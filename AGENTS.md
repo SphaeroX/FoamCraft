@@ -55,6 +55,11 @@ Read only what your current work needs:
   before naming another product, and before touching the runtime image or a release.
 - [docs/project-brief.md](docs/project-brief.md): read when goal, scope or non-goals are unclear.
 
+## Roadmap
+
+Work on roadmap tasks follows [Roadmap/AGENTS.md](Roadmap/AGENTS.md) (written in German). The
+current task files are in `Roadmap/Tasks/`.
+
 ## Limits
 
 - **Licenses:** only dependencies on the allowed list in `docs/licensing.md`. Ask before adding
