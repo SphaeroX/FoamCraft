@@ -1,0 +1,7 @@
+LICENSE
+package-lock.json
+Roadmap/
+target/
+dist/
+node_modules/
+app/src-tauri/gen/

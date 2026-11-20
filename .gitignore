@@ -1,0 +1,42 @@
+# Rust
+target/
+**/*.rs.bk
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Tauri
+app/src-tauri/gen/
+app/src-tauri/target/
+
+# Simulation data and runtime artifacts (never commit cases or results)
+/work/
+*.foamcraft-cache/
+processor*/
+postProcessing/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and temp files
+*.log
+*.tmp
+
+# IDE and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local agent files
+CLAUDE.local.md
+.claude/settings.local.json
