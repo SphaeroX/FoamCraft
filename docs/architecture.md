@@ -79,6 +79,10 @@ samples/                   sample projects (CC0): geometry scripts, STL and proj
 tools/windows/             PowerShell helpers to screenshot and click the app window
                            (app-print.ps1 captures it without focus or mouse)
 tools/i18n-merge.mjs       adds interface texts to en.json and de.json in one step
+tools/screenshots/         renders the README pictures from the samples (workflow screenshots.yml)
+tools/site/assemble.sh     builds the GitHub Pages site from site/ (workflow pages.yml)
+site/                      landing page (static HTML and CSS, no scripts) and the demo video
+docs/screenshots/          README and website pictures, committed by the screenshots workflow
 crates/foamcraft-runtime   runner trait, Docker runner, fake engine
 crates/foamcraft-agent     agent inside the runtime container (Linux)
 runtime/Dockerfile         runtime image: OpenFOAM plus agent (multi-stage build)

@@ -12,6 +12,9 @@ on:
     paths-ignore:
       - "docs/screenshots/**"
       - "Roadmap/**"
+      - "site/**"
+      - "tools/site/**"
+      - ".github/workflows/pages.yml"
       - "**/*.md"
 
 permissions:

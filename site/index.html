@@ -1,0 +1,250 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FoamCraft</title>
+    <meta
+      name="description"
+      content="FoamCraft is a free desktop app that makes CFD simulation with OpenFOAM approachable for people who are not simulation experts."
+    />
+    <meta property="og:title" content="FoamCraft" />
+    <meta
+      property="og:description"
+      content="A wind tunnel on your desk: load a model, press Run and watch the air move."
+    />
+    <meta property="og:image" content="screenshots/wind-tunnel-light-trails.png" />
+    <link rel="icon" href="icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="#top"><img src="icon.png" alt="" width="28" height="28" />FoamCraft</a>
+      <nav aria-label="Sections">
+        <a href="#demo">Demo</a>
+        <a href="#pictures">Pictures</a>
+        <a href="#build">Build</a>
+        <a href="https://github.com/SphaeroX/FoamCraft">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="tunnel" aria-labelledby="hero-title">
+        <svg class="streams" viewBox="0 0 1200 520" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-20 120 C 300 120, 420 60, 620 70 S 1000 140, 1220 130" />
+          <path d="M-20 190 C 280 190, 420 120, 640 130 S 1000 200, 1220 200" />
+          <path d="M-20 260 C 260 260, 400 200, 660 210 S 1010 270, 1220 265" />
+          <path d="M-20 330 C 260 330, 400 300, 660 305 S 1010 330, 1220 335" />
+          <path d="M-20 400 C 280 400, 420 420, 640 415 S 1000 395, 1220 400" />
+          <path d="M-20 470 C 300 470, 420 500, 620 495 S 1000 465, 1220 470" />
+        </svg>
+        <div class="tunnel-text">
+          <h1 id="hero-title">A wind tunnel on your desk.</h1>
+          <p class="lede">
+            FoamCraft is a free desktop app that runs OpenFOAM flow simulations for people who are
+            not simulation experts. Load a 3D model, press Run, and watch the air move around it or
+            through it.
+          </p>
+          <p class="actions">
+            <a class="button" href="https://github.com/SphaeroX/FoamCraft"
+              >Get the source on GitHub</a
+            >
+            <a class="button quiet" href="#demo">Watch the demo</a>
+          </p>
+          <p class="status">In development. No installer yet; you can build it from source.</p>
+        </div>
+        <figure class="window">
+          <img
+            src="screenshots/wind-tunnel-light-trails.png"
+            width="1280"
+            height="720"
+            alt="Glowing light trails stream past a rounded block in the virtual wind tunnel"
+          />
+          <figcaption>
+            Light trails, long exposure, rendered from the wind tunnel sample.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="demo" class="demo" aria-labelledby="demo-title">
+        <h2 id="demo-title">See it in 20 seconds</h2>
+        <video controls preload="metadata" playsinline poster="media/demo-poster.jpg">
+          <source src="media/demo.mp4" type="video/mp4" />
+          Your browser cannot play this video.
+          <a href="media/demo.mp4">Download the demo video</a>.
+        </video>
+      </section>
+
+      <section class="steps" aria-labelledby="steps-title">
+        <h2 id="steps-title">From model to result</h2>
+        <ol>
+          <li>
+            <h3>Bring a model</h3>
+            <p>
+              STL, OBJ, 3MF, STEP or IGES. FoamCraft checks that it is closed and lets you place it
+              with handles.
+            </p>
+          </li>
+          <li>
+            <h3>Say how the air flows</h3>
+            <p>
+              Around the part in a virtual wind tunnel, or through it: click a face to make it an
+              inlet or an outlet.
+            </p>
+          </li>
+          <li>
+            <h3>Press Run</h3>
+            <p>
+              Mesh, solver settings and the stop criterion are chosen for you and sized to your
+              computer.
+            </p>
+          </li>
+          <li>
+            <h3>Look and measure</h3>
+            <p>
+              Drag, lift, pressure loss and flow per opening, each explained in plain words, plus a
+              light that says how far to trust them.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="pictures" class="pictures" aria-labelledby="pictures-title">
+        <h2 id="pictures-title">What you see</h2>
+        <p class="note">
+          Every picture on this page is rendered automatically from the two sample projects, so it
+          shows the current state of the code.
+        </p>
+        <div class="mosaic">
+          <figure class="wide">
+            <img
+              src="screenshots/wind-tunnel-smoke-lines.png"
+              width="1280"
+              height="720"
+              alt="Smoke lines from a rake upstream of the body"
+              loading="lazy"
+            />
+            <figcaption>Smoke lines from a rake</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="screenshots/wind-tunnel-ribbons.png"
+              width="1280"
+              height="720"
+              alt="Ribbons that twist with the swirl around the body"
+              loading="lazy"
+            />
+            <figcaption>Ribbons that twist with the swirl</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="screenshots/wind-tunnel-pressure.png"
+              width="1280"
+              height="720"
+              alt="Pressure coloured on the surface of the body"
+              loading="lazy"
+            />
+            <figcaption>Pressure on the model</figcaption>
+          </figure>
+          <figure class="wide">
+            <img
+              src="screenshots/manifold-light-trails.png"
+              width="1280"
+              height="720"
+              alt="Light trails through a pipe manifold"
+              loading="lazy"
+            />
+            <figcaption>Light trails through a pipe manifold</figcaption>
+          </figure>
+          <figure class="wide">
+            <img
+              src="screenshots/wind-tunnel-oil-film.png"
+              width="1280"
+              height="720"
+              alt="Oil-film lines on a dark model"
+              loading="lazy"
+            />
+            <figcaption>Oil-film lines show where the flow separates</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="screenshots/manifold-slice.png"
+              width="1280"
+              height="720"
+              alt="Speed on a slice through a pipe manifold"
+              loading="lazy"
+            />
+            <figcaption>Speed on a slice through a manifold</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="more" aria-labelledby="more-title">
+        <h2 id="more-title">Also in the box</h2>
+        <dl>
+          <div>
+            <dt>Ride along</dt>
+            <dd>
+              Follow one particle in first person and read speed, pressure and wall distance as you
+              go.
+            </dd>
+          </div>
+          <div>
+            <dt>Export</dt>
+            <dd>
+              Images up to 8K, videos with camera paths, and a PDF or HTML report that compares two
+              runs.
+            </dd>
+          </div>
+          <div>
+            <dt>For AI agents</dt>
+            <dd>
+              An MCP server gives agents the same commands as the interface: set up, run, read
+              figures, take pictures.
+            </dd>
+          </div>
+          <div>
+            <dt>Yours, on your machine</dt>
+            <dd>
+              English and German. No account, no telemetry; the only download is the OpenFOAM
+              runtime image.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="build" class="build" aria-labelledby="build-title">
+        <h2 id="build-title">Build it</h2>
+        <p>
+          You need Rust, Node.js 22 with npm, Docker and a GPU with Vulkan, DirectX 12 or Metal.
+          Windows is the main platform; Linux and macOS work too.
+        </p>
+        <pre><code>git clone https://github.com/SphaeroX/FoamCraft
+cd FoamCraft
+npm ci
+cargo build --release -p foamcraft-cli
+target/release/foamcraft runtime build
+npm run app:dev</code></pre>
+        <p>
+          On the first start a setup assistant checks Docker, memory and the runtime image. Details
+          are in the <a href="https://github.com/SphaeroX/FoamCraft#readme">README</a>.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        FoamCraft is free software under the
+        <a href="https://github.com/SphaeroX/FoamCraft/blob/main/LICENSE">GNU GPL v3.0 or later</a>.
+        Simulation results are estimates without any warranty; do not use them as the sole basis for
+        safety-relevant decisions.
+      </p>
+      <p class="tm">
+        FoamCraft is an independent project. This offering is not approved or endorsed by OpenCFD
+        Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner
+        of the OPENFOAM® and OpenCFD® trade marks.
+      </p>
+    </footer>
+  </body>
+</html>

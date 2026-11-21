@@ -6,11 +6,16 @@ click where the flow enters and leaves a part, press **Run**, and then explore t
 lines, glowing particle trails, ribbons that twist with the swirl, pressure on the surface, a ride
 along a single particle, and exported images, videos and reports.
 
-![Light trails around the sample body in the wind tunnel](docs/screenshots/wind-tunnel-light-trails.png)
+[![Watch the 20-second demo video](site/media/demo-poster.jpg)](https://sphaerox.github.io/FoamCraft/#demo)
+
+**[Website and demo video](https://sphaerox.github.io/FoamCraft/)** (the video file:
+[site/media/demo.mp4](site/media/demo.mp4))
 
 > **Status:** in active development, no installer yet. You can build and run it from source (see
 > below). The pictures on this page are rendered automatically from the sample projects by a
 > GitHub workflow, so they always show the current state of the code.
+
+![Light trails around the sample body in the wind tunnel](docs/screenshots/wind-tunnel-light-trails.png)
 
 ## What it does
 
@@ -106,6 +111,7 @@ Development follows strict test-driven development; see [AGENTS.md](AGENTS.md) a
 | `app/`                                         | Tauri 2 shell with a React and TypeScript interface              |
 | `runtime/`                                     | the OpenFOAM container image                                     |
 | `samples/`                                     | sample projects (CC0)                                            |
+| `site/`                                        | the website (GitHub Pages) and the demo video                    |
 | `docs/`                                        | architecture, testing, code style, conventions, licensing        |
 | `Roadmap/`                                     | the work plan (in German)                                        |
 
@@ -116,6 +122,10 @@ runtime image on a Linux runner, runs both samples and renders the pictures with
 [`tools/screenshots/make-screenshots.sh`](tools/screenshots/make-screenshots.sh) (software Vulkan
 driver, no GPU needed). Changed pictures are committed to `docs/screenshots/`. Run it by hand
 from the Actions tab, or locally with the same script.
+
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes the website from `site/`
+with the same pictures ([`tools/site/assemble.sh`](tools/site/assemble.sh)) whenever the page or
+the pictures change.
 
 ## License
 

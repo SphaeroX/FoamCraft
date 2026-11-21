@@ -59,7 +59,11 @@ approval.
 - Icons and fonts: MIT, Apache-2.0, OFL-1.1 or CC0.
 - Report font: Libertinus Serif (Regular, Bold, Italic) under the SIL OFL 1.1, unmodified from the
   typst-assets 0.15.1 package, in `assets/fonts/` with its licence text (`OFL.txt`). It is embedded
-  in every PDF report. Releases ship `OFL.txt` with the other notices.
+  in every PDF report. Releases ship `OFL.txt` with the other notices. The landing page (`site/`)
+  serves the Regular and Bold files from the same folder, together with `OFL.txt`; it loads no
+  fonts or scripts from third-party servers.
+- Demo video (`site/media/demo.mp4`) and its poster: self-made from FoamCraft exports of the CC0
+  sample geometry, with self-synthesised music; released under the project licence.
 - Sample geometry and test data: self-made and released as CC0 (sample projects in `samples/`,
   made from own Gmsh scripts). Model reference bodies from their
   published dimensions instead of downloading third-party files. Check the license of any

@@ -43,3 +43,6 @@ CLAUDE.local.md
 
 # Projects saved next to the test CAD files (they hold runs and results)
 /tests/data/cad/*/
+
+# /brag launch video work files
+/brag-output*/
