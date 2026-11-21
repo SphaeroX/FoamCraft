@@ -6,7 +6,15 @@ export type CameraAction =
   | { kind: "pan"; dx: number; dy: number }
   | { kind: "zoom"; factor: number }
   | { kind: "fit" }
-  | { kind: "resize" };
+  | { kind: "resize" }
+  /** Turns to a standard view (`front`, `top_front_right`, `default`, ...) with a short move. */
+  | { kind: "view"; name: string };
+
+/** Yaw and pitch of the camera in radians, as reported by the native view. */
+export interface CameraPose {
+  yaw: number;
+  pitch: number;
+}
 
 /** Radians of rotation per pixel of drag. */
 const ORBIT_SPEED = 0.01;

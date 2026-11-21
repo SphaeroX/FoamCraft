@@ -40,3 +40,6 @@ desktop.ini
 # Local agent files
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Projects saved next to the test CAD files (they hold runs and results)
+/tests/data/cad/*/

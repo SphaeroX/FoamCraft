@@ -406,6 +406,36 @@ pub fn assess(history: &[Coefficients], s: &ConvergenceSettings) -> Assessment {
     result(Verdict::Continue, mean)
 }
 
+/// Like [`assess`], for a run with sources of air. The forces on a model stay near zero until a
+/// jet arrives (and for good when it blows past the model), so settled forces alone do not show
+/// that the flow has developed: the mean speed in the domain (`flow`, one value per iteration)
+/// must lie within the tolerance band as well. Window means that merely agree are not enough for
+/// it; while the front of a jet crosses the domain they agree long before the jet has its shape.
+pub fn assess_with_flow(
+    history: &[Coefficients],
+    flow: &[f64],
+    s: &ConvergenceSettings,
+) -> Assessment {
+    let forces = assess(history, s);
+    if !matches!(forces.verdict, Verdict::Stable | Verdict::Oscillating) {
+        return forces;
+    }
+    let n = history.len().min(flow.len());
+    let verdict = match assess_series(&[&flow[..n]], s).verdict {
+        Verdict::Stable => return forces,
+        Verdict::Diverged => Verdict::Diverged,
+        _ if history.len() >= s.max_iterations as usize => Verdict::LimitReached,
+        _ => Verdict::Continue,
+    };
+    // Not settled: the mean of the last window, as `assess` reports it for these verdicts.
+    let last = &history[history.len().saturating_sub(s.window.max(1))..];
+    Assessment {
+        verdict,
+        mean: Coefficients::mean(last),
+        ..forces
+    }
+}
+
 /// Name of the force object over all model patches.
 pub const TOTAL_FORCES: &str = "forces";
 /// Prefix of the force object of one part (model patch region).

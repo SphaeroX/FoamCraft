@@ -10,6 +10,8 @@ struct Globals {
 
 struct Object {
     color: vec4<f32>,
+    // Placement of the mesh in the world (identity unless a model is being dragged).
+    model: mat4x4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
@@ -32,9 +34,10 @@ fn vs_main(
     @location(3) color: vec3<f32>,
 ) -> VsOut {
     var out: VsOut;
-    out.clip = globals.view_proj * vec4<f32>(position, 1.0);
-    out.world = position;
-    out.normal = normal;
+    let world = object.model * vec4<f32>(position, 1.0);
+    out.clip = globals.view_proj * world;
+    out.world = world.xyz;
+    out.normal = (object.model * vec4<f32>(normal, 0.0)).xyz;
     out.pick = pick;
     out.color = color;
     return out;

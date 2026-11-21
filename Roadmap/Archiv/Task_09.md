@@ -32,7 +32,7 @@ Aus Geometrie und Windkanal-Szenario entsteht ohne Handarbeit ein rechenfähiges
 **Gehört nicht dazu:**
 
 - Vernetzung für die Innenströmung (Task_13)
-- Lösungsadaptive Verfeinerung (Task_35)
+- Lösungsadaptive Verfeinerung (Task_39)
 
 ## Umsetzungsschritte
 
@@ -88,7 +88,7 @@ Reihenfolge und Details stehen in `AGENTS.md`, Abschnitt "Abschluss- und Archivi
 
 ## Erkenntnisse für Folge-Agenten
 
-- **Umgesetzt (und Abweichungen vom Plan):** `foamcraft_sim::{mesh (Plan), case (Fall-Schreiber), mesh_report (checkMesh/Schichten), mesh_steps (Ausweichleiter)}`, Vorlagen `templates/wind_tunnel/`, `RunOptions.stop_after`, Befehle `mesh.generate` und `mesh.info` in `foamcraft-api`, Manifest Schema 6 (`mesh`), Linien-Pipeline im Renderer, Netzvorschau, `MeshSection` im Szenario-Schritt. "Ansicht einpassen" richtet sich jetzt nach den Modellen, nicht nach Tunnel/Achsen. Abweichung: Kantenerkennung (surfaceFeatureExtract) wird nicht genutzt; `implicitFeatureSnap` reicht für die Testkörper. snappyHexMesh läuft seriell (parallel erst bei Bedarf, Task_33).
+- **Umgesetzt (und Abweichungen vom Plan):** `foamcraft_sim::{mesh (Plan), case (Fall-Schreiber), mesh_report (checkMesh/Schichten), mesh_steps (Ausweichleiter)}`, Vorlagen `templates/wind_tunnel/`, `RunOptions.stop_after`, Befehle `mesh.generate` und `mesh.info` in `foamcraft-api`, Manifest Schema 6 (`mesh`), Linien-Pipeline im Renderer, Netzvorschau, `MeshSection` im Szenario-Schritt. "Ansicht einpassen" richtet sich jetzt nach den Modellen, nicht nach Tunnel/Achsen. Abweichung: Kantenerkennung (surfaceFeatureExtract) wird nicht genutzt; `implicitFeatureSnap` reicht für die Testkörper. snappyHexMesh läuft seriell (parallel erst bei Bedarf, Task_37).
 - **Learnings & Stolpersteine:** OpenFOAM-`wordRes` behandelt `(model.*)` wörtlich; ein regulärer Ausdruck braucht Anführungszeichen: `'("model.*")'`. `surfaceMeshExtract -constant` hängt den Zeitindex an (`preview_0.obj`). Randflächen von OpenFOAM zeigen aus dem Fluid heraus (ins Modell); für Darstellung `fix_normals` anwenden. Achsen dürfen nicht in Bounding-Box-Rechnungen für Tunnel/Fokus eingehen. Tauri-Dev startet die App bei Änderungen in `crates/` neu – danach das Projekt erneut öffnen. Mausrad per `mouse_event`: negative Delta erst in `UInt32` umdeuten (`BitConverter`), negatives Delta = Inhalt scrollt nach unten / Ansicht zoomt heraus.
 - **Wichtige Entscheidungen und ihre Gründe:** Rechnung im Strömungssystem (Tunnel achsenparallel, einfache blockMesh- und Box-Verfeinerung). Ein Job pro Vernetzungsversuch (saubere Zustände, Volume des akzeptierten Netzes bleibt). Leck-Prüfung vorab über die Diagnose statt über snappyHexMesh-Ergebnis (eindeutiger Klartext).
 - **Auswirkungen auf Folge-Tasks:** Task_10 rechnet im Volume des Jobs `manifest.mesh.job_id` weiter (Stufen decompose/solve/reconstruct; `record.state` z. B. auf `Running(Decompose)` setzen oder neuen Lauf mit `stop_after: None` ab Decompose). Kräfte in x-Richtung des Strömungssystems = Widerstand; Auftrieb z. Patch-Gruppe `model` für forces-Functionobject verwenden. Anfangswerte k/ω stehen in `case::template_values`. Der Docker-Speicher (1,9 GiB) begrenzt das Budget auf ~0,76 Mio. Zellen.

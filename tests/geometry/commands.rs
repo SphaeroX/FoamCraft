@@ -178,3 +178,103 @@ fn every_undoable_geometry_command_undoes_and_redoes_exactly() {
         );
     }
 }
+
+// --- Task_25: pivot, move_by, rotate_about ---
+
+#[test]
+fn pivot_reports_centre_centroid_and_origin() {
+    let (reg, mut s, _) = setup("pivot");
+    import(&reg, &mut s, "cube_binary.stl");
+    reg.execute(
+        &mut s,
+        "geometry.set_transform",
+        json!({"id": "model-1", "translation": [1.0, 0.0, 0.0]}),
+    )
+    .unwrap();
+    let p = reg
+        .execute(&mut s, "geometry.pivot", json!({"id": "model-1"}))
+        .unwrap();
+    // The 20 mm cube spans 1.00..1.02 in x after the move.
+    assert!(
+        (p["center"][0].as_f64().unwrap() - 1.01).abs() < 1e-6,
+        "{p}"
+    );
+    assert!(
+        (p["centroid"][0].as_f64().unwrap() - 1.01).abs() < 1e-6,
+        "{p}"
+    );
+    assert_eq!(p["origin"], json!([1.0, 0.0, 0.0]));
+}
+
+#[test]
+fn move_by_adds_to_the_translation_and_is_one_undo_step() {
+    let (reg, mut s, _) = setup("move-by");
+    import(&reg, &mut s, "cube_binary.stl");
+    let out = reg
+        .execute(
+            &mut s,
+            "geometry.move_by",
+            json!({"id": "model-1", "delta": [0.1, -0.2, 0.05]}),
+        )
+        .unwrap();
+    assert_eq!(out["translation"], json!([0.1, -0.2, 0.05]));
+    reg.execute(
+        &mut s,
+        "geometry.move_by",
+        json!({"id": "model-1", "delta": [0.1, 0.0, 0.0]}),
+    )
+    .unwrap();
+    reg.execute(&mut s, "history.undo", json!({})).unwrap();
+    let info = reg
+        .execute(&mut s, "geometry.info", json!({"id": "model-1"}))
+        .unwrap();
+    assert_eq!(info["translation"], json!([0.1, -0.2, 0.05]));
+}
+
+#[test]
+fn rotate_about_keeps_the_chosen_pivot_in_place() {
+    let (reg, mut s, _) = setup("rotate-about");
+    import(&reg, &mut s, "cube_binary.stl");
+    let before = reg
+        .execute(&mut s, "geometry.pivot", json!({"id": "model-1"}))
+        .unwrap();
+    let out = reg
+        .execute(
+            &mut s,
+            "geometry.rotate_about",
+            json!({"id": "model-1", "axis": "z", "angle_deg": 90.0, "pivot": "center"}),
+        )
+        .unwrap();
+    assert!((out["rotation_deg"][0].as_f64().unwrap() - 90.0).abs() < 1e-9);
+    let after = reg
+        .execute(&mut s, "geometry.pivot", json!({"id": "model-1"}))
+        .unwrap();
+    for k in 0..3 {
+        let (a, b) = (
+            before["center"][k].as_f64().unwrap(),
+            after["center"][k].as_f64().unwrap(),
+        );
+        assert!((a - b).abs() < 1e-6, "{before} vs {after}");
+    }
+    // Rotating about the model origin keeps the translation.
+    let out = reg
+        .execute(
+            &mut s,
+            "geometry.rotate_about",
+            json!({"id": "model-1", "axis": "x", "angle_deg": 30.0, "pivot": "origin"}),
+        )
+        .unwrap();
+    let t = out["translation"].clone();
+    let before_t = after["origin"].clone();
+    for k in 0..3 {
+        assert!((t[k].as_f64().unwrap() - before_t[k].as_f64().unwrap()).abs() < 1e-9);
+    }
+    let err = reg
+        .execute(
+            &mut s,
+            "geometry.rotate_about",
+            json!({"id": "model-1", "axis": "w", "angle_deg": 1.0}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, "command.invalid_params");
+}

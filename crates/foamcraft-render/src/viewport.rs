@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! A window surface that shows the scene.
 
-use crate::camera::OrbitCamera;
+use crate::camera::ViewCamera;
 use crate::renderer::GpuScene;
 use crate::renderer::Renderer;
 
@@ -60,7 +60,7 @@ impl Viewport {
     }
 
     /// Draws one frame. Lost or outdated surfaces are reconfigured and skipped.
-    pub fn render(&mut self, renderer: &Renderer, scene: &GpuScene, camera: &OrbitCamera) {
+    pub fn render(&mut self, renderer: &Renderer, scene: &GpuScene, camera: &dyn ViewCamera) {
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -81,13 +81,47 @@ impl Viewport {
         renderer.queue.present(frame);
     }
 
+    /// Draws a scene with a second view on top in the rectangle `inset` = [x, y, width, height]
+    /// (picture in picture of a ride).
+    pub fn render_inset(
+        &mut self,
+        renderer: &Renderer,
+        scene: &GpuScene,
+        camera: &dyn ViewCamera,
+        inset_scene: &GpuScene,
+        inset_camera: &dyn ViewCamera,
+        inset: [u32; 4],
+    ) {
+        let frame = match self.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(frame)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
+            _ => {
+                self.surface.configure(&renderer.device, &self.config);
+                return;
+            }
+        };
+        let view = frame.texture.create_view(&Default::default());
+        renderer.render_inset_gpu(
+            scene,
+            camera,
+            inset_scene,
+            inset_camera,
+            &view,
+            self.config.format,
+            self.config.width,
+            self.config.height,
+            inset,
+        );
+        renderer.queue.present(frame);
+    }
+
     /// Draws two scenes side by side with one camera, in the columns `span` (first, count).
     pub fn render_split(
         &mut self,
         renderer: &Renderer,
         left: &GpuScene,
         right: &GpuScene,
-        camera: &OrbitCamera,
+        camera: &dyn ViewCamera,
         span: (u32, u32),
     ) {
         let frame = match self.surface.get_current_texture() {

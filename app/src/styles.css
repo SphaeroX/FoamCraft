@@ -1,14 +1,36 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* The page is transparent so the native 3D view underneath shows through. */
+/* Design tokens (Task_29): a flow lab over the dark 3D view. Ink panels, one dye-cyan accent for
+   the main action, signal colours only for states. See docs/code-style.md. */
 :root {
-  --panel-bg: rgba(22, 25, 31, 0.88);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --text: #e8eaee;
-  --muted: #9aa3b2;
-  --accent: #e07a2a;
-  --field-bg: #1c2027;
-  font-family: system-ui, "Segoe UI", sans-serif;
-  font-size: 14px;
+  --ink: #1a1f28;
+  --panel-bg: rgba(26, 31, 40, 0.93);
+  --panel-border: #2f3746;
+  --raised: #252c38;
+  --raised-hover: #2e3644;
+  --text: #e9edf2;
+  --muted: #9aa6b6;
+  --accent: #3fc1c9;
+  --accent-ink: #0b2a2d;
+  --accent-soft: rgba(63, 193, 201, 0.16);
+  --ok: #6fd08c;
+  --warn: #f2b13c;
+  --bad: #ff7a6b;
+  --field-bg: #141921;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --text-s: 12px;
+  --text-m: 13px;
+  --text-l: 15px;
+  --text-xl: 19px;
+  --text-xxl: 24px;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: var(--text-m);
+  line-height: 1.45;
   color: var(--text);
   color-scheme: dark;
 }
@@ -28,8 +50,9 @@ body,
 .panel {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  backdrop-filter: blur(6px);
+  border-radius: var(--radius-m);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 24px rgba(5, 8, 12, 0.35);
 }
 .toolbar {
   position: fixed;
@@ -42,7 +65,13 @@ body,
   padding: 6px 10px;
 }
 .brand {
-  font-weight: 600;
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: var(--text-l);
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.brand::first-letter {
   color: var(--accent);
 }
 .spacer {
@@ -62,14 +91,39 @@ button,
 select {
   font: inherit;
   color: var(--text);
-  background: #2c313b;
+  background: var(--raised);
   border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 4px 10px;
+  border-radius: var(--radius-s);
+  padding: 5px 12px;
+  cursor: pointer;
 }
 button:hover,
 select:hover {
-  background: #363c48;
+  background: var(--raised-hover);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* The one main action of a step. */
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+/* Secondary actions that should not compete with the task. */
+button.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+button.quiet:hover {
+  background: var(--raised);
+  color: var(--text);
 }
 .dialog-backdrop {
   position: fixed;
@@ -110,7 +164,7 @@ select:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(520px, calc(100vw - 32px));
+  width: min(980px, calc(100vw - 32px));
   max-height: calc(100vh - 120px);
   overflow: auto;
   padding: 20px 24px;
@@ -652,12 +706,18 @@ pre.code {
 /* Light appearance follows the system setting; the 3D view keeps its own background. */
 @media (prefers-color-scheme: light) {
   :root {
-    --panel-bg: rgba(250, 251, 253, 0.94);
-    --panel-border: rgba(20, 30, 45, 0.14);
+    --ink: #f6f8fb;
+    --panel-bg: rgba(246, 248, 251, 0.96);
+    --panel-border: #d3dae4;
+    --raised: #e9edf3;
+    --raised-hover: #dde3ec;
     --text: #1b2230;
     --muted: #4d5869;
+    --accent: #0b6970;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(11, 105, 112, 0.12);
     --ok: #2e7d32;
-    --warn: #9a6700;
+    --warn: #8a5a00;
     --bad: #c62828;
     --field-bg: #ffffff;
     color-scheme: light;
@@ -665,12 +725,19 @@ pre.code {
   button,
   select,
   input {
-    background: #eef1f5;
+    background: var(--raised);
     color: var(--text);
   }
   button:hover,
   select:hover {
-    background: #e2e7ee;
+    background: var(--raised-hover);
+  }
+  button.primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  button.quiet {
+    background: transparent;
   }
   .hint {
     color: var(--muted);
@@ -714,7 +781,7 @@ button.link:hover {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #16191f;
+  color: var(--accent-ink);
   font-weight: 600;
 }
 button.primary:hover:not(:disabled) {
@@ -798,4 +865,649 @@ button:disabled {
 .mesh-details summary,
 .run-panel details summary {
   cursor: pointer;
+}
+/* View cube: top right of the free view area, turns with the camera. */
+.view-cube-anchor {
+  position: fixed;
+  top: 64px;
+  z-index: 2;
+}
+.view-cube {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.view-cube-stage {
+  width: 110px;
+  height: 110px;
+  perspective: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.view-cube-body {
+  position: relative;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.view-cube-body button {
+  position: absolute;
+  padding: 0;
+  border-radius: 0;
+  backface-visibility: hidden;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.view-cube-face {
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  background: rgba(46, 52, 64, 0.92);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.view-cube-edge {
+  width: 44px;
+  height: 12px;
+  margin: -6px 0 0 -22px;
+  background: rgba(90, 98, 114, 0.95);
+  border: none;
+}
+.view-cube-edge.vertical {
+  width: 12px;
+  height: 44px;
+  margin: -22px 0 0 -6px;
+}
+.view-cube-corner {
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: rgba(110, 118, 134, 0.95);
+  border: none;
+}
+.view-cube-body button:hover,
+.view-cube-body button:focus-visible {
+  background: var(--accent);
+  color: #fff;
+  outline: none;
+}
+.view-cube-home {
+  font-size: 11px;
+  padding: 2px 10px;
+}
+/* Move and rotate handles: bar at the bottom centre of the view. */
+.move-tools {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  max-width: calc(100vw - 660px);
+  z-index: 2;
+}
+.move-tools label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.move-value {
+  min-width: 7em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 600;
+}
+/* Scenario step: wind rose, quick speeds, ground pictures. */
+.wind-rose {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.wind-rose svg {
+  cursor: pointer;
+  outline: none;
+}
+.wind-rose svg:focus-visible .wind-rose-ring {
+  stroke: var(--accent);
+}
+.wind-rose-ring {
+  fill: var(--field-bg);
+  stroke: var(--panel-border);
+  stroke-width: 2;
+}
+.wind-rose-tick {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.wind-rose-label {
+  fill: var(--muted);
+  font-size: 9px;
+}
+.wind-rose-model {
+  fill: rgba(184, 191, 204, 0.35);
+  stroke: rgba(184, 191, 204, 0.8);
+}
+.wind-rose-arrow {
+  stroke: #f28c26;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.wind-rose-head {
+  fill: #f28c26;
+}
+.quick-speeds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.ground-choice {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ground-choice legend {
+  color: var(--muted);
+}
+.ground-buttons {
+  display: flex;
+  gap: 6px;
+}
+.ground-buttons button {
+  padding: 2px 4px;
+}
+.ground-buttons button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ground-buttons button:disabled {
+  opacity: 0.4;
+}
+.ground-icon-body {
+  fill: #b8bfcc;
+}
+.ground-icon-floor {
+  stroke: #9aa3b2;
+  stroke-width: 2;
+  fill: none;
+}
+.ground-select {
+  font-size: 11px;
+}
+.scenario-result details summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+/* Ready-made views and the demo (results step). */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.preset-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  font-size: 11px;
+}
+.preset-grid button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.preset-icon-body {
+  fill: #b8bfcc;
+}
+.preset-icon-line {
+  stroke: #6fc3e8;
+  stroke-width: 1.5;
+  fill: none;
+}
+.preset-icon-veil {
+  fill: rgba(220, 225, 235, 0.25);
+}
+.preset-icon-slice {
+  fill: #e0b33a;
+}
+.preset-icon-hot {
+  fill: #e0503a;
+}
+.preset-explanation {
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+  margin: 6px 0;
+}
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ---- Assistant (Task_29) ---- */
+/* Step rail: the four steps as stations on one streamline that fills as steps are done. */
+.step-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 var(--space-3);
+}
+.step-rail ol {
+  position: relative;
+  display: flex;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step-rail-line {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  height: 2px;
+  background: var(--panel-border);
+  border-radius: 1px;
+}
+.step-rail-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+.step-rail button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--ink);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 3px 12px 3px 3px;
+  color: var(--muted);
+}
+.step-rail button.current {
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.step-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--raised);
+  font-size: var(--text-s);
+  font-weight: 700;
+}
+.step-rail button[data-state="done"] .step-dot {
+  background: var(--ok);
+  color: var(--accent-ink);
+}
+.step-rail button[data-state="attention"] .step-dot {
+  background: var(--warn);
+  color: #2a1d00;
+}
+.step-rail button.current .step-dot {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.step-rail button[data-state="open"]:not(.current) {
+  opacity: 0.7;
+}
+/* Guide card: one sentence what to do, Back and Next. */
+.step-guide {
+  position: fixed;
+  left: 8px;
+  bottom: 44px;
+  width: 300px;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  z-index: 3;
+}
+.step-guide p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-m);
+}
+.step-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.step-footer-note {
+  flex: 1;
+}
+.step-footer .primary {
+  margin-left: auto;
+}
+/* With the guide card below it, the left panel ends higher. */
+.side-panel:not(.right) {
+  bottom: 150px;
+}
+/* Menu with everything that is not part of the current task. */
+.app-menu {
+  position: relative;
+}
+.menu-toggle svg path {
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.app-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 200px;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  z-index: 20;
+}
+.app-menu-list [role="menuitem"] {
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+.app-menu-list [role="menuitem"]:hover {
+  background: var(--raised);
+}
+.mode-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+}
+.toolbar {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.project-name {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .step-name {
+    display: none;
+  }
+  .step-rail button {
+    padding-right: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-rail-fill {
+    transition: none;
+  }
+}
+
+/* Start page: three cards side by side; the sample is the biggest, most people start there. */
+.start-head h1 {
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font-size: var(--text-xxl);
+  letter-spacing: -0.015em;
+}
+.start-head p {
+  margin: var(--space-1) 0 0;
+  max-width: 70ch;
+}
+.start-cards {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: var(--space-3);
+}
+.start-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-m);
+  background: var(--ink);
+  min-width: 0;
+}
+.start-card-samples {
+  border-color: var(--accent);
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+.start-new {
+  flex-direction: column;
+  align-items: stretch;
+}
+@media (max-width: 860px) {
+  .start-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ride along a particle (Task_32) */
+.ride-cards {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+.ride-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-2);
+}
+.ride-card-title {
+  font-weight: 600;
+}
+.ride-hud {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-2) var(--space-3);
+  min-width: 260px;
+  font-variant-numeric: tabular-nums;
+}
+.ride-hud dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-3);
+  margin: 0 0 var(--space-1);
+}
+.ride-hud dt {
+  color: var(--muted);
+}
+.ride-hud dd {
+  margin: 0;
+}
+.ride-spark {
+  display: block;
+  width: 100%;
+  height: 20px;
+}
+.ride-spark path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.ride-spark line {
+  stroke: var(--text);
+  vector-effect: non-scaling-stroke;
+}
+.ride-sentence {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 560px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-l);
+  text-align: center;
+}
+.ride-note {
+  position: fixed;
+  bottom: 170px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+}
+.ride-bar {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  max-width: calc(100vw - 32px);
+}
+.ride-timeline {
+  position: relative;
+  width: 240px;
+}
+.ride-timeline input {
+  width: 100%;
+}
+.ride-events {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.ride-events li {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.ride-speed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.ride-speed input {
+  width: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ride-sentence,
+  .ride-note {
+    transition: none;
+  }
+}
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+}
+.segmented button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.preset-icon-tuft {
+  fill: none;
+  stroke: #f2c879;
+  stroke-width: 1.5;
+}
+
+/* Flow on the surface (Task_33) */
+.surface-flow-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+.surface-flow-options {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-4);
+}
+.surface-flow-options label {
+  display: grid;
+  grid-template-columns: 9em 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+.surface-flow-options p {
+  margin: 0;
+}
+
+/* Particles with mass (Task_34) */
+.heavy-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.heavy-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+}
+.heavy-cards button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.heavy-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-1);
+  align-items: end;
+}
+.heavy-custom label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.heavy-custom input {
+  width: 100%;
+}
+.heavy-impact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.heavy-impact p {
+  margin: 0;
+}
+/* Light trails and ribbons in the preset gallery (Task_35). */
+.preset-icon-glow {
+  fill: none;
+  stroke: #ffd79a;
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1.5px #ffb347);
+}
+.preset-icon-ribbon {
+  fill: #e8913a;
+  stroke: #3a7bd5;
+  stroke-width: 0.8;
 }

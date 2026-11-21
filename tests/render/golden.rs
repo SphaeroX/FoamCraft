@@ -477,3 +477,41 @@ fn slice_through_an_analytic_field_matches_golden_image() {
         share * 100.0
     );
 }
+
+#[test]
+fn named_corner_view_of_test_cube_matches_golden_image() {
+    let Some(renderer) = renderer() else { return };
+    let scene = Scene::test_cube();
+    let (yaw, pitch) = foamcraft_render::camera::named_view("top_front_right").expect("view");
+    let mut camera = OrbitCamera {
+        yaw,
+        pitch,
+        ..Default::default()
+    };
+    let (center, radius) = scene.bounding_sphere();
+    camera.fit(center, radius, 1.0);
+    let pixels = renderer.render_offscreen(&scene, &camera, SIZE, SIZE);
+    let golden = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/golden/view_top_front_right.png");
+    if std::env::var_os("FOAMCRAFT_UPDATE_GOLDEN").is_some() {
+        foamcraft_render::write_png(&golden, SIZE, SIZE, &pixels).expect("write golden");
+    }
+    let reference = read_png(&golden);
+    let off = pixels
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(reference.as_chunks::<4>().0)
+        .filter(|(a, b)| {
+            a.iter()
+                .zip(b.iter())
+                .any(|(x, y)| x.abs_diff(*y) > CHANNEL_TOLERANCE)
+        })
+        .count();
+    let share = off as f64 / f64::from(SIZE * SIZE);
+    assert!(
+        share <= PIXEL_TOLERANCE,
+        "{:.3}% of pixels differ",
+        share * 100.0
+    );
+}

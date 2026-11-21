@@ -98,10 +98,10 @@
   } else if s == "comparison" and d.comparison != none {
     let c = d.comparison
     table(
-      columns: (1fr, auto, auto, auto, auto),
+      columns: (1fr,) + (auto,) * (c.header.len() - 1),
       stroke: (x, y) => (bottom: 0.4pt + luma(220)),
       inset: (x: 4pt, y: 5pt),
-      align: (left, right, right, right, right),
+      align: (left,) + (right,) * (c.header.len() - 1),
       table.header(..c.header.map(h => strong(h))),
       ..c.rows.flatten(),
     )

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Api, type ApiEvent, type LocalizedMessage } from "../api";
 import { useTranslation } from "../i18n/i18n";
+import { ExpertOnly, useMode } from "../mode";
 import { RunMonitor, useRunMonitor } from "../run-monitor";
 import { LineChart, type Series } from "./LineChart";
 import { MeshSection } from "./MeshSection";
@@ -22,12 +23,15 @@ interface Props {
   api: Api;
   /** Subscribes to command API events; returns the unsubscribe function. */
   subscribe: (handler: (event: ApiEvent) => void) => () => void;
+  /** Shown at the end of the panel (the queue of scenarios). */
+  footer?: React.ReactNode;
   /** The monitor of the open project; without one the panel follows the run on its own. */
   monitor?: RunMonitor;
 }
 
-export function RunPanel({ api, subscribe, monitor }: Props) {
+export function RunPanel({ api, subscribe, monitor, footer }: Props) {
   const { t, language } = useTranslation();
+  const { mode } = useMode();
   const [own] = useState(() => monitor ?? new RunMonitor(api, subscribe));
   const m = monitor ?? own;
   useEffect(() => {
@@ -178,9 +182,11 @@ export function RunPanel({ api, subscribe, monitor }: Props) {
         </p>
       )}
       {residualSeries.length > 0 && (
-        <LineChart label={t("run.residuals")} series={residualSeries} log />
+        <ExpertOnly>
+          <LineChart label={t("run.residuals")} series={residualSeries} log />
+        </ExpertOnly>
       )}
-      {coeffs.cd.length > 0 && (
+      {coeffs.cd.length > 0 && mode === "expert" && (
         <LineChart
           label={`${t("run.coefficients")}: Cd ${fmt(lastCd ?? 0)}`}
           series={[
@@ -260,24 +266,27 @@ export function RunPanel({ api, subscribe, monitor }: Props) {
           </ul>
         </section>
       )}
-      <details className="mesh-details">
-        <summary>{t("mesh.title")}</summary>
-        <MeshSection
-          api={api}
-          revision={state.meshRevision}
-          heading={false}
-          showCells={false}
-          busy={running}
-          generateLabel={t("run.meshOnly")}
-          onGenerate={() => m.start(true)}
-        />
-      </details>
-      {jobId && (
-        <details onToggle={(e) => setLogOpen((e.target as HTMLDetailsElement).open)}>
-          <summary>{t("run.log")}</summary>
-          <pre className="log">{log.join("\n")}</pre>
+      <ExpertOnly>
+        <details className="mesh-details">
+          <summary>{t("mesh.title")}</summary>
+          <MeshSection
+            api={api}
+            revision={state.meshRevision}
+            heading={false}
+            showCells={false}
+            busy={running}
+            generateLabel={t("run.meshOnly")}
+            onGenerate={() => m.start(true)}
+          />
         </details>
-      )}
+        {jobId && (
+          <details onToggle={(e) => setLogOpen((e.target as HTMLDetailsElement).open)}>
+            <summary>{t("run.log")}</summary>
+            <pre className="log">{log.join("\n")}</pre>
+          </details>
+        )}
+      </ExpertOnly>
+      {footer}
     </aside>
   );
 }

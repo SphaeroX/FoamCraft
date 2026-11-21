@@ -90,14 +90,18 @@ pub fn stage_script(stage: Stage, cores: u32) -> String {
             "foamDictionary -entry numberOfSubdomains -set {cores} system/decomposeParDict \
              > /dev/null && decomposePar -force"
         ),
-        // potentialFoam initialises the flow; its log is shown only when it fails.
+        // potentialFoam initialises the flow; its log is shown only when it fails. A case with
+        // sources of air (velocity constraints in system/fvOptions) starts from rest instead:
+        // with still air and open boundaries only, potentialFoam fails.
         Stage::Solve if cores > 1 => format!(
-            "mpirun --oversubscribe -np {cores} potentialFoam -parallel -writep -initialiseUBCs \
-             > log.potentialFoam 2>&1 || {{ tail -n 30 log.potentialFoam; exit 1; }}; \
+            "if [ ! -f system/fvOptions ]; then mpirun --oversubscribe -np {cores} potentialFoam \
+             -parallel -writep -initialiseUBCs > log.potentialFoam 2>&1 \
+             || {{ tail -n 30 log.potentialFoam; exit 1; }}; fi; \
              mpirun --oversubscribe -np {cores} simpleFoam -parallel"
         ),
-        Stage::Solve => "potentialFoam -writep -initialiseUBCs > log.potentialFoam 2>&1 \
-                         || { tail -n 30 log.potentialFoam; exit 1; }; simpleFoam"
+        Stage::Solve => "if [ ! -f system/fvOptions ]; then potentialFoam -writep \
+                         -initialiseUBCs > log.potentialFoam 2>&1 \
+                         || { tail -n 30 log.potentialFoam; exit 1; }; fi; simpleFoam"
             .into(),
         Stage::Reconstruct => "reconstructPar -latestTime".into(),
     }

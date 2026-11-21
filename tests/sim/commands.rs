@@ -130,3 +130,133 @@ fn invalid_inputs_and_missing_models_have_codes() {
         "scenario.invalid_input"
     );
 }
+
+// --- Task_26: turning the wind ---
+
+#[test]
+fn set_wind_direction_changes_only_the_direction_and_is_undoable() {
+    let (reg, mut s, _) = setup("direction", true);
+    let err = reg
+        .execute(
+            &mut s,
+            "scenario.set_wind_direction",
+            json!({"direction_deg": 30.0}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.not_wind_tunnel");
+    reg.execute(&mut s, "scenario.set_wind_tunnel", tunnel(12.0))
+        .unwrap();
+    let out = reg
+        .execute(
+            &mut s,
+            "scenario.set_wind_direction",
+            json!({"direction_deg": 30.0}),
+        )
+        .unwrap();
+    assert_eq!(out["scenario"]["direction_deg"], 30.0);
+    assert_eq!(out["scenario"]["speed_m_s"], 12.0);
+    assert_eq!(out["scenario"]["ground"], "fixed");
+    // Angles are kept in -180..180.
+    let out = reg
+        .execute(
+            &mut s,
+            "scenario.set_wind_direction",
+            json!({"direction_deg": 270.0}),
+        )
+        .unwrap();
+    assert_eq!(out["scenario"]["direction_deg"], -90.0);
+    reg.execute(&mut s, "history.undo", json!({})).unwrap();
+    let info = reg.execute(&mut s, "scenario.info", json!({})).unwrap();
+    assert_eq!(info["scenario"]["direction_deg"], 30.0);
+}
+
+// --- Task_31: sources of air ---
+
+#[test]
+fn jets_are_set_on_the_wind_tunnel_and_checked() {
+    let (reg, mut s, _) = setup("jets", true);
+    reg.execute(&mut s, "scenario.set_wind_tunnel", tunnel(10.0))
+        .unwrap();
+    // The 20 mm cube spans 0..0.02 m; a 10 mm source 50 mm in front blows at it.
+    let jet = json!({"shape": "circle", "center": [-0.05, 0.01, 0.01], "direction": [1.0, 0.0, 0.0],
+                     "size": [0.01, 0.01], "speed_m_s": 15.0});
+    let out = reg
+        .execute(
+            &mut s,
+            "scenario.set_jets",
+            json!({"jets": [jet.clone(), jet.clone()]}),
+        )
+        .unwrap();
+    assert_eq!(out["jets"].as_array().unwrap().len(), 2);
+    // With sources the surrounding air is still; the reference is the fastest jet.
+    assert_eq!(out["scenario"]["speed_m_s"], 15.0);
+    assert_eq!(out["warnings"], json!([]));
+    let inside = json!({"shape": "circle", "center": [0.01, 0.01, 0.01], "direction": [1.0, 0.0, 0.0],
+                        "size": [0.005, 0.005], "speed_m_s": 15.0});
+    let out = reg
+        .execute(&mut s, "scenario.set_jets", json!({"jets": [inside]}))
+        .unwrap();
+    assert_eq!(out["warnings"][0]["code"], "scenario.jet_inside_model");
+    let bad = json!({"shape": "circle", "center": [0.0, 0.0, 0.0], "direction": [0.0, 0.0, 0.0],
+                     "size": [0.01, 0.01], "speed_m_s": 15.0});
+    let err = reg
+        .execute(&mut s, "scenario.set_jets", json!({"jets": [bad]}))
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.invalid_input");
+    let five: Vec<_> = (0..5).map(|_| jet.clone()).collect();
+    let err = reg
+        .execute(&mut s, "scenario.set_jets", json!({"jets": five}))
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.invalid_input");
+    // Undo brings the two sources back; no sources is the plain wind tunnel again.
+    reg.execute(&mut s, "history.undo", json!({})).unwrap();
+    let info = reg.execute(&mut s, "scenario.info", json!({})).unwrap();
+    assert_eq!(info["jets"].as_array().unwrap().len(), 2);
+    let out = reg
+        .execute(&mut s, "scenario.set_jets", json!({"jets": []}))
+        .unwrap();
+    assert!(out["jets"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn a_jet_is_moved_and_turned_as_one_undo_step_each() {
+    let (reg, mut s, _) = setup("jet-move", true);
+    reg.execute(&mut s, "scenario.set_wind_tunnel", tunnel(10.0))
+        .unwrap();
+    let jet = json!({"shape": "circle", "center": [-0.05, 0.01, 0.01], "direction": [1.0, 0.0, 0.0],
+                     "size": [0.01, 0.01], "speed_m_s": 15.0});
+    reg.execute(&mut s, "scenario.set_jets", json!({"jets": [jet]}))
+        .unwrap();
+    let out = reg
+        .execute(
+            &mut s,
+            "scenario.move_jet",
+            json!({"index": 0, "delta": [0.0, 0.0, 0.005]}),
+        )
+        .unwrap();
+    let c = &out["jets"][0]["center"];
+    assert!((c[2].as_f64().unwrap() - 0.015).abs() < 1e-12, "{c}");
+    let out = reg
+        .execute(
+            &mut s,
+            "scenario.rotate_jet",
+            json!({"index": 0, "axis": "z", "angle_deg": 90.0}),
+        )
+        .unwrap();
+    let d = &out["jets"][0]["direction"];
+    assert!(
+        d[0].as_f64().unwrap().abs() < 1e-9 && (d[1].as_f64().unwrap() - 1.0).abs() < 1e-9,
+        "{d}"
+    );
+    reg.execute(&mut s, "history.undo", json!({})).unwrap();
+    let info = reg.execute(&mut s, "scenario.info", json!({})).unwrap();
+    assert_eq!(info["jets"][0]["direction"][0], 1.0);
+    let err = reg
+        .execute(
+            &mut s,
+            "scenario.move_jet",
+            json!({"index": 3, "delta": [0.0, 0.0, 0.0]}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.invalid_input");
+}

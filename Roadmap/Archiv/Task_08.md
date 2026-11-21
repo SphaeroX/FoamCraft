@@ -20,7 +20,7 @@ Der Nutzer richtet eine Außenumströmung ein: Anströmgeschwindigkeit, Richtung
 
 - Szenario "Windkanal" im Projekt, Befehl `scenario.set_wind_tunnel`
 - Medien-Vorgaben (Luft und Wasser bei einer Temperatur ergeben Dichte und Viskosität) und frei definierbare Medien
-- Boden: kein Boden, fester Boden; bewegter Boden als Option vorgesehen, gerechnet wird er in Task_39
+- Boden: kein Boden, fester Boden; bewegter Boden als Option vorgesehen, gerechnet wird er in Task_43
 - Automatische Tunnelgröße aus den Abmessungen des Modells nach einer dokumentierten Regel
 - Bezugsfläche (projizierte Stirnfläche in Anströmrichtung) und Bezugslänge
 - Reynolds-Zahl mit Einordnung in Klartext
@@ -62,7 +62,7 @@ Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder ei
 ## Offene Fragen / Annahmen
 
 - Annahme: Tunnelgröße nach üblichen Richtwerten (etwa 5 Modelllängen davor, 15 dahinter, 5 seitlich und darüber). Task_10 prüft sie am Vergleichsfall.
-- Annahme: Faustwert für den Speicherbedarf je Million Zellen; in Task_09 und Task_33 nachmessen.
+- Annahme: Faustwert für den Speicherbedarf je Million Zellen; in Task_09 und Task_37 nachmessen.
 
 ## Notizen zu diesem Task
 
@@ -85,5 +85,5 @@ Reihenfolge und Details stehen in `AGENTS.md`, Abschnitt "Abschluss- und Archivi
 - **Umgesetzt (und Abweichungen vom Plan):** Crate `foamcraft-sim` (Stirnfläche per Rasterung, Länge in Strömungsrichtung, Medien, Tunnelregel, Zellbudget, Strömungsklasse, Warnungen, Befehle `scenario.set_wind_tunnel` und `scenario.info`); Szenario-Typen im Manifest (Schema 5); Tunnel/Boden/Pfeil im Renderer; React `ScenarioPanel` und Schritt-Tabs "Geometrie | Szenario". Abweichung: Das Zellbudget rechnet mit dem Speicher des Rechners (sysinfo); der Docker-Speicher (derzeit 1,9 GiB) wird erst beim Vernetzen geprüft.
 - **Learnings & Stolpersteine:** sysinfo (neueste Version): `System::new()` liefert ein `Result`; `physical_core_count()` ist eine assoziierte Funktion. Modellkoordinaten sind f32, Vergleiche in Tests nicht enger als 1e-6 m. clippy verbietet `!(x > 0.0)` (`neg_cmp_op_on_partial_ord`).
 - **Wichtige Entscheidungen und ihre Gründe:** Regeln in `docs/architecture.md` ("Wind tunnel"). Stirnfläche über Rasterung statt exakter Polygonvereinigung: einfach, robust, genau genug (< 0,2 % bei 2048 Zellen). Tunnel immer in Strömungsrichtung gedreht, damit Einlass und Auslass Stirnflächen des Tunnels sind (wichtig für blockMesh in Task_09).
-- **Auswirkungen auf Folge-Tasks:** Task_09 erzeugt das Hintergrundnetz aus `tunnel_box` (gedrehter Quader: blockMesh mit gedrehten Eckpunkten oder Netz im Strömungssystem und Modell drehen) und verteilt Zellen nach `cell_budget`. Docker-Speicher (1,9 GiB im Hyper-V-Modus) begrenzt das Budget real stärker – Task_09 sollte `min(Rechner, Container)` verwenden. Der bewegte Boden ist im Modell vorhanden, wird aber erst in Task_39 gerechnet.
+- **Auswirkungen auf Folge-Tasks:** Task_09 erzeugt das Hintergrundnetz aus `tunnel_box` (gedrehter Quader: blockMesh mit gedrehten Eckpunkten oder Netz im Strömungssystem und Modell drehen) und verteilt Zellen nach `cell_budget`. Docker-Speicher (1,9 GiB im Hyper-V-Modus) begrenzt das Budget real stärker – Task_09 sollte `min(Rechner, Container)` verwenden. Der bewegte Boden ist im Modell vorhanden, wird aber erst in Task_43 gerechnet.
 - **Hinweise zu Tests und Befehlen:** `cargo test -p foamcraft-sim` (Stirnfläche, Medien, Regeln, Befehle), Golden `cube_in_wind_tunnel_matches_golden_image`, Vitest `tests/app/scenario-panel.test.tsx`.

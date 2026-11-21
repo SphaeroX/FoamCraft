@@ -10,11 +10,11 @@ FoamCraft ist eine kostenlose, unabhängige Open-Source-Desktop-App (GPL-3.0-or-
 
 **Zielgruppe:** Maker, Studierende und Ingenieure ohne CFD-Erfahrung auf Windows (zuerst), Linux und macOS; außerdem KI-Agenten über MCP. Die Oberfläche gibt es in Englisch und Deutsch.
 
-**Nicht-Ziele:** CAD-Bearbeitung: Geometrie wird nur geladen, ausgerichtet, skaliert und an Öffnungen verschlossen. Wünsche des Nutzers für später, für die es in dieser Roadmap keine Tasks gibt: Cloud-Dienst mit Konten, automatische Formoptimierung, Überschall und Verbrennung. In einzelnen Tasks zusätzlich ausgeklammert und dort begründet: Wärmeleitung in Festkörpern und Strahlung (Task_38), echte Drehung mit gleitenden Netzen (Task_39), frei bewegliche Körper im Wasser (Task_41).
+**Nicht-Ziele:** CAD-Bearbeitung: Geometrie wird nur geladen, ausgerichtet, skaliert und an Öffnungen verschlossen. Wünsche des Nutzers für später, für die es in dieser Roadmap keine Tasks gibt: Cloud-Dienst mit Konten, automatische Formoptimierung, Überschall und Verbrennung. In einzelnen Tasks zusätzlich ausgeklammert und dort begründet: Wärmeleitung in Festkörpern und Strahlung (Task_42), echte Drehung mit gleitenden Netzen (Task_43), frei bewegliche Körper im Wasser (Task_45).
 
 ## Aktueller Status
 
-Stand: 2026-11-21 – Task_01 bis Task_21 erledigt (Meilensteine 1 und 2 gemeldet). Der Nutzer hat die erste Version durchgesehen und Rückmeldung zur Bedienung gegeben; daraus sind Task_22 bis Task_31 entstanden (Phase 4b), die vor dem Release bearbeitet werden. Die bis dahin offenen Tasks 22 bis 33 wurden dafür um zehn nach hinten nummeriert (jetzt 32 bis 43; alle Verweise sind angepasst). Task_22 und Task_23 sind erledigt. Task_24 bis Task_31 arbeitet ein anderer Agent ab; jeder dieser Tasks hat dafür einen Abschnitt "Umsetzungshinweise" mit den betroffenen Codestellen, Stolpersteinen und den bestehenden Tests, die den Weg vorgeben. Der nächste Task ist Task_24. Task_32 (Installer, Veröffentlichung) wartet auf die Zustimmung des Nutzers zum Veröffentlichen.
+Stand: 2026-11-21 – Task_01 bis Task_21 erledigt (Meilensteine 1 und 2 gemeldet). Der Nutzer hat die erste Version durchgesehen und Rückmeldung zur Bedienung gegeben; daraus sind Task_22 bis Task_31 entstanden (Phase 4b), die vor dem Release bearbeitet werden. Die bis dahin offenen Tasks 22 bis 33 wurden dafür um zehn nach hinten nummeriert (damals 32 bis 43, seit dem Einschub der Phase 4c 36 bis 47; alle Verweise sind angepasst). Am 2026-11-21 kamen auf Wunsch des Nutzers Task_32 bis Task_35 dazu (Phase 4c "Strömung erleben": Mitflug auf einem Partikel, Wandstromlinien und Wollfäden, schwere Partikel mit Aufprall, Leuchtspuren und Bänder); sie folgen auf Task_31 und liegen vor dem Release. Task_22 bis Task_29 sind erledigt (Stand nach Task_29 dem Nutzer gemeldet). Task_30 und Task_31 sind erledigt (Phase 4b abgeschlossen, Stand dem Nutzer gemeldet); haben je einen Abschnitt "Umsetzungshinweise" mit den betroffenen Codestellen, Stolpersteinen und den bestehenden Tests, die den Weg vorgeben. Task_32 bis Task_35 sind erledigt (Phase 4c abgeschlossen, Stand dem Nutzer gemeldet). Der nächste Task ist Task_36. Task_36 (Installer, Veröffentlichung) wartet auf die Zustimmung des Nutzers zum Veröffentlichen.
 
 | Task | Titel | Status |
 |---|---|---|
@@ -41,26 +41,30 @@ Stand: 2026-11-21 – Task_01 bis Task_21 erledigt (Meilensteine 1 und 2 gemelde
 | 21 | Einrichtungsassistent und Beispielprojekte | erledigt |
 | 22 | Beispielprojekte und neue Projekte ohne Ordnerwahl | erledigt |
 | 23 | Rechnen in einem Schritt: Vernetzung, Fortschritt, Konsole, Abbruch | erledigt |
-| 24 | Ansichtswürfel und Standardansichten | offen |
-| 25 | Modell in der Ansicht verschieben und drehen | offen |
-| 26 | Anströmung in der Ansicht einstellen | offen |
-| 27 | Schnitte in der Ansicht ziehen, Rauch aufschneiden | offen |
-| 28 | Strömung verstehen: Ansichtsvorlagen und Vorführmodus | offen |
-| 29 | Oberfläche als Assistent mit neuem Erscheinungsbild | offen |
-| 30 | Mehrere Szenarien je Geometrie | offen |
-| 31 | Lokale Strömungsquellen: Düse und Lüfter | offen |
-| 32 | Installer und Release-Pipeline | offen |
-| 33 | Leistungsmessung und CPU-Tuning | offen |
-| 34 | GPU-Linearlöser (experimentell) | offen |
-| 35 | Lösungsadaptive Netzverfeinerung | offen |
-| 36 | WSL2-Runner ohne Docker Desktop | offen |
-| 37 | Zeitabhängige Rechnung mit Zeitleiste | offen |
-| 38 | Wärme und Auftrieb | offen |
-| 39 | Rotierende Teile und bewegter Boden | offen |
-| 40 | Poröse Bauteile | offen |
-| 41 | Freie Wasseroberfläche | offen |
-| 42 | GPU-Strömungslöser als Kern | offen |
-| 43 | Sofort-Vorschau in der App | offen |
+| 24 | Ansichtswürfel und Standardansichten | erledigt |
+| 25 | Modell in der Ansicht verschieben und drehen | erledigt |
+| 26 | Anströmung in der Ansicht einstellen | erledigt |
+| 27 | Schnitte in der Ansicht ziehen, Rauch aufschneiden | erledigt |
+| 28 | Strömung verstehen: Ansichtsvorlagen und Vorführmodus | erledigt |
+| 29 | Oberfläche als Assistent mit neuem Erscheinungsbild | erledigt |
+| 30 | Mehrere Szenarien je Geometrie | erledigt |
+| 31 | Lokale Strömungsquellen: Düse und Lüfter | erledigt |
+| 32 | Mitflug: die Strömung aus Sicht eines Partikels | erledigt |
+| 33 | Strömung an der Oberfläche: Wandstromlinien und Wollfäden | erledigt |
+| 34 | Schwere Partikel mit Aufprall und Trefferkarte | erledigt |
+| 35 | Leuchtspuren und Bänder | erledigt |
+| 36 | Installer und Release-Pipeline | offen |
+| 37 | Leistungsmessung und CPU-Tuning | offen |
+| 38 | GPU-Linearlöser (experimentell) | offen |
+| 39 | Lösungsadaptive Netzverfeinerung | offen |
+| 40 | WSL2-Runner ohne Docker Desktop | offen |
+| 41 | Zeitabhängige Rechnung mit Zeitleiste | offen |
+| 42 | Wärme und Auftrieb | offen |
+| 43 | Rotierende Teile und bewegter Boden | offen |
+| 44 | Poröse Bauteile | offen |
+| 45 | Freie Wasseroberfläche | offen |
+| 46 | GPU-Strömungslöser als Kern | offen |
+| 47 | Sofort-Vorschau in der App | offen |
 
 Status ist `offen`, `läuft` (Datei trägt das Präfix `RUN_`) oder `erledigt` (Datei liegt in `Archiv/`). Die Tabelle wird beim Archivieren eines Tasks aktualisiert.
 
@@ -77,11 +81,12 @@ Alle Einträge dieses Abschnitts stammen, soweit nicht anders vermerkt, aus dem 
 | 1 | 01–04 | Fundament: App mit 3D-Fenster, Runtime, Job-Pipeline, Projektmodell und Befehls-API | – |
 | 2 | 05–13 | Geometrie und beide Grundfälle (Windkanal, Innenströmung) | M1: beide Grundfälle von der Datei bis zur Kennzahl (Task_13) |
 | 3 | 14–20 | Ergebnisse, Animation, MCP, Video, Report | M2: Ergebnisse, MCP und Export vollständig (Task_20) |
-| 4 | 21, 32 | Einrichtungsassistent, Installer, Release | M3: erste öffentliche Version (Task_32) |
+| 4 | 21, 36 | Einrichtungsassistent, Installer, Release | M3: erste öffentliche Version (Task_36) |
 | 4b | 22–31 | Bedienung nach der ersten Durchsicht des Nutzers: Beispiele mit einem Klick, Rechnen in einem Schritt, Ansichtswürfel, Griffe in der Ansicht, Ansichtsvorlagen, Assistent und neues Erscheinungsbild, mehrere Szenarien, lokale Strömungsquellen | Stand nach Task_29 und nach Task_31 dem Nutzer melden |
-| 5 | 33–36 | Leistung, GPU-Linearlöser, adaptive Verfeinerung, WSL-Runner | – |
-| 6 | 37–41 | Physik: zeitabhängig, Wärme, rotierend, porös, freie Wasseroberfläche | – |
-| 7 | 42–43 | Eigener GPU-Löser und Sofort-Vorschau | – |
+| 4c | 32–35 | Strömung erleben (Wunsch des Nutzers vom 2026-11-21): Mitflug auf einem Partikel in der Ich-Perspektive, Wandstromlinien und Wollfäden auf der Oberfläche, schwere Partikel mit Aufprall und Trefferkarte, Leuchtspuren und Bänder | Stand nach Task_35 dem Nutzer melden |
+| 5 | 37–40 | Leistung, GPU-Linearlöser, adaptive Verfeinerung, WSL-Runner | – |
+| 6 | 41–45 | Physik: zeitabhängig, Wärme, rotierend, porös, freie Wasseroberfläche | – |
+| 7 | 46–47 | Eigener GPU-Löser und Sofort-Vorschau | – |
 
 An den Meilensteinen meldet der Agent dem Nutzer den Stand zur Abnahme (steht im jeweiligen Task).
 
@@ -105,21 +110,21 @@ Maßgeblich ist `docs/architecture.md`; hier nur das Nötigste für die Einordnu
 | Technik für STEP und IGES | entschieden in Task_07: Gmsh im Runtime-Container |
 | Brücke zwischen CLI/MCP und laufender App | Task_18 (entschieden: Loopback-TCP mit Token) |
 | Video-Encoder und Containerformat | Task_19 (entschieden: Motion-JPEG in AVI, eigener Encoder) |
-| Beitragspolitik (DCO oder keine), Signatur-Zertifikate, Repository und Registry | Task_32 |
-| GPU-Plugin (Ginkgo/OGL oder AmgX) und Lizenzfrage der CUDA-Bestandteile | Task_34 |
-| Auslieferung des Root-Dateisystems für WSL | Task_36 |
+| Beitragspolitik (DCO oder keine), Signatur-Zertifikate, Repository und Registry | Task_36 |
+| GPU-Plugin (Ginkgo/OGL oder AmgX) und Lizenzfrage der CUDA-Bestandteile | Task_38 |
+| Auslieferung des Root-Dateisystems für WSL | Task_40 |
 
 ### Externe Voraussetzungen
 
 - Docker Desktop mit WSL2-Backend muss für alle `runtime_`-Tests laufen (ab Task_02).
-- Für Task_32 entscheidet der Nutzer über öffentliches Repository, Registry und Signatur. Veröffentlicht wird nur mit seiner ausdrücklichen Zustimmung.
+- Für Task_36 entscheidet der Nutzer über öffentliches Repository, Registry und Signatur. Veröffentlicht wird nur mit seiner ausdrücklichen Zustimmung.
 - Testgeometrie wird selbst erzeugt (CC0). STEP-Testdateien kann der Nutzer mit SolidCraft erstellen.
 
 ### Lizenz und Unabhängigkeit
 
 - Projektlizenz GPL-3.0-or-later; Abhängigkeiten nur von der Erlaubnisliste in `docs/licensing.md`.
 - FoamCraft ist unabhängig. Keine Namen, Texte, Layouts, Grafiken oder Beispielmodelle anderer CFD-Produkte übernehmen. "OpenFOAM" nur beschreibend verwenden, immer mit dem Markenhinweis.
-- Code aus FluidX3D oder anderen Quellen mit Nutzungsbeschränkung darf nicht verwendet werden (wichtig für Task_42).
+- Code aus FluidX3D oder anderen Quellen mit Nutzungsbeschränkung darf nicht verwendet werden (wichtig für Task_46).
 
 ### Arbeitsweise für Phase 4b (Task_24 bis Task_31)
 
@@ -150,7 +155,7 @@ Hier trägt jeder Agent beim Archivieren taskübergreifende Erkenntnisse ein, mi
 - **Task_01 – App prüfen ohne Nutzer:** Bildschirmfoto und Mausbewegung per PowerShell-Skript (`CopyFromScreen`, `SetCursorPos`, `mouse_event`) auf das Fenster von `foamcraft-app.exe`; der Computer-Use-Freigabedialog wird ohne den Nutzer nicht bestätigt. Nachweise liegen in `Roadmap/Nachweise/`.
 - **Task_02 – Laufzeit:** OpenFOAM v2606 im Image `foamcraft-runtime:<version>` (`runtime/Dockerfile`, bauen mit `cargo run -p foamcraft-cli -- runtime build`). Docker über die Kommandozeile (`foamcraft_runtime::DockerRunner`), Tests ohne Docker mit `fake::FakeEngine`. Fälle auf Docker-Volume unter `/work`, Agent `foamcraft-agent` im Container, Antworten als JSON auf stdout. OpenFOAM-Befehle immer über `exec_openfoam` (Login-Shell).
 - **Task_02 – Fehlercodes:** Katalog `crates/foamcraft-core/data/errors.json` (en/de, Text und Abhilfe); `tests/core/errors.rs` erzwingt beide Sprachen. Neue Codes dort eintragen.
-- **Task_02 – Referenzrechner-Zustand:** Docker Desktop läuft im Hyper-V-Modus (Kernel linuxkit), ~1,9 GiB Speicher, keine GPU-Durchreichung. Für GPU-Tasks (Task_34) muss der Nutzer das WSL2-Backend einschalten. Bind-Mounts neuer Host-Ordner lösen einen Docker-Freigabe-Dialog aus, der unbeaufsichtigte Läufe blockiert.
+- **Task_02 – Referenzrechner-Zustand:** Docker Desktop läuft im Hyper-V-Modus (Kernel linuxkit), ~1,9 GiB Speicher, keine GPU-Durchreichung. Für GPU-Tasks (Task_38) muss der Nutzer das WSL2-Backend einschalten. Bind-Mounts neuer Host-Ordner lösen einen Docker-Freigabe-Dialog aus, der unbeaufsichtigte Läufe blockiert.
 - **Task_03 – Jobs:** `foamcraft_core::job` (Stufen, Zustände, `run_job`), Ausführung im Container über Agent `run-stage`/`tail`, Job-Daten unter `%LOCALAPPDATA%FoamCraftjobs<id>` (`FOAMCRAFT_DATA_DIR` überschreibt). Neue Fälle über `foamcraft_runtime::jobs::prepare_job` und Vorlagen in `crates/foamcraft-core/templates/`. Nach jeder Agent-Änderung Image neu bauen.
 - **Task_03 – Logs:** Parser `foamcraft_core::log` gegen echte v2606-Logs in `tests/data/logs/`; Fortschritt nur aus der Lösungsstufe. Fehlercodes `run.foam_fatal_error`, `run.diverged`, `run.stage_failed`, `run.cancelled`, `run.lost`, `mesh.check_failed`, `job.not_found`, `job.storage_failed`.
 - **Task_04 – Befehls-API:** Jede Aktion ist ein Befehl im `foamcraft_core::command::Registry` (Kern) bzw. in `foamcraft-api` (wenn Docker nötig). Parameter-Structs mit `Deserialize + JsonSchema + deny_unknown_fields`; `undoable` + `example` angeben (Test prüft Undo/Redo für alle). App ruft Befehle nur über `app/src/api.ts` (`tauriApi.call`) und hört auf `foamcraft://event`. Regeln in `docs/conventions.md`.
@@ -179,19 +184,35 @@ Hier trägt jeder Agent beim Archivieren taskübergreifende Erkenntnisse ein, mi
 - **Task_23 – Hintergrundarbeit:** Ein Befehl hält die Sitzung gesperrt, solange er läuft. Was länger dauert (Container), läuft in einem Thread mit einer Kopie des Projekts und reicht Manifest-Änderungen über `session.updates()` ein; `Registry::execute` wendet sie vor jedem Befehl an. `run.start` ist so gebaut (`Pipeline` in `crates/foamcraft-api/src/run.rs`): Lauf-Kennung sofort, dann Vernetzung (nur wenn `mesh::mesh_is_current` nein sagt), Löser, Auswertung. Ereignisse `mesh.stage`, `mesh.progress`, `mesh.ready` tragen `run_id`.
 - **Task_23 – Oberfläche:** Der Zustand eines Laufs liegt im `RunMonitor` (`app/src/run-monitor.ts`, einer je Projekt, in `App` erzeugt), nicht in Komponenten. Neue Anzeigen zum Lauf lesen ihn mit `useRunMonitor`.
 - **Task_23 – App prüfen, ohne den Nutzer zu stören:** `tools/windows/app-print.ps1` nimmt das Fenster ohne Fokuswechsel auf. Die Klick-Skripte (`app-ui.ps1`, `app-click.ps1`) bewegen die echte Maus und holen das Fenster nach vorn: nur verwenden, wenn der Nutzer nicht am Rechner arbeitet. App mit eigenem Zustand starten: `FOAMCRAFT_DATA_DIR` und `FOAMCRAFT_PROJECTS_DIR` setzen; ist Port 1420 belegt, `tauri dev --config <JSON mit build.devUrl und build.beforeDevCommand auf einem anderen Port>`.
+- **Task_24 – Kamera und Ansichten:** Standardansichten über `foamcraft_render::camera::named_view` (27 Namen in `VIEW_NAMES`, `front` blickt von −X), Übergänge mit `CameraTransition`. `viewport_camera` gibt `{yaw, pitch}` zurück, Kamerafahrten senden `viewport://camera`; der `ViewCube` oben rechts spiegelt das. `view.render` und MCP `view_render` nehmen `view`.
+- **Task_25 – Griffe in der Ansicht:** Wiederverwendbare Technik in `foamcraft_render::handles` (Zug-Mathematik auf Kamerastrahlen, Pfeil-/Ring-Netze) und im Renderer (Modellmatrix je Netz, Griff-Durchlauf vor allem anderen). Ablauf: Hover liefert `handle:`-Schlüssel → `viewport_handle_begin/drag` (Vorschau ohne Befehl) → `viewport_handle_end` gibt genau einen Befehl zurück, den die Oberfläche ausführt. Kamera wird nur bei neuem Projekt/neuer Modellmenge neu eingepasst.
+- **Task_25 – App mit Projekt prüfen ohne Maus:** `foamcraft mcp --app` mit dem `FOAMCRAFT_DATA_DIR` der App starten und per stdio `samples.create`/`project_open` schicken; danach `app-print.ps1`. Skript-Vorlage siehe Notizen in `Archiv/Task_25.md`.
+- **Task_26 – Szenario ohne Übernehmen:** Mit Zustimmung des Nutzers wirken Szenario-Eingaben 400 ms nach der letzten Eingabe; es gibt keinen Knopf "Übernehmen" mehr. Windrichtung allein: `scenario.set_wind_direction`. Windpfeil-Griff `handle:wind` im Szenario-Schritt.
+- **Task_27 – Schema 12 und Beschnitt:** Manifest-Schema 12 (`clip_targets`, ausgeblendete Schnitte); `view.set_clip` schneidet wahlweise Modell, Partikel/Rauch, Stromlinien, Isoflächen. Schnitte sind pickbar (`slice:<id>`) und ziehbar. Für Live-Prüfungen mit Ergebnis: Beispiel per `foamcraft command batch` mit `run.start {wait: true}` rechnen (Entwurf ≈ 2 min).
+- **Task_28 – Ansichtsvorlagen:** `view.presets`/`view.apply_preset` (`crates/foamcraft-api/src/presets.rs`) bauen fertige Ansichten aus dem Lauf; Startbereich `rake` für Rauchfäden; Erklärtexte `preset.<id>` im Katalog; Vorführmodus `app/src/demo.ts`. Animierte Partikel erscheinen nicht in `view.render`/`export.image`.
+- **Task_29 – Oberfläche:** Gestaltungs-Variablen in `app/src/styles.css` (Regeln in `docs/code-style.md`), Schrittleiste und Hinweis-Karte (`StepRail`, `StepFooter`, `app/src/steps.ts`), Menü (`AppMenu`), Stufen Einfach/Experte (`app/src/mode.tsx`, `<ExpertOnly>`; ohne Anbieter = Experte, damit Komponententests alles sehen).
+- **Task_30 – Szenarien:** Manifest-Schema 13. `scenario`/`mesh` sind das aktive Szenario, `scenarios` die Liste (`Manifest::normalize`). Netz-Schlüssel `mesh::mesh_key` (Schichthöhe in √2-Stufen). Warteschlange `run.start_all`, Vergleich `results.compare_many`, Bericht `compare_runs`.
+- **Task_34 – Schwere Partikel:** `foamcraft_sim::heavy` (exakter Integrator, Aufprall auf Dreiecken), GPU mit Abstandsfeld (`particles_heavy.wgsl`, CPU-Referenz `heavy_gpu`). Startgeschwindigkeit immer die korrigierte Endgeschwindigkeit. Abgeleitete Oberflächenfelder über `results::meta_with_derived` prüfen.
+- **Task_35 – Leuchtspuren und Bänder:** Ringpuffer je Partikel, Lichtbild `Rgba16Float` mit Schein, Langzeitbelichtung (`export.image` `exposure_s`, Belichtungsmodus in der Ansicht), Bänder und Röhren aus `foamcraft_sim::ribbons`. Ohne Leuchtspuren läuft kein zusätzlicher Durchgang (alle Golden-Images unverändert). Offen: Leuchtspuren für schwere Partikel, Mitflug-Bahn als Band, Partikel in `export.preview`; der Export-Test hing im Gesamtlauf zweimal (einzeln grün, Ursache offen).
+- **Task_33 – Oberfläche:** Cache mit Wandschubspannungs-Vektor (`wss_x/y/z`), Karte `attached` beim Laden abgeleitet, eigene Render-Pipelines mit Zeitwert (`flow.wgsl`, `GpuScene.time`). Vor vollen Testläufen übergroße PDBs in `target/agent` löschen (LNK1201) und `--no-fail-fast` nutzen.
+- **Task_32 – Mitflug:** `foamcraft_sim::distance` (Wandabstand) und `foamcraft_sim::ride` (Bahn mit maskierten Punkten als ruhende Wand, Zeit-Tabelle, Kameraspur, Ereignisse, Vorschläge) sind reine Logik im Strömungssystem; der Renderer nimmt `&dyn ViewCamera` (`OrbitCamera` oder `FreeCamera`). Vorschläge nur aus Bahnen, die hereinkommen und wieder gehen; Flüge auf das Stück ums Modell gekürzt. Oberflächen-Checks ohne Maus per CDP (siehe Erkenntnisse Task_32).
+- **Task_31 – Quellen:** Windkanal mit `jets` = Freistrahl in ruhender Luft (`foamcraft_sim::jets`, Zwangsbedingung in `system/fvOptions`, offene Ränder, SIMPLE 0,5/0,3, ohne potentialFoam). Abbruch mit Quellen erst, wenn auch die mittlere Geschwindigkeit ruhig ist. Validierung Freistrahl B = 5,05. Nie zwei GPU-Testläufe gleichzeitig starten.
+- **Task_24 – Paralleles Arbeiten mit dem Nutzer:** Der Nutzer startet oft selbst `npm run app:dev` (Port 1420, eigene `cargo`-Prozesse). Seine `foamcraft-app.exe` sperrt `target/debug`; Agenten bauen und testen deshalb mit `CARGO_TARGET_DIR=target/agent` (ignoriert durch `target/`) und beenden keine fremden Prozesse.
 
 ## Auffälligkeiten & Details
 
 Dinge, die global noch zu beachten sind: Besonderheiten, bekannte Einschränkungen, kleinere Details. Wird laufend ergänzt.
 
 - **Docker:** Docker Desktop läuft (vom Nutzer am 2026-11-21 gestartet), aber im Hyper-V-Modus mit ~1,9 GiB Speicher; siehe Task_02-Erkenntnisse.
-- **GPU bei OpenFOAM:** Es gibt keine offizielle GPU-Version, nur die Auslagerung des linearen Lösers. Der Gewinn ist begrenzt und wird in Task_34 gemessen, nicht versprochen. Der große Sprung kommt erst mit dem eigenen GPU-Löser (Task_42, Task_43).
-- **Hybrid-CPU:** P- und E-Kerne verhalten sich bei OpenFOAM unterschiedlich. Bis Task_33 gilt "physische Kerne" als Standard, danach die gemessene Regel.
-- **Linux und macOS:** Bis Task_32 wird nur unter Windows entwickelt und geprüft. WebGPU in System-Web-Views ist unter Linux unzuverlässig, deshalb der native Renderer.
+- **GPU bei OpenFOAM:** Es gibt keine offizielle GPU-Version, nur die Auslagerung des linearen Lösers. Der Gewinn ist begrenzt und wird in Task_38 gemessen, nicht versprochen. Der große Sprung kommt erst mit dem eigenen GPU-Löser (Task_46, Task_47).
+- **Hybrid-CPU:** P- und E-Kerne verhalten sich bei OpenFOAM unterschiedlich. Bis Task_37 gilt "physische Kerne" als Standard, danach die gemessene Regel.
+- **Linux und macOS:** Bis Task_36 wird nur unter Windows entwickelt und geprüft. WebGPU in System-Web-Views ist unter Linux unzuverlässig, deshalb der native Renderer.
 - **Prettier ignoriert `Roadmap/`**, damit das Regelwerk und die Task-Dateien nicht umformatiert werden.
 - **Validierungstests:** Toleranzen stehen mit Quelle im Test und werden nie aufgeweitet, um Grün zu erreichen. Gelingt eine Toleranz nicht, anhalten und dem Nutzer berichten.
 - **Reihenfolge:** Die Tasks werden streng numerisch abgearbeitet, auch wenn ein Task laut "Voraussetzung" nur von einem früheren abhängt.
-- **Bekannt, noch offen:** Nach einem Neuladen der Web-Ansicht zeigt die App die Startseite, obwohl die Sitzung ein Projekt offen hat (`App` fragt beim Laden nicht `project.info`); die Werkzeugleiste bricht bei 1280 px Breite um; die Zeitschätzung im Rechnen-Schritt ist bei wenig Container-Speicher deutlich zu niedrig. Die ersten beiden gehören zu Task_29, die Schätzung zu Task_33.
+- **Bekannt, noch offen:** Die Zeitschätzung im Rechnen-Schritt ist bei wenig Container-Speicher deutlich zu niedrig (Task_37). Neuladen und Umbruch der Werkzeugleiste wurden in Task_29 behoben.
 - **Docker-Volumes:** Auf dem Referenzrechner liegen rund 20 Volumes `foamcraft-job-*` aus früheren Läufen. Agenten löschen nur Volumes, die sie selbst angelegt haben; über die übrigen entscheidet der Nutzer.
-- **Umnummerierung am 2026-11-21:** Die Tasks der Phase 4b (22 bis 31) wurden nach der Durchsicht des Nutzers eingefügt; die früheren Tasks 22 bis 33 heißen seitdem 32 bis 43. Nachweise und Erkenntnisse der Tasks 01 bis 21 sind davon nicht berührt. Wer in alten Notizen oder Commit-Texten "Task_22" im Sinn von "Installer" liest, meint heute Task_32.
+- **Umnummerierung am 2026-11-21:** Die Tasks der Phase 4b (22 bis 31) wurden nach der Durchsicht des Nutzers eingefügt; die früheren Tasks 22 bis 33 hießen danach 32 bis 43. Nachweise und Erkenntnisse der Tasks 01 bis 21 sind davon nicht berührt. Wer in alten Notizen oder Commit-Texten "Task_22" im Sinn von "Installer" liest, meint heute Task_36.
+- **Zweite Umnummerierung am 2026-11-21 (Phase 4c):** Task_32 bis Task_35 (Mitflug, Oberflächenströmung, schwere Partikel, Leuchtspuren und Bänder) wurden hinter Task_31 eingefügt; die Tasks 32 bis 43 heißen seitdem 36 bis 47 (Installer = Task_36, Leistungsmessung = Task_37, zeitabhängige Rechnung = Task_41, GPU-Löser = Task_46). Alle Verweise in `Roadmap/`, `docs/architecture.md` und zwei Code-Kommentaren sind angepasst. Commit-Texte und Notizen von vor diesem Datum nennen noch die alten Nummern.
+- **Phase 4c baut aufeinander auf:** Task_32 legt `foamcraft_sim::distance` (Wandabstand) und die freie Kamera an, Task_33 den Zeitwert im Shader; Task_34 und Task_35 nutzen beides. Alle vier rechnen mit stationären Feldern; Task_41 prüft, was davon im zeitabhängigen Feld gilt. Die Mechanik steht jeweils im Abschnitt "Mechanik" des Tasks und ist mit dem Nutzer abgestimmt (Auswahl über Vorschläge und Anklicken, Flug umschaltbar ruhig/Achterbahn).
 - **Unabhängigkeit bei der Gestaltung:** Der Nutzer nennt andere Produkte als Maßstab für Einfachheit. Übernommen wird davon nichts (Layout, Texte, Grafiken); siehe Root-`AGENTS.md` und `docs/licensing.md`.

@@ -109,3 +109,67 @@ fn geometry_entries_round_trip() {
     project.save().unwrap();
     assert_eq!(Project::open(&dir).unwrap().manifest, project.manifest);
 }
+
+#[test]
+fn version_eleven_manifest_keeps_cutting_only_the_model() {
+    let dir = temp("v11");
+    std::fs::create_dir_all(&dir).unwrap();
+    let v11 = r#"{"schema_version":11,"name":"Old","created":5,"display_units":"metric","runs":[],
+        "view":{"slices":[{"id":"slice-1","origin":[0,0,0],"normal":[0,0,1],"field":"U_mag"}],
+                "clip":{"origin":[0,0,0],"normal":[1,0,0]}}}"#;
+    std::fs::write(dir.join(MANIFEST_FILE), v11).unwrap();
+    let project = Project::open(&dir).unwrap();
+    assert_eq!(project.manifest.schema_version, SCHEMA_VERSION);
+    const { assert!(SCHEMA_VERSION >= 12) };
+    assert_eq!(project.manifest.view.clip_targets, ["model"]);
+    assert!(!project.manifest.view.slices[0].hidden);
+}
+
+// --- Task_30: several named scenarios ---
+
+#[test]
+fn an_old_project_opens_with_its_scenario_as_the_first_one() {
+    let dir = temp("v12");
+    std::fs::create_dir_all(&dir).unwrap();
+    let v12 = r#"{"schema_version":12,"name":"Old","created":5,"display_units":"metric","runs":["job-1"],
+        "scenario":{"kind":"wind_tunnel","speed_m_s":20.0,"direction_deg":0.0,"ground":"fixed",
+                    "medium":{"kind":"air","temperature_c":20.0},"quality":"draft"},
+        "mesh":{"job_id":"job-m","cells":10,"verdict":"good","layers_target":3,"layers_achieved":3.0,"fallbacks":[]}}"#;
+    std::fs::write(dir.join(MANIFEST_FILE), v12).unwrap();
+    let project = Project::open(&dir).unwrap();
+    let m = &project.manifest;
+    assert_eq!(m.scenarios.len(), 1);
+    assert_eq!(m.scenarios[0].id, "scenario-1");
+    assert_eq!(m.active_scenario.as_deref(), Some("scenario-1"));
+    assert_eq!(m.scenarios[0].scenario, m.scenario);
+    assert_eq!(m.scenarios[0].mesh.as_ref().unwrap().job_id, "job-m");
+}
+
+#[test]
+fn switching_scenarios_keeps_each_one_intact_across_saving() {
+    let dir = temp("switch");
+    let mut project = Project::create(&dir, "S").unwrap();
+    let tunnel = |speed: f64| -> foamcraft_core::project::Scenario {
+        serde_json::from_value(serde_json::json!({"kind": "wind_tunnel", "speed_m_s": speed,
+            "direction_deg": 0.0, "ground": "fixed", "medium": {"kind": "air", "temperature_c": 20.0},
+            "quality": "draft"}))
+        .unwrap()
+    };
+    project.manifest.scenario = Some(tunnel(10.0));
+    let second = project.manifest.add_scenario("Fast", true);
+    assert_eq!(second, "scenario-2");
+    assert!(project.manifest.activate_scenario(&second));
+    project.manifest.scenario = Some(tunnel(30.0));
+    project.save().unwrap();
+    let mut project = Project::open(&dir).unwrap();
+    assert_eq!(
+        project.manifest.active_scenario.as_deref(),
+        Some("scenario-2")
+    );
+    assert_eq!(project.manifest.scenario, Some(tunnel(30.0)));
+    assert!(project.manifest.activate_scenario("scenario-1"));
+    assert_eq!(project.manifest.scenario, Some(tunnel(10.0)));
+    assert!(project.manifest.activate_scenario("scenario-2"));
+    assert_eq!(project.manifest.scenario, Some(tunnel(30.0)));
+    assert!(!project.manifest.activate_scenario("scenario-9"));
+}

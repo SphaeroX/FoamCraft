@@ -210,6 +210,8 @@ fn change_project(session: &mut Session, root: &Path, change: impl FnOnce(&mut M
 struct Pipeline {
     runner: SharedRunner,
     project: Project,
+    /// Id of the scenario this run belongs to (its mesh is recorded there).
+    scenario_id: String,
     store: JobStore,
     record: JobRecord,
     events: EventBus,
@@ -232,9 +234,19 @@ impl Pipeline {
             };
             let meshed = mesh_project(&ctx, &self.project, GenerateParams { max_cells: None })?;
             let mesh = meshed.record;
-            // The volume of the mesh this one replaces is dropped; its record stays in runs/.
+            // The volume of the mesh this one replaces is dropped, unless another scenario
+            // still uses it; its record stays in runs/.
+            let id = self.scenario_id.clone();
+            let shared = |job: &str| {
+                self.project
+                    .manifest
+                    .scenarios
+                    .iter()
+                    .any(|e| e.id != id && e.mesh.as_ref().is_some_and(|m| m.job_id == job))
+            };
             if let Some(old) = self.project.manifest.mesh.replace(mesh.clone())
                 && old.job_id != mesh.job_id
+                && !shared(&old.job_id)
                 && let Ok(old_record) = self.store.load(&old.job_id)
             {
                 let _ = remove_job_resources(self.runner.as_ref(), &old_record);
@@ -246,8 +258,9 @@ impl Pipeline {
                 "cells": mesh.cells,
                 "verdict": mesh.verdict,
             });
-            self.updates
-                .push(move |s| change_project(s, &root, |m| m.mesh = Some(mesh)));
+            self.updates.push(move |s| {
+                change_project(s, &root, |m| m.set_scenario_mesh(&id, mesh));
+            });
             self.events.emit("project.changed", Value::Null);
             self.events.emit("mesh.ready", ready);
         }
@@ -270,7 +283,7 @@ impl Pipeline {
     }
 
     /// Runs the pipeline; a failure is recorded in the job of the run.
-    fn run(mut self, cancel: &AtomicBool) -> Result<Option<Value>, FoamError> {
+    fn run(&mut self, cancel: &AtomicBool) -> Result<Option<Value>, FoamError> {
         let out = self.work(cancel);
         if let Err(error) = &out
             && let Ok(mut record) = self.store.load(&self.record.id)
@@ -314,12 +327,19 @@ fn start_scenario(
         solve::case_name(&scenario)
     })?;
     let job_id = record.id.clone();
+    project.manifest.normalize();
+    let scenario_id = project.manifest.active_id();
     if !p.mesh_only {
         project.manifest.runs.push(job_id.clone());
+        project
+            .manifest
+            .run_scenarios
+            .insert(job_id.clone(), scenario_id.clone());
         project.save()?;
     }
-    let pipeline = Pipeline {
+    let mut pipeline = Pipeline {
         runner: runner.clone(),
+        scenario_id,
         project: project.clone(),
         store,
         record,
@@ -346,6 +366,7 @@ fn start_scenario(
     }
     let id = job_id.clone();
     std::thread::spawn(move || {
+        let mut pipeline = pipeline;
         if let Err(e) = pipeline.run(&cancel) {
             events.emit(
                 "run.failed",
@@ -358,6 +379,234 @@ fn start_scenario(
         job_id,
         result: None,
     })
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct StartAllParams {
+    /// Scenario ids to run, in this order; default: all scenarios that are set up.
+    #[serde(default)]
+    pub scenarios: Option<Vec<String>>,
+    #[serde(default)]
+    pub iterations: Option<u32>,
+    #[serde(default)]
+    pub cores: Option<u32>,
+    /// Block until the whole queue has ended.
+    #[serde(default)]
+    pub wait: bool,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct QueuedRun {
+    pub job_id: String,
+    pub scenario: String,
+    /// Code of the failure of this run; null while pending or when it succeeded.
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct Queue {
+    pub runs: Vec<QueuedRun>,
+}
+
+/// Cancel flag and job ids of the running queue, by project folder.
+type QueueEntry = (Arc<AtomicBool>, Vec<String>);
+fn queues() -> &'static Mutex<HashMap<std::path::PathBuf, QueueEntry>> {
+    static QUEUES: OnceLock<Mutex<HashMap<std::path::PathBuf, QueueEntry>>> = OnceLock::new();
+    QUEUES.get_or_init(Default::default)
+}
+
+/// Runs scenarios one after another in the background: each on a copy of the project with that
+/// scenario active, reusing a mesh of an earlier scenario when it fits. A failure is recorded
+/// and the queue goes on; `run.cancel_queue` stops it.
+fn start_all(
+    runner: &SharedRunner,
+    session: &mut Session,
+    p: StartAllParams,
+) -> Result<Queue, FoamError> {
+    let project = session.project()?;
+    project.manifest.normalize();
+    let ids: Vec<String> = match p.scenarios {
+        Some(ids) => ids,
+        None => project
+            .manifest
+            .scenarios
+            .iter()
+            .filter(|e| e.scenario.is_some())
+            .map(|e| e.id.clone())
+            .collect(),
+    };
+    if ids.is_empty() {
+        return Err(FoamError::new("scenario.none", ""));
+    }
+    let store = JobStore::new(project.root.join("runs"));
+    let mut items = Vec::new();
+    for id in &ids {
+        let m = project
+            .manifest
+            .with_active(id)
+            .ok_or_else(|| FoamError::new("scenario.not_found", id.clone()))?;
+        let scenario = m
+            .scenario
+            .clone()
+            .ok_or_else(|| FoamError::new("scenario.none", id.clone()))?;
+        if matches!(scenario, foamcraft_core::project::Scenario::WindTunnel(_)) {
+            let mut copy = project.clone();
+            copy.manifest = m;
+            crate::mesh::prepare_models(&copy)?;
+        }
+        items.push((id.clone(), solve::case_name(&scenario)));
+    }
+    let mut queued = Vec::new();
+    for (id, case) in items {
+        let record = store.create(case)?;
+        project.manifest.runs.push(record.id.clone());
+        project
+            .manifest
+            .run_scenarios
+            .insert(record.id.clone(), id.clone());
+        queued.push((id, record));
+    }
+    project.save()?;
+    let base = project.clone();
+    let flag = Arc::new(AtomicBool::new(false));
+    if let Ok(mut map) = queues().lock() {
+        map.insert(
+            base.root.clone(),
+            (
+                flag.clone(),
+                queued.iter().map(|(_, r)| r.id.clone()).collect(),
+            ),
+        );
+    }
+    let answer: Vec<QueuedRun> = queued
+        .iter()
+        .map(|(id, r)| QueuedRun {
+            job_id: r.id.clone(),
+            scenario: id.clone(),
+            error: None,
+        })
+        .collect();
+    let events = session.events().clone();
+    events.emit("project.changed", Value::Null);
+    let updates = session.updates();
+    let runner = runner.clone();
+    let (iterations, cores) = (p.iterations, p.cores);
+    let work = move || -> Vec<QueuedRun> {
+        let total = queued.len();
+        let mut produced: Vec<foamcraft_core::project::MeshRecord> = Vec::new();
+        let mut out = Vec::new();
+        let mut cancelled = false;
+        for (index, (id, record)) in queued.into_iter().enumerate() {
+            if cancelled || flag.load(Ordering::SeqCst) {
+                cancelled = true;
+                let mut r = record;
+                r.state = JobState::Cancelled;
+                let _ = store.save(&r);
+                out.push(QueuedRun {
+                    job_id: r.id,
+                    scenario: id,
+                    error: Some("run.cancelled".into()),
+                });
+                continue;
+            }
+            events.emit(
+                "run.queue",
+                json!({"index": index, "total": total, "run_id": record.id, "scenario": id}),
+            );
+            let mut copy = base.clone();
+            if let Some(m) = base.manifest.with_active(&id) {
+                copy.manifest = m;
+            }
+            // A mesh an earlier scenario of this queue built may fit this one.
+            if !mesh_is_current(&copy) {
+                let own = copy.manifest.mesh.clone();
+                for m in &produced {
+                    copy.manifest.mesh = Some(m.clone());
+                    if mesh_is_current(&copy) {
+                        break;
+                    }
+                    copy.manifest.mesh = own.clone();
+                }
+            }
+            let job_id = record.id.clone();
+            let mut pipeline = Pipeline {
+                runner: runner.clone(),
+                scenario_id: id.clone(),
+                project: copy,
+                store: JobStore::new(base.root.join("runs")),
+                record,
+                events: events.clone(),
+                updates: updates.clone(),
+                iterations,
+                cores,
+                mesh_only: false,
+            };
+            let cancel = cancel_flag(&job_id);
+            let result = pipeline.run(&cancel);
+            forget(&job_id);
+            if let Some(mesh) = pipeline.project.manifest.mesh.clone() {
+                if !produced.iter().any(|m| m.job_id == mesh.job_id) {
+                    produced.push(mesh.clone());
+                }
+                let root = base.root.clone();
+                let sid = id.clone();
+                updates.push(move |s| {
+                    change_project(s, &root, |m| m.set_scenario_mesh(&sid, mesh));
+                });
+            }
+            let error = result.err().map(|e| {
+                if e.code == "run.cancelled" {
+                    cancelled = true;
+                }
+                events.emit(
+                    "run.failed",
+                    json!({"job_id": job_id, "code": e.code, "detail": e.detail}),
+                );
+                e.code
+            });
+            out.push(QueuedRun {
+                job_id,
+                scenario: id,
+                error,
+            });
+        }
+        if let Ok(mut map) = queues().lock() {
+            map.remove(&base.root);
+        }
+        events.emit("project.changed", Value::Null);
+        events.emit(
+            "run.queue_finished",
+            json!({"cancelled": cancelled || flag.load(Ordering::SeqCst), "runs": out}),
+        );
+        out
+    };
+    if p.wait {
+        let runs = work();
+        session.apply_updates();
+        return Ok(Queue { runs });
+    }
+    std::thread::spawn(work);
+    Ok(Queue { runs: answer })
+}
+
+/// Stops the running queue of the open project: the current run is cancelled, the rest skipped.
+fn cancel_queue(session: &mut Session) -> Result<Value, FoamError> {
+    let root = session.project()?.root.clone();
+    let entry = queues().lock().ok().and_then(|m| m.get(&root).cloned());
+    let Some((flag, jobs)) = entry else {
+        return Ok(json!({"cancelled": false}));
+    };
+    flag.store(true, Ordering::SeqCst);
+    let flags = running().lock().ok().map(|m| {
+        jobs.iter()
+            .filter_map(|j| m.get(j).cloned())
+            .collect::<Vec<_>>()
+    });
+    for f in flags.into_iter().flatten() {
+        f.store(true, Ordering::SeqCst);
+    }
+    Ok(json!({"cancelled": true}))
 }
 
 /// The run lost its background work (the app ended while its mesh was built): its meshing jobs
@@ -597,6 +846,36 @@ pub fn register(r: &mut Registry, runner: SharedRunner) {
             example: json!({"iterations": 200}),
         },
         move |s, p: StartParams| start(&starter, s, p),
+    );
+    let queue_runner = runner.clone();
+    r.add(
+        "run.start_all",
+        "Run several scenarios one after another in the background (all set-up scenarios, or the \
+         given ids). A scenario reuses the mesh of an earlier one when it fits; a failure is \
+         recorded and the queue goes on. Events run.queue and run.queue_finished.",
+        Options {
+            undoable: false,
+            errors: &[
+                "project.none_open",
+                "scenario.none",
+                "scenario.not_found",
+                "scenario.no_geometry",
+                "runtime.docker_missing",
+                "runtime.daemon_not_running",
+            ],
+            example: json!({"scenarios": ["scenario-1", "scenario-2"]}),
+        },
+        move |s, p: StartAllParams| start_all(&queue_runner, s, p),
+    );
+    r.add(
+        "run.cancel_queue",
+        "Stop the running queue of scenarios: the current run is cancelled, the others skipped.",
+        Options {
+            undoable: false,
+            errors: &["project.none_open"],
+            example: json!({}),
+        },
+        |s, _: crate::results::JobParams| cancel_queue(s),
     );
     r.add(
         "run.log",

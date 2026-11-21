@@ -340,3 +340,34 @@ fn validation_turbulent_pipe_matches_blasius() {
         deviation * 100.0
     );
 }
+
+#[test]
+#[ignore = "needs Docker and the runtime image"]
+fn runtime_minus_wall_shear_stress_points_downstream_in_a_pipe() {
+    // Task_33: the lines on the surface follow -wallShearStress. In a straight pipe with the flow
+    // along +x that must point downstream on (almost) the whole wall.
+    let (reg, mut s, keys) = project("wss", "pipe_open", "mm");
+    set_flow(
+        &reg,
+        &mut s,
+        &keys,
+        json!({"type": "velocity", "m_s": 0.5}),
+        "draft",
+    );
+    let r = solve(&reg, &mut s, 150_000, 600);
+    let job = r["job_id"].as_str().unwrap().to_string();
+    let root = s.project().unwrap().root.clone();
+    let surface = foamcraft_api::results::load_surface(&root, &job).unwrap();
+    let wss = foamcraft_api::surface_flow::wss_vectors(&surface).expect("wss_x, wss_y, wss_z");
+    let (mut along, mut total) = (0.0, 0.0);
+    for (t, w) in surface.triangles.iter().zip(&wss) {
+        let [a, b, c] = t.map(|i| glam::DVec3::from(surface.points[i as usize].map(f64::from)));
+        let area = 0.5 * (b - a).cross(c - a).length();
+        total += area;
+        if -w.x > 0.0 {
+            along += area;
+        }
+    }
+    eprintln!("wss: {:.4} of the wall has -wss downstream", along / total);
+    assert!(along / total >= 0.99, "{}", along / total);
+}

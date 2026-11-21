@@ -19,6 +19,7 @@ interface Slice {
   origin: Vec3;
   normal: Vec3;
   field: string;
+  hidden?: boolean;
 }
 
 interface Iso {
@@ -31,22 +32,34 @@ interface ViewState {
   slices: Slice[];
   isosurfaces: Iso[];
   clip: { origin: Vec3; normal: Vec3 } | null;
+  /** What the clip plane cuts: model, particles, streamlines, isosurfaces. */
+  clip_targets?: string[];
 }
+
+const CLIP_TARGETS = ["model", "particles", "streamlines", "isosurfaces"] as const;
 
 interface Props {
   api: Api;
   /** Grid levels of the result (the first spans the whole domain). */
   levels: Level[];
+  /** Slice chosen in the list or in the 3D view. */
+  selected?: string | null;
+  onSelect?: (id: string | null) => void;
 }
 
 const ISO_FIELDS = ["U_mag", "p_total", "Q"];
 
 /** The view state with missing lists filled in. */
 function normalise(v: Partial<ViewState> | null | undefined): ViewState {
-  return { slices: v?.slices ?? [], isosurfaces: v?.isosurfaces ?? [], clip: v?.clip ?? null };
+  return {
+    slices: v?.slices ?? [],
+    isosurfaces: v?.isosurfaces ?? [],
+    clip: v?.clip ?? null,
+    clip_targets: v?.clip_targets ?? ["model"],
+  };
 }
 
-export function FlowViewSection({ api, levels }: Props) {
+export function FlowViewSection({ api, levels, selected = null, onSelect }: Props) {
   const { t, language } = useTranslation();
   const [view, setView] = useState<ViewState>({ slices: [], isosurfaces: [], clip: null });
   const [fields, setFields] = useState<{ name: string; unit: string }[]>([]);
@@ -102,6 +115,7 @@ export function FlowViewSection({ api, levels }: Props) {
   };
 
   const first = view.slices[0];
+  const selectedSlice = view.slices.find((s) => s.id === selected);
   return (
     <section className="flow-view">
       <h3>{t("flowView.slices")}</h3>
@@ -136,10 +150,44 @@ export function FlowViewSection({ api, levels }: Props) {
         {view.slices.map((s) => {
           const k = Math.max(0, axisOf(s.normal));
           return (
-            <li key={s.id} aria-label={s.id}>
+            <li key={s.id} aria-label={s.id} className={selected === s.id ? "selected" : ""}>
               <span>
                 {s.id} · {label(s.field)}
               </span>
+              <button
+                type="button"
+                aria-pressed={selected === s.id}
+                onClick={() => onSelect?.(selected === s.id ? null : s.id)}
+              >
+                {t("flowView.select")}
+              </button>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  aria-label={t("flowView.visible")}
+                  checked={!s.hidden}
+                  onChange={(e) =>
+                    act("view.update_slice", { id: s.id, hidden: !e.target.checked })
+                  }
+                />
+                {t("flowView.visible")}
+              </label>
+              {selected === s.id &&
+                AXES.map((a, i) => (
+                  <button
+                    key={a}
+                    type="button"
+                    aria-label={t("flowView.alongAxis", { axis: a.toUpperCase() })}
+                    aria-pressed={axisOf(s.normal) === i}
+                    onClick={() => {
+                      const normal = [0, 0, 0] as Vec3;
+                      normal[i] = 1;
+                      act("view.update_slice", { id: s.id, normal });
+                    }}
+                  >
+                    {a.toUpperCase()}
+                  </button>
+                ))}
               <input
                 type="range"
                 min={box.min[k]}
@@ -225,6 +273,43 @@ export function FlowViewSection({ api, levels }: Props) {
         >
           {t("flowView.flip")}
         </button>
+      )}
+      {selectedSlice && (
+        <button
+          type="button"
+          onClick={() =>
+            act("view.set_clip", {
+              plane: { origin: selectedSlice.origin, normal: selectedSlice.normal },
+            })
+          }
+        >
+          {t("flowView.cutAtSelected")}
+        </button>
+      )}
+      {view.clip && (
+        <fieldset className="clip-targets">
+          <legend>{t("flowView.cutTargets")}</legend>
+          {CLIP_TARGETS.map((target) => {
+            const on = (view.clip_targets ?? ["model"]).includes(target);
+            return (
+              <label key={target} className="check">
+                <input
+                  type="checkbox"
+                  aria-label={t(`flowView.target.${target}`)}
+                  checked={on}
+                  onChange={(e) => {
+                    const current = view.clip_targets ?? ["model"];
+                    const targets = CLIP_TARGETS.filter((x) =>
+                      x === target ? e.target.checked : current.includes(x),
+                    );
+                    act("view.set_clip", { plane: view.clip, targets });
+                  }}
+                />
+                {t(`flowView.target.${target}`)}
+              </label>
+            );
+          })}
+        </fieldset>
       )}
       {error && (
         <p role="alert" className="error">

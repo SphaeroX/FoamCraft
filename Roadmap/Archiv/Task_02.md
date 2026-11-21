@@ -29,8 +29,8 @@
 **Gehört nicht dazu:**
 
 - Eigene Fälle und die Job-Pipeline (Task_03)
-- GPU-Löser (Task_34), WSL-Runner (Task_36), Einrichtungsassistent in der Oberfläche (Task_21)
-- Veröffentlichung des Images in einer Registry (Task_32)
+- GPU-Löser (Task_38), WSL-Runner (Task_40), Einrichtungsassistent in der Oberfläche (Task_21)
+- Veröffentlichung des Images in einer Registry (Task_36)
 
 ## Umsetzungsschritte
 
@@ -64,8 +64,8 @@ Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder ei
 ## Offene Fragen / Annahmen
 
 - Offene Entscheidungen "OpenFOAM release" und "Case file I/O" fallen in diesem Task.
-- Annahme: Das Image wird bis Task_32 lokal gebaut.
-- Docker Desktop ist für größere Firmen kostenpflichtig; die Alternative entsteht in Task_36.
+- Annahme: Das Image wird bis Task_36 lokal gebaut.
+- Docker Desktop ist für größere Firmen kostenpflichtig; die Alternative entsteht in Task_40.
 
 ## Notizen zu diesem Task
 
@@ -89,5 +89,5 @@ Reihenfolge und Details stehen in `AGENTS.md`, Abschnitt "Abschluss- und Archivi
 - **Umgesetzt (und Abweichungen vom Plan):** Crates `foamcraft-runtime` (Trait `Runner`, `DockerRunner`, `fake::FakeEngine`, `report`) und `foamcraft-agent` (Linux-Binary im Image; `version`, `status`, `idle`). Fehlerkatalog `crates/foamcraft-core/data/errors.json` mit `foamcraft_core::error::{FoamError, Language, message}`. Protokoll-Typen in `foamcraft_core::runtime`. `runtime/Dockerfile` (Multi-Stage: rust:1.99-bookworm baut den Agenten, Basis `opencfd/openfoam-run:2606` per Digest). Messfall `runtime/cases/cavity` (aus dem OpenFOAM-Tutorial adaptiert). CLI `foamcraft [--lang de] runtime check|build|stop`. Abweichung: Docker wird über die Kommandozeile angesprochen statt über eine Bibliothek (Begründung in `docs/architecture.md`). Zusätzlich zu den vier verlangten Fehlercodes gibt es `runtime.image_missing`, `runtime.command_failed`, `runtime.agent_failed`.
 - **Learnings & Stolpersteine:** Das OpenCFD-`-run`-Image enthält keine Tutorials und keine Compiler; `-dev`/`-default` gab es für 2606 noch nicht. Die OpenFOAM-Umgebung ist nur in einer Login-Shell geladen (`bash -lc`); `Runner::exec_openfoam` macht genau das. Der Agent findet OpenFOAM auch ohne Umgebung unter `/usr/lib/openfoam/openfoam*`. Rusts `available_parallelism` beachtet das cgroup-CPU-Limit (`--cpus 2` → 2). Docker Desktop zeigt bei jedem neuen Bind-Mount-Ordner einen Freigabe-Dialog; ohne Bestätigung hängt `docker run` unbegrenzt. Die Sicherheitsprüfung des Agenten-Werkzeugs blockt Shell-Kommandos mit `rm` in `bash -c`-Skripten; Aufräumen deshalb über Rust (`Runner::stop`, `remove_volume`).
 - **Wichtige Entscheidungen und ihre Gründe:** OpenFOAM v2606 (aktuelles OpenCFD-Release). Fall-Dateien auf einem benannten Volume mit Agent (Messwerte in `docs/architecture.md`: Volume ~1,07 s gegen Bind-Mount ~1,2 s, dazu der Freigabe-Dialog). Host↔Agent über `docker exec … foamcraft-agent <befehl>` mit JSON auf stdout, kein Netzwerkport. "Kein WSL2-Backend" und "zu wenig Speicher" sind Warnungen, keine harten Fehler, weil Rechnen trotzdem geht.
-- **Auswirkungen auf Folge-Tasks:** Der Referenzrechner läuft derzeit mit Docker Desktop im Hyper-V-Modus (Kernel `linuxkit`), nur ~1,9 GiB Speicher im Docker-VM und ohne GPU-Durchreichung. Task_03 (Fall < 200 000 Zellen) muss mit 2 GiB auskommen; Task_34 (GPU) braucht das WSL2-Backend – den Nutzer vorher bitten, es einzuschalten. Neue Runner-Funktionen für Task_03: `create_volume`, `remove_volume`, `copy_into`, `copy_out`, `exec_openfoam`, `stop_all`. Container tragen das Label `org.foamcraft.managed=true`.
+- **Auswirkungen auf Folge-Tasks:** Der Referenzrechner läuft derzeit mit Docker Desktop im Hyper-V-Modus (Kernel `linuxkit`), nur ~1,9 GiB Speicher im Docker-VM und ohne GPU-Durchreichung. Task_03 (Fall < 200 000 Zellen) muss mit 2 GiB auskommen; Task_38 (GPU) braucht das WSL2-Backend – den Nutzer vorher bitten, es einzuschalten. Neue Runner-Funktionen für Task_03: `create_volume`, `remove_volume`, `copy_into`, `copy_out`, `exec_openfoam`, `stop_all`. Container tragen das Label `org.foamcraft.managed=true`.
 - **Hinweise zu Tests und Befehlen:** Image bauen: `cargo run -p foamcraft-cli -- runtime build`. Runtime-Tests: `cargo test --workspace -- --ignored runtime_` (brauchen das Image; 8 Tests inkl. CLI und beider I/O-Messungen). Der Ordner `target/io-bench` ist in Docker Desktop freigegeben (vom Nutzer am 2026-11-21 erlaubt); andere Host-Ordner lösen den Dialog erneut aus.

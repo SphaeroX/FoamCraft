@@ -112,3 +112,45 @@ fn a_comparison_report_and_chosen_formats() {
     assert!(page.contains("Visor down"));
     assert!(!root.join("cmp.pdf").exists());
 }
+
+#[test]
+fn a_report_compares_several_chosen_runs() {
+    let (reg, mut s, root) = setup("compare-many");
+    std::fs::write(
+        root.join("results/job-c.json"),
+        result("job-c", 52.8).to_string(),
+    )
+    .unwrap();
+    reg.execute(
+        &mut s,
+        "runs.rename",
+        json!({"job_id": "job-b", "name": "Slow"}),
+    )
+    .unwrap();
+    reg.execute(
+        &mut s,
+        "runs.rename",
+        json!({"job_id": "job-c", "name": "Fast"}),
+    )
+    .unwrap();
+    let out = reg
+        .execute(
+            &mut s,
+            "export.report",
+            json!({"path": root.join("many.html"), "formats": ["html", "pdf"], "job_id": "job-a",
+                   "compare_runs": ["job-b", "job-c"]}),
+        )
+        .unwrap();
+    let page = read(&PathBuf::from(out["html"].as_str().unwrap()));
+    assert!(page.contains("Comparison report"));
+    assert!(
+        page.contains("Slow") && page.contains("Fast"),
+        "names of the chosen runs"
+    );
+    // 48 N against 52.8 N: +10 % in the column of the fast run.
+    assert!(
+        page.contains("52.8 (+10 %)"),
+        "relative change in the table"
+    );
+    assert!(PathBuf::from(out["pdf"].as_str().unwrap()).is_file());
+}

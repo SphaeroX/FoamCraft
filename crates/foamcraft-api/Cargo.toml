@@ -62,6 +62,22 @@ name = "results_runtime"
 path = "../../tests/api/results_runtime.rs"
 
 [[test]]
+name = "surface_flow"
+path = "../../tests/api/surface_flow.rs"
+
+[[test]]
+name = "heavy"
+path = "../../tests/api/heavy.rs"
+
+[[test]]
+name = "ride"
+path = "../../tests/api/ride.rs"
+
+[[test]]
+name = "trails"
+path = "../../tests/api/trails.rs"
+
+[[test]]
 name = "view"
 path = "../../tests/api/view.rs"
 
@@ -88,6 +104,10 @@ path = "../../tests/api/samples.rs"
 [[test]]
 name = "system"
 path = "../../tests/api/system.rs"
+
+[[test]]
+name = "jet_runtime"
+path = "../../tests/api/jet_runtime.rs"
 
 [[test]]
 name = "pipeline"

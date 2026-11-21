@@ -256,8 +256,32 @@ fn mesh_inputs(project: &Project) -> serde_json::Value {
         "groups": m.groups,
         "caps": m.caps,
         "boundary_roles": m.boundary_roles,
-        "scenario": m.scenario,
+        "scenario": mesh_key(m.scenario.as_ref()),
+        "jets": m.jets,
     })
+}
+
+/// The part of a scenario that decides the mesh. For a wind tunnel speed and medium only enter
+/// through the first boundary layer height (∝ ν^0.9 / U^0.9 for the same model, see
+/// `foamcraft_sim::mesh::first_layer_thickness`); it is kept in steps of √2, so scenarios whose
+/// layer heights differ less than that share a mesh (y+ then differs by at most that factor).
+pub(crate) fn mesh_key(scenario: Option<&foamcraft_core::project::Scenario>) -> serde_json::Value {
+    use foamcraft_core::project::Scenario;
+    match scenario {
+        Some(Scenario::WindTunnel(w)) => {
+            let nu = medium_properties(&w.medium).kinematic_viscosity;
+            let relative = (nu / w.speed_m_s.max(1e-9)).powf(0.9);
+            let stage = (2.0 * relative.log2()).round() as i64;
+            json!({
+                "kind": "wind_tunnel",
+                "direction_deg": w.direction_deg,
+                "ground": w.ground,
+                "quality": w.quality,
+                "layer_stage": stage,
+            })
+        }
+        other => json!(other),
+    }
 }
 
 /// Whether the mesh of the project was built from its current geometry and scenario. A mesh
@@ -352,9 +376,25 @@ fn mesh_wind(
     p: GenerateParams,
 ) -> Result<(MeshRecord, MeshResult), FoamError> {
     let runner = ctx.runner;
-    let Some(Scenario::WindTunnel(wind)) = project.manifest.scenario.clone() else {
+    let Some(Scenario::WindTunnel(mut wind)) = project.manifest.scenario.clone() else {
         return Err(FoamError::new("scenario.none", ""));
     };
+    if let Some(v) = project
+        .manifest
+        .jets
+        .iter()
+        .map(|j| j.speed_m_s)
+        .reduce(f64::max)
+    {
+        wind.speed_m_s = v;
+    }
+    // Sources of air in the flow frame of the case (empty: plain wind tunnel).
+    let jets: Vec<foamcraft_sim::jets::JetFlow> = project
+        .manifest
+        .jets
+        .iter()
+        .map(|j| foamcraft_sim::jets::to_flow(j, wind.direction_deg))
+        .collect();
     let prepared = prepare_models(project)?;
     let refs: Vec<&foamcraft_geometry::Mesh> = prepared.worlds.iter().collect();
     let medium = medium_properties(&wind.medium);
@@ -399,6 +439,7 @@ fn mesh_wind(
             cells,
         );
         plan.layers = attempt.layers;
+        foamcraft_sim::jets::extend_plan(&mut plan, &jets);
         let models: Vec<ModelSurface<'_>> = prepared
             .worlds
             .iter()
@@ -409,7 +450,8 @@ fn mesh_wind(
             })
             .collect();
         let mut record = prepare_job(r, &store, "wind_tunnel_mesh", |dir| {
-            write_wind_tunnel_case(dir, &plan, &models, &wind, &medium, 500)
+            write_wind_tunnel_case(dir, &plan, &models, &wind, &medium, 500)?;
+            foamcraft_sim::jets::apply_jets(dir, &plan, &jets)
         })?;
         let state = ctx.attempt(&store, &mut record, number, plan.layers > 0);
         ctx.check_cancelled(&record)?;

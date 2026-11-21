@@ -358,3 +358,143 @@ fn projects_without_a_path_are_created_inside_the_first_root() {
     assert!(path.starts_with(&work), "{}", path.display());
     assert!(path.join("foamcraft.json").is_file());
 }
+
+#[test]
+fn the_render_tool_takes_a_named_view() {
+    let dir = base("render-view");
+    let s = server(&dir);
+    call(
+        &s,
+        "project_new",
+        json!({"path": dir.join("work/v"), "name": "V"}),
+    );
+    let tools = s.tools();
+    let render = tools.iter().find(|t| t.name == "view_render").unwrap();
+    assert!(
+        render.input_schema["properties"]["view"]["enum"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("front"))
+    );
+    let err = s
+        .call(
+            "view_render",
+            json!({"width": 64, "height": 64, "view": "nowhere"}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, "view.unknown_view");
+    match s.call(
+        "view_render",
+        json!({"width": 64, "height": 64, "view": "top"}),
+    ) {
+        Err(e) if e.code == "view.no_gpu" => eprintln!("SKIPPED: no GPU adapter available"),
+        Err(e) => panic!("{e}"),
+        Ok(out) => assert!(matches!(&out[0], Output::Png(_))),
+    }
+}
+
+#[test]
+fn models_are_moved_and_turned_with_the_handle_commands() {
+    let dir = base("move");
+    let s = server(&dir);
+    call(
+        &s,
+        "project_new",
+        json!({"path": dir.join("work/m"), "name": "M"}),
+    );
+    let model = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/data/geometry/cube_binary.stl");
+    let work = dir.join("work");
+    std::fs::copy(&model, work.join("cube.stl")).unwrap();
+    call(
+        &s,
+        "geometry_import",
+        json!({"path": work.join("cube.stl"), "unit": "mm"}),
+    );
+    let moved = call(
+        &s,
+        "geometry_move_by",
+        json!({"id": "model-1", "delta": [0.0, 0.0, 0.05]}),
+    );
+    assert_eq!(moved["translation"], json!([0.0, 0.0, 0.05]));
+    let turned = call(
+        &s,
+        "geometry_rotate_about",
+        json!({"id": "model-1", "axis": "z", "angle_deg": 90.0}),
+    );
+    assert!((turned["rotation_deg"][0].as_f64().unwrap() - 90.0).abs() < 1e-9);
+    let pivots = call(&s, "geometry_pivot", json!({"id": "model-1"}));
+    assert!(pivots["centroid"].is_array());
+}
+
+#[test]
+fn the_ride_tools_are_listed_and_call_the_ride_commands() {
+    let dir = base("ride");
+    let s = server(&dir);
+    let tools = s.tools();
+    for want in ["ride_suggest", "ride_start", "ride_telemetry", "ride_stop"] {
+        assert!(tools.iter().any(|t| t.name == want), "{want} missing");
+    }
+    let render = tools.iter().find(|t| t.name == "view_render").unwrap();
+    assert_eq!(
+        render.input_schema["properties"]["ride_t"]["type"],
+        "number"
+    );
+    call(
+        &s,
+        "project_new",
+        json!({"path": dir.join("work/r"), "name": "R"}),
+    );
+    // Without a result there is nothing to ride; without a ride nothing to read.
+    assert_eq!(
+        s.call("ride_suggest", json!({})).unwrap_err().code,
+        "results.none"
+    );
+    assert_eq!(
+        s.call("ride_telemetry", json!({})).unwrap_err().code,
+        "ride.none"
+    );
+    assert_eq!(call(&s, "ride_stop", json!({}))["stopped"], true);
+}
+
+#[test]
+fn the_surface_flow_tool_is_listed_and_needs_a_result() {
+    let dir = base("surface-flow");
+    let s = server(&dir);
+    let tools = s.tools();
+    assert!(tools.iter().any(|t| t.name == "view_set_surface_flow"));
+    call(
+        &s,
+        "project_new",
+        json!({"path": dir.join("work/f"), "name": "F"}),
+    );
+    assert_eq!(
+        s.call("view_set_surface_flow", json!({"lines": {"on": true}}))
+            .unwrap_err()
+            .code,
+        "results.none"
+    );
+}
+
+#[test]
+fn the_heavy_particle_tools_are_listed_and_answer() {
+    let dir = base("heavy");
+    let s = server(&dir);
+    let tools = s.tools();
+    for want in [
+        "view_set_particles",
+        "particles_materials",
+        "results_impact",
+        "results_impact_status",
+    ] {
+        assert!(tools.iter().any(|t| t.name == want), "{want} missing");
+    }
+    let list = call(&s, "particles_materials", json!({}));
+    assert!(list.as_array().unwrap().iter().any(|m| m["id"] == "rain"));
+    assert_eq!(
+        s.call("results_impact_status", json!({"impact_id": "nothing"}))
+            .unwrap_err()
+            .code,
+        "impact.not_found"
+    );
+}

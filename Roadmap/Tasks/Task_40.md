@@ -1,4 +1,4 @@
-# Task_40: Poröse Bauteile
+# Task_40: WSL2-Runner ohne Docker Desktop
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,55 +7,56 @@
 
 ## Ziel
 
-Der Nutzer markiert ein Teil als durchströmt (Kühler, Filter, Lochblech) und gibt dafür einfache Kenndaten ein. Ergebnisse sind Volumenstrom durch das Teil und Druckabfall.
+Unter Windows kann FoamCraft OpenFOAM in einer selbst verwalteten WSL2-Umgebung betreiben. Docker Desktop ist dann nicht mehr nötig.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_13 ist archiviert; die Zonen-Erzeugung aus Task_39 ist vorhanden.
-- **Relevantes Vorwissen:** Erkenntnisse aus Task_39 zu Zellzonen. Poröse Zonen gelten für Außen- und Innenströmung.
+- **Voraussetzung:** Task_21 (Einrichtungsassistent) und Task_36 (Release-Pipeline) sind archiviert; Task_37 bis Task_39 liegen davor.
+- **Relevantes Vorwissen:** Runner-Schnittstelle aus Task_02. Das Aktivieren von WSL braucht Administratorrechte und einen Neustart; das macht der Nutzer selbst, FoamCraft leitet nur an.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Teil (geschlossener Körper) als durchströmt markieren
-- Eingabe: Druckverlust bei einer Geschwindigkeit (ein oder zwei Messpunkte), daraus die Widerstandsbeiwerte; Durchströmrichtung, quer dazu gesperrt
-- Vorlagen: Kühler, Filter, Lochblech mit freiem Flächenanteil
-- Zellzone und Widerstandsquelle im Fall
-- Ergebnisse: Volumenstrom durch das Teil, Druckabfall
+- Zweite Runner-Implementierung: eine von FoamCraft verwaltete WSL2-Distribution (Import eines Root-Dateisystems aus dem Runtime-Image, eigener Name, Aktualisieren, Entfernen)
+- Befehle über `wsl.exe`, Agent in der Distribution, GPU in WSL
+- Assistent: Wahl zwischen Docker und der integrierten Umgebung, Prüfung, ob WSL2 aktiv ist, Hinweise zu den Ressourcen
+- Die Release-Pipeline erzeugt das Root-Dateisystem als Artefakt
+- Gemeinsame Vertragstests für alle Runner
 
 **Gehört nicht dazu:**
 
-- Wärmeübergang im Kühler
+- Änderungen an Systemeinstellungen durch FoamCraft
+- Unterstützung für WSL1
 
 ## Umsetzungsschritte
 
-1. Tests zuerst für die Beiwerte aus einem und aus zwei Messpunkten (Handrechnung) und für die Lochblech-Korrelation (Quelle im Test).
-2. Markierung, Eingabe und Vorlagen umsetzen.
-3. Zone und Widerstandsquelle in der Fallerzeugung umsetzen (Snapshot).
-4. Auswertung umsetzen.
-5. Oberfläche, Kennzahlen und Report erweitern.
-6. Validierungstest schreiben.
+1. Vertragstests für die Runner-Schnittstelle schreiben, die Docker-, Fake- und WSL-Runner gleichermaßen bestehen müssen.
+2. Erzeugung des Root-Dateisystems aus dem Image umsetzen.
+3. WSL-Runner umsetzen (Import, Start, Ausführung, Aktualisieren, Entfernen).
+4. Fehlerfälle umsetzen (WSL nicht aktiv, Distribution beschädigt).
+5. Assistent und Einstellungen erweitern.
+6. Release-Pipeline um das Artefakt ergänzen.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Beiwerte gegen Handrechnung; Lochblech-Korrelation.
-- Snapshot der Fallerzeugung.
-- `validation_`: Kanal mit porösem Block, der Druckabfall entspricht der eingegebenen Kennlinie (Toleranz 5 %).
+- Vertragstests laufen für alle Runner.
+- Fehlerfälle liefern Fehlercodes mit Text in beiden Sprachen.
+- `runtime_` unter Windows: Import, ein Lauf des Referenzfalls, Aktualisieren, Entfernen.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] Ein Teil lässt sich in der App als durchströmt markieren und rechnen
-- [ ] Volumenstrom und Druckabfall stehen in den Kennzahlen
-- [ ] Der Validierungstest läuft grün
+- [ ] Der Referenzfall rechnet über den WSL-Runner ohne laufendes Docker Desktop
+- [ ] Die verwaltete Distribution lässt sich über die App rückstandsfrei entfernen
+- [ ] Die Vertragstests laufen für Docker- und WSL-Runner grün
 
 ## Offene Fragen / Annahmen
 
-- Keine
+- Die Größe des Root-Dateisystems und der Weg der Auslieferung (im Installer oder Download beim ersten Start) werden hier entschieden.
 
 ## Notizen zu diesem Task
 

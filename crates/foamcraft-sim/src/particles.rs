@@ -231,3 +231,70 @@ pub fn streamline(
     }
     line
 }
+
+/// The positions on the visible side of a clip plane (`(p - origin) · normal <= 0`), as the GPU
+/// draws them; all in the same frame.
+pub fn visible_positions(
+    positions: &[[f32; 3]],
+    origin: [f32; 3],
+    normal: [f32; 3],
+) -> Vec<[f32; 3]> {
+    positions
+        .iter()
+        .copied()
+        .filter(|p| (0..3).map(|k| (p[k] - origin[k]) * normal[k]).sum::<f32>() <= 0.0)
+        .collect()
+}
+
+/// Start points of a rake: `nozzles` nozzles evenly on `origin + s·u` (s in 0..1), each point in a
+/// small disc of `radius` across `u`, so every nozzle gives one thin smoke line.
+pub fn rake_points(
+    origin: [f32; 3],
+    u: [f32; 3],
+    radius: f32,
+    nozzles: u32,
+    n: u32,
+    seed: u32,
+) -> Vec<[f32; 3]> {
+    let len = (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]).sqrt();
+    let axis = if len > 1e-12 {
+        u.map(|c| c / len)
+    } else {
+        [1.0, 0.0, 0.0]
+    };
+    // Two directions across the rake.
+    let helper = if axis[0].abs() < 0.9 {
+        [1.0, 0.0, 0.0]
+    } else {
+        [0.0, 1.0, 0.0]
+    };
+    let cross = |a: [f32; 3], b: [f32; 3]| {
+        [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ]
+    };
+    let norm = |a: [f32; 3]| {
+        let l = (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]).sqrt().max(1e-30);
+        a.map(|c| c / l)
+    };
+    let e1 = norm(cross(axis, helper));
+    let e2 = cross(axis, e1);
+    let nozzles = nozzles.max(1);
+    (0..n)
+        .map(|i| {
+            let k = i % nozzles;
+            let s = if nozzles == 1 {
+                0.5
+            } else {
+                k as f32 / (nozzles - 1) as f32
+            };
+            // Uniform in the disc: radius from the square root.
+            let r = radius * random(i, 0, seed, 303).sqrt();
+            let a = random(i, 0, seed, 404) * std::f32::consts::TAU;
+            let (c, sn) = (a.cos() * r, a.sin() * r);
+            [0, 1, 2].map(|j| origin[j] + s * u[j] + c * e1[j] + sn * e2[j])
+        })
+        .collect()
+}

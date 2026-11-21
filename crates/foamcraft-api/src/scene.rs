@@ -4,6 +4,7 @@
 //! The app draws it in its window; `view.render` draws it without a window.
 
 use foamcraft_render::Scene;
+use foamcraft_render::flow::FlowGeometry;
 use foamcraft_render::glam::Vec3;
 
 /// Scene of the open project: every face and cap gets a pick id (`keys` holds the key per id).
@@ -13,6 +14,49 @@ pub struct ProjectScene {
     /// Sphere that "fit view" frames (the models).
     pub focus: Option<(Vec3, f32)>,
     pub hit_meshes: Vec<(String, foamcraft_geometry::Mesh)>,
+    /// The plain models (empty while a result surface replaces them), for move and turn handles.
+    pub models: Vec<SceneModel>,
+    /// The wind of a wind tunnel scenario, for the wind arrow handle.
+    pub wind: Option<SceneWind>,
+    /// Indices into `scene.meshes` of the tunnel frame, ground and inlet arrow.
+    pub tunnel_meshes: Vec<usize>,
+    /// Shown slices, pickable with keys `slice:<id>`.
+    pub slices: Vec<SceneSlice>,
+    /// Lines and tufts on the model surface (Task_33).
+    pub flow: Option<std::sync::Arc<(FlowGeometry, crate::surface_flow::FlowInfo)>>,
+    /// Ribbons and tubes of streamlines (Task_35).
+    pub ribbons: Option<FlowGeometry>,
+}
+
+/// A slice in the scene: its mesh, plane (world) and the offsets along the normal that keep it
+/// inside the coarsest grid.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneSlice {
+    pub id: String,
+    pub mesh: usize,
+    pub origin: [f32; 3],
+    pub normal: [f32; 3],
+    pub range: [f32; 2],
+}
+
+/// Wind of the scene: bounding sphere of the models and the flow direction.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SceneWind {
+    pub center: [f32; 3],
+    pub radius: f32,
+    /// Degrees, 0 = towards +X, 90 = towards +Y.
+    pub direction_deg: f32,
+}
+
+/// A model in the scene: which meshes draw it and its bounding sphere in the world.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneModel {
+    pub id: String,
+    /// Indices into `scene.meshes`: the model and its caps.
+    pub meshes: Vec<usize>,
+    /// Centre and radius of the bounding sphere, metres.
+    pub center: [f32; 3],
+    pub radius: f32,
 }
 
 impl ProjectScene {
@@ -22,8 +66,50 @@ impl ProjectScene {
             keys: Vec::new(),
             focus: None,
             hit_meshes: Vec::new(),
+            models: Vec::new(),
+            wind: None,
+            tunnel_meshes: Vec::new(),
+            slices: Vec::new(),
+            flow: None,
+            ribbons: None,
         }
     }
+
+    /// The scene on the GPU, with its surface flow at animation time `time`.
+    pub fn upload(
+        &self,
+        renderer: &foamcraft_render::Renderer,
+        time: f32,
+    ) -> foamcraft_render::GpuScene {
+        let mut gpu = renderer.upload(&self.scene);
+        renderer.set_surface_flow(&mut gpu, self.flow_geometry().as_ref());
+        gpu.time = time;
+        gpu
+    }
+
+    /// Surface flow and ribbons together, as the renderer draws them.
+    pub fn flow_geometry(&self) -> Option<FlowGeometry> {
+        if self.flow.is_none() && self.ribbons.is_none() {
+            return None;
+        }
+        let mut g = self.flow.as_ref().map(|f| f.0.clone()).unwrap_or_default();
+        if let Some(r) = &self.ribbons {
+            g.ribbons = r.ribbons.clone();
+            g.ribbon_indices = r.ribbon_indices.clone();
+        }
+        Some(g)
+    }
+}
+
+/// Colour of the model under the oil film and the tufts: dark and matt, so the light lines and
+/// the yarn stand out.
+const OIL_FILM_MODEL: [f32; 3] = [0.13, 0.14, 0.17];
+
+/// Two colours for the map "attached / reverse flow": red for reverse flow, green for attached.
+fn attached_color(v: f64) -> [f32; 3] {
+    let t = ((v + 1.0) / 2.0).clamp(0.0, 1.0) as f32;
+    let (back, along) = ([0.86, 0.33, 0.27], [0.30, 0.74, 0.46]);
+    [0, 1, 2].map(|k| back[k] + (along[k] - back[k]) * t)
 }
 
 /// Colours of caps by role.
@@ -131,9 +217,17 @@ fn result_surface(
     let (s, values, lo, hi) = surface_values(project)?;
     let job = project.manifest.view.result_job.as_ref()?;
     let span = (hi - lo).max(1e-30);
+    let two_colors = project.manifest.view.surface_field.as_deref() == Some("attached")
+        && project.manifest.view.compare.is_none();
     let colors = values
         .iter()
-        .map(|v| foamcraft_sim::results::colormap((f64::from(*v) - lo) / span))
+        .map(|v| {
+            if two_colors {
+                attached_color(f64::from(*v))
+            } else {
+                foamcraft_sim::results::colormap((f64::from(*v) - lo) / span)
+            }
+        })
         .collect();
     let mesh = foamcraft_geometry::Mesh {
         positions: s.points,
@@ -204,6 +298,27 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
     let mut hit_meshes = Vec::new();
     let mut keys = Vec::new();
     let mut meshes = Vec::new();
+    let mut scene_models = Vec::new();
+    let oil_film = project.is_some_and(|p| {
+        p.manifest.view.surface_field.is_none()
+            && p.manifest
+                .view
+                .surface_flow
+                .as_ref()
+                .is_some_and(|f| f.lines.is_some() || f.tufts.is_some())
+                // Light trails glow best around a dark model (Task_35).
+                || p.manifest.view.surface_field.is_none()
+                    && p.manifest
+                        .view
+                        .particles
+                        .as_ref()
+                        .is_some_and(|s| s.style == "trails")
+    });
+    let model_color = if oil_film {
+        OIL_FILM_MODEL
+    } else {
+        MODEL_COLOR
+    };
     for m in &models {
         let base = keys.len() as u32;
         keys.extend(m.segmentation.faces.iter().map(|f| face_key(&m.id, f.id)));
@@ -218,8 +333,16 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
             &world.positions,
             &world.triangles,
             &ids,
-            MODEL_COLOR,
+            model_color,
         ));
+        let (min, max) = world.bounds();
+        let (min, max) = (Vec3::from(min), Vec3::from(max));
+        scene_models.push(SceneModel {
+            id: m.id.clone(),
+            meshes: vec![meshes.len() - 1],
+            center: ((min + max) / 2.0).into(),
+            radius: ((max - min).length() / 2.0).max(1e-6),
+        });
         hit_meshes.push((m.id.clone(), world));
     }
     // A result field replaces the plain models: the wall surface of the run, coloured.
@@ -231,9 +354,13 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
         mesh.vertex_colors = Some(colors.iter().flat_map(|c| [*c; 3]).collect());
         meshes = vec![mesh];
         hit_meshes = vec![(key, surface)];
+        scene_models.clear();
     }
     // The model cut open along the clip plane of the view.
-    if let Some(plane) = project.and_then(|p| p.manifest.view.clip.as_ref()) {
+    if let Some(plane) = project
+        .filter(|p| p.manifest.view.clips("model"))
+        .and_then(|p| p.manifest.view.clip.as_ref())
+    {
         for m in &mut meshes {
             crate::view::clip(m, plane);
         }
@@ -241,6 +368,9 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
     let models_len = meshes.len();
     // Caps: translucent, coloured by role, pickable; roles as arrows; open edges highlighted.
     let mut overlays = Vec::new();
+    // Slices: index in `overlays`, id, plane, range; turned into scene indices below.
+    let mut pending_slices: Vec<(usize, String, foamcraft_core::project::PlaneSpec, [f32; 2])> =
+        Vec::new();
     if let Some(p) = project {
         use foamcraft_core::project::BoundaryRole;
         use foamcraft_geometry::caps::{cap_meshes, cap_views, open_loops};
@@ -264,6 +394,12 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
                 color,
             );
             mesh.opacity = 0.5;
+            if let Some(m) = scene_models
+                .iter_mut()
+                .find(|m| key.starts_with(&format!("{}:", m.id)))
+            {
+                m.meshes.push(meshes.len());
+            }
             meshes.push(mesh);
             hit_meshes.push((key, cap));
         }
@@ -284,9 +420,33 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
                 false,
             ));
         }
-        // Slices and isosurfaces of the result.
-        overlays.extend(crate::view::flow_meshes(p));
-        overlays.extend(crate::particles::streamline_meshes(p));
+        // Slices (pickable) and isosurfaces of the result, cut open when asked.
+        let view = &p.manifest.view;
+        for part in crate::view::flow_parts(p) {
+            let mut mesh = part.mesh;
+            match part.slice {
+                Some((id, plane, range)) => {
+                    keys.push(format!("slice:{id}"));
+                    let pick = keys.len() as u32;
+                    for v in &mut mesh.vertices {
+                        v.pick = pick;
+                    }
+                    pending_slices.push((overlays.len(), id, plane, range));
+                }
+                None => {
+                    if let (true, Some(c)) = (view.clips("isosurfaces"), view.clip.as_ref()) {
+                        crate::view::clip(&mut mesh, c);
+                    }
+                }
+            }
+            overlays.push(mesh);
+        }
+        for mut mesh in crate::particles::streamline_meshes(p) {
+            if let (true, Some(c)) = (view.clips("streamlines"), view.clip.as_ref()) {
+                crate::view::clip_lines(&mut mesh, c);
+            }
+            overlays.push(mesh);
+        }
         let loops: Vec<Vec<[f32; 3]>> = open_loops(p)
             .iter()
             .map(|l| l.iter().map(|x| x.map(|c| c as f32)).collect())
@@ -309,8 +469,47 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
         background: scene.background,
     }
     .bounding_sphere();
+    // Sources of air: a disc with an arrow each, pickable as `jet:N` and movable with handles.
+    let mut jet_models = Vec::new();
+    if let Some(p) = project {
+        for (i, j) in p.manifest.jets.iter().enumerate() {
+            keys.push(format!("jet:{}", i + 1));
+            let pick = keys.len() as u32;
+            let d = foamcraft_sim::jets::diameter(j) as f32;
+            let c = Vec3::from(j.center.map(|x| x as f32));
+            let dir = Vec3::from(j.direction.map(|x| x as f32));
+            jet_models.push((
+                overlays.len(),
+                format!("jet:{}", i + 1),
+                c,
+                (d * 2.0).max(1e-4),
+            ));
+            overlays.push(foamcraft_render::handles::jet_marker(c, dir, d, pick));
+        }
+    }
+    let overlay_base = scene.meshes.len();
+    for (i, id, c, r) in jet_models {
+        scene_models.push(SceneModel {
+            id,
+            meshes: vec![overlay_base + i],
+            center: c.into(),
+            radius: r,
+        });
+    }
+    let slices = pending_slices
+        .into_iter()
+        .map(|(i, id, plane, range)| SceneSlice {
+            id,
+            mesh: overlay_base + i,
+            origin: plane.origin.map(|x| x as f32),
+            normal: plane.normal.map(|x| x as f32),
+            range,
+        })
+        .collect();
     scene.meshes.extend(overlays);
     scene.meshes.extend(axes((focus.1 * 1.6).max(1e-3)));
+    let mut wind = None;
+    let mut tunnel_meshes = Vec::new();
     // Wind tunnel around the models.
     if let Some(foamcraft_core::project::Scenario::WindTunnel(w)) =
         project.and_then(|p| p.manifest.scenario.as_ref())
@@ -353,17 +552,30 @@ pub fn project_scene(project: Option<&foamcraft_core::project::Project>) -> Proj
         }
         let ground = !matches!(w.ground, foamcraft_core::project::Ground::None);
         let t = foamcraft_sim::tunnel_box(min, max, w.direction_deg, w.ground);
+        wind = Some(SceneWind {
+            center: focus.0.into(),
+            radius: focus.1,
+            direction_deg: w.direction_deg as f32,
+        });
+        let first = scene.meshes.len();
         scene.meshes.extend(foamcraft_render::scene::tunnel(
             t.center,
             [t.length, t.width, t.height],
             t.yaw_deg,
             ground,
         ));
+        tunnel_meshes = (first..scene.meshes.len()).collect();
     }
     ProjectScene {
         scene,
         keys,
         focus: Some(focus),
         hit_meshes,
+        models: scene_models,
+        wind,
+        tunnel_meshes,
+        slices,
+        flow: project.and_then(crate::surface_flow::geometry),
+        ribbons: project.and_then(crate::particles::ribbon_geometry),
     }
 }

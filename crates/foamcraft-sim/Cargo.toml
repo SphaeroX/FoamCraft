@@ -33,6 +33,30 @@ glam = "0.34.3"
 serde_json = "1.0.154"
 
 [[test]]
+name = "distance"
+path = "../../tests/sim/distance.rs"
+
+[[test]]
+name = "ride"
+path = "../../tests/sim/ride.rs"
+
+[[test]]
+name = "surface_flow"
+path = "../../tests/sim/surface_flow.rs"
+
+[[test]]
+name = "heavy_particles"
+path = "../../tests/sim/heavy_particles.rs"
+
+[[test]]
+name = "ribbons"
+path = "../../tests/sim/ribbons.rs"
+
+[[test]]
+name = "jets"
+path = "../../tests/sim/jets.rs"
+
+[[test]]
 name = "scenario_commands"
 path = "../../tests/sim/commands.rs"
 

@@ -5,7 +5,13 @@ import { useEffect, useState } from "react";
 import { errorMessage, isApiError, type Api } from "../api";
 import { useTranslation } from "../i18n/i18n";
 import { FlowViewSection } from "./FlowViewSection";
+import { PresetGallery } from "./PresetGallery";
+import { CompareManySection } from "./CompareManySection";
+import { ExpertOnly } from "../mode";
 import { ParticlesSection } from "./ParticlesSection";
+import { RideSection } from "./RideSection";
+import { SurfaceFlowSection } from "./SurfaceFlowSection";
+import { HeavySection } from "./HeavySection";
 
 interface FieldInfo {
   name: string;
@@ -33,9 +39,28 @@ interface Props {
   api: Api;
   /** Value under the mouse, found by the app. */
   probe: ProbeValue | null;
+  /** Slice chosen in the list or in the 3D view. */
+  selectedSlice?: string | null;
+  onSelectSlice?: (id: string | null) => void;
+  /** Turns the camera to a standard view (ready-made views and the demo). */
+  onView?: (name: string) => void;
+  /** The next click in the view starts a ride from there. */
+  onRidePick?: () => void;
+  ridePicking?: boolean;
+  /** Changes with every project change. */
+  revision?: number;
 }
 
-export function ResultsPanel({ api, probe }: Props) {
+export function ResultsPanel({
+  api,
+  probe,
+  selectedSlice,
+  onSelectSlice,
+  onView,
+  onRidePick,
+  ridePicking,
+  revision,
+}: Props) {
   const { t, language } = useTranslation();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [field, setField] = useState("p");
@@ -86,6 +111,10 @@ export function ResultsPanel({ api, probe }: Props) {
       <h2>{t("results.title")}</h2>
       {meta && (
         <>
+          <PresetGallery api={api} onView={onView ?? (() => {})} />
+          <SurfaceFlowSection api={api} revision={revision} />
+          <HeavySection api={api} revision={revision} />
+          {onRidePick && <RideSection api={api} onPick={onRidePick} picking={ridePicking} />}
           <label className="unit-field">
             <span>{t("results.surfaceField")}</span>
             <select
@@ -111,13 +140,24 @@ export function ResultsPanel({ api, probe }: Props) {
           >
             <div
               className="gradient"
-              style={{ background: `linear-gradient(to right, ${meta.colormap.join(", ")})` }}
+              style={{
+                background:
+                  field === "attached"
+                    ? "linear-gradient(to right, #4dbd75, #db5445)"
+                    : `linear-gradient(to right, ${meta.colormap.join(", ")})`,
+              }}
             />
-            <figcaption>
-              <span>{fmt(lo)}</span>
-              <span>{info?.unit}</span>
-              <span>{fmt(hi)}</span>
-            </figcaption>
+            {field === "attached" ? (
+              <figcaption>
+                <span>{t("surfaceFlow.attachedLegend")}</span>
+              </figcaption>
+            ) : (
+              <figcaption>
+                <span>{fmt(lo)}</span>
+                <span>{info?.unit}</span>
+                <span>{fmt(hi)}</span>
+              </figcaption>
+            )}
           </figure>
           <label className="check">
             <input
@@ -161,8 +201,16 @@ export function ResultsPanel({ api, probe }: Props) {
               ? `${label(probe.field)}: ${fmt(probe.value)} ${probe.unit}`
               : t("results.hover")}
           </p>
-          <ParticlesSection api={api} levels={meta.levels} />
-          <FlowViewSection api={api} levels={meta.levels} />
+          <ExpertOnly>
+            <ParticlesSection api={api} levels={meta.levels} />
+            <FlowViewSection
+              api={api}
+              levels={meta.levels}
+              selected={selectedSlice}
+              onSelect={onSelectSlice}
+            />
+          </ExpertOnly>
+          <CompareManySection api={api} revision={0} />
           <p className="muted small">{t("results.gridNote")}</p>
         </>
       )}

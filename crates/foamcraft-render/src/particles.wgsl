@@ -20,6 +20,8 @@ struct Params {
     constant: vec4<f32>,
     // cos and sin of the yaw: grids are in the flow frame, the drawing in the world
     rot: vec4<f32>,
+    // clip plane in the world: normal xyz, w = -normal·origin; a zero normal means no clip
+    clip: vec4<f32>,
 };
 
 struct Level {
@@ -146,6 +148,18 @@ fn write(i: u32, s: vec4<f32>, u: vec3<f32>) {
         c = colormap((pressure_at(head) - params.range_lo) / span);
     }
     var ends = array<vec3<f32>, 2>(tail, head);
+    // Cut open: a particle beyond the clip plane is drawn as a point of zero length (it keeps
+    // moving, so the smoke does not break off behind the plane).
+    if (any(params.clip.xyz != vec3<f32>(0.0))) {
+        let hw = vec3<f32>(
+            params.rot.x * head.x - params.rot.y * head.y,
+            params.rot.y * head.x + params.rot.x * head.y,
+            head.z,
+        );
+        if (dot(params.clip.xyz, hw) + params.clip.w > 0.0) {
+            ends[0] = head;
+        }
+    }
     for (var e = 0u; e < 2u; e = e + 1u) {
         let base = (2u * i + e) * 7u;
         let f = ends[e];

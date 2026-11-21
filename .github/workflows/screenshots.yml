@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Renders the README pictures from the sample projects and commits them when they changed:
+# builds the CLI and the OpenFOAM runtime image, runs both samples and exports the views
+# (tools/screenshots/make-screenshots.sh). The GPU is Mesa's software Vulkan driver (lavapipe).
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/screenshots/**"
+      - "Roadmap/**"
+      - "**/*.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Software Vulkan driver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: screenshots-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+
+      - name: Build the CLI
+        run: cargo build --release --locked -p foamcraft-cli
+
+      - name: Build the runtime image
+        run: target/release/foamcraft runtime build
+
+      - name: Render the pictures
+        run: bash tools/screenshots/make-screenshots.sh target/release/foamcraft docs/screenshots
+
+      - name: Commit changed pictures
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "Pictures unchanged."
+          else
+            git commit -m "docs: update screenshots [skip ci]"
+            git push
+          fi

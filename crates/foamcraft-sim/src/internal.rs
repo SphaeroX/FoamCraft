@@ -221,7 +221,8 @@ pub fn evaluate(project: &Project, flow: &InternalFlow) -> Result<InternalFlowIn
     })
 }
 
-/// Values of `surfaceFieldValue` objects (`log true`) per iteration: object name → value.
+/// Values of `surfaceFieldValue` and `volFieldValue` objects (`log true`) per iteration: object
+/// name → value.
 #[derive(Debug, Default)]
 pub struct FieldValueLog {
     /// Objects per iteration; a sample is complete when all have reported.
@@ -249,7 +250,9 @@ impl FieldValueLog {
             self.current.clear();
             return false;
         }
-        if let Some(rest) = t.strip_prefix("surfaceFieldValue ")
+        if let Some(rest) = t
+            .strip_prefix("surfaceFieldValue ")
+            .or_else(|| t.strip_prefix("volFieldValue "))
             && let Some(name) = rest.strip_suffix(" write:")
         {
             self.pending = Some(name.trim().to_string());

@@ -266,3 +266,58 @@ fn a_run_counts_as_done_only_when_its_result_is_stored() {
     }
     assert!(root.join("results").join(format!("{job}.json")).is_file());
 }
+
+/// Solver log of a jet beside the model: no force on the model from the first iteration, while
+/// the mean speed in the domain overshoots and settles at 0.12 m/s only after some hundred
+/// iterations (shape of the free jet validation run).
+fn jet_log(n: usize) -> String {
+    let mut log = String::new();
+    for i in 1..=n {
+        let x = i as f64;
+        let speed = 0.12 * (1.0 - (-x / 60.0).exp()) + 0.05 * (-((x - 125.0) / 40.0).powi(2)).exp();
+        let _ = write!(
+            log,
+            "Time = {i}\n\nGAMG:  Solving for p, Initial residual = 0.01, Final residual = 0.001, No Iterations 2\n\
+             ExecutionTime = {i}.0 s  ClockTime = {i} s\n\nvolFieldValue jetFlow write:\n    volAverage(region0) of jetSpeed = {speed}\n\n\
+             forceCoeffs forces write:\n    Coefficient\tTotal\tPressure\tViscous\tInternal\n\
+             \x20   Cd:\t-3e-07\t-3e-07\t0\t0\n    Cl:\t1e-07\t1e-07\t0\t0\n    Cs:\t0\t0\t0\t0\n\n    writing force and moment coefficient files.\n\n",
+        );
+    }
+    log.push_str("End\n");
+    log
+}
+
+#[test]
+fn a_run_with_sources_goes_on_until_the_flow_has_settled() {
+    let (reg, mut s, root) = project("jets", &jet_log(900));
+    // A source 30 m beside the 20 m cube, blowing past it.
+    reg.execute(
+        &mut s,
+        "scenario.set_jets",
+        json!({"jets": [{"shape": "circle", "center": [-60.0, 50.0, 10.0],
+                         "direction": [1.0, 0.0, 0.0], "size": [2.0, 2.0], "speed_m_s": 10.0}]}),
+    )
+    .unwrap();
+    let out = reg
+        .execute(&mut s, "run.start", json!({"wait": true, "cores": 1}))
+        .unwrap();
+    let result = &out["result"];
+    assert_eq!(result["reason"], "stable", "{result}");
+    // Window 60: the forces alone would end the run at iteration 120.
+    let decided = result["decided_at_iteration"].as_u64().unwrap();
+    assert!((250..500).contains(&decided), "{decided}");
+    assert!(result["coefficients"]["cd"].as_f64().unwrap().abs() < 1e-6);
+    // The case of the run prints the mean speed.
+    let job = result["job_id"].as_str().unwrap();
+    let control =
+        std::fs::read_to_string(root.join("runs").join(job).join("case/system/controlDict"))
+            .unwrap();
+    assert!(
+        control.contains("jetFlow { type volFieldValue;"),
+        "{control}"
+    );
+    // The stored result gives the same verdict.
+    let stored = reg.execute(&mut s, "run.result", json!({})).unwrap();
+    assert_eq!(stored["reason"], "stable");
+    assert_eq!(stored["decided_at_iteration"], decided);
+}

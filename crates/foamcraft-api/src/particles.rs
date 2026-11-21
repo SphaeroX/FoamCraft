@@ -20,6 +20,8 @@ pub const SEEDS: u32 = 4096;
 pub const CROSSING_SECONDS: f64 = 4.0;
 /// Frames per second of the animation.
 pub const FPS: f64 = 60.0;
+/// Brightness of one light trail by default: many overlapping trails add up (Task_35).
+pub const DEFAULT_TRAIL_EXPOSURE: f64 = 0.4;
 
 /// Everything the app needs to animate the particles.
 pub struct ParticleSetup {
@@ -29,6 +31,64 @@ pub struct ParticleSetup {
     /// Flow time per animation frame, s.
     pub dt: f32,
     pub paused: bool,
+    /// Clip plane (origin, normal; world) when the view cuts the particles open.
+    pub clip: Option<([f32; 3], [f32; 3])>,
+    /// Heavy particles: their properties and the distance field of the grids (Task_34).
+    pub heavy: Option<(
+        foamcraft_render::particles::HeavySettings,
+        std::sync::Arc<Vec<f32>>,
+    )>,
+    /// Light trails (Task_35): ring length, writing interval and look.
+    pub trails: Option<foamcraft_render::trails::TrailSettings>,
+    /// The memory limit made the trails shorter than asked ("trails shortened").
+    pub trails_shortened: bool,
+    /// Long exposure in the view: half-life of the light, screen seconds.
+    pub long_exposure: Option<f32>,
+}
+
+/// Flow time of a comet tail: 6 % of the time the fastest flow needs to cross the finest grid.
+fn comet_tail(grids: &[Grid]) -> f64 {
+    let Some(fine) = finest(grids) else {
+        return 0.0;
+    };
+    let length = (0..3)
+        .map(|k| fine.spec.max[k] - fine.spec.min[k])
+        .fold(0.0, f64::max);
+    let (_, umax) = max_of(grids, "U_mag");
+    0.06 * CROSSING_SECONDS * (length / umax.max(1e-9) / CROSSING_SECONDS)
+}
+
+/// Light trails from the particle spec: `trail_length` (flow seconds, default three comet tails,
+/// at most ten) spread over K points within the memory limit.
+fn trail_settings(
+    spec: &ParticleSpec,
+    color: ParticleColor,
+    range: (f64, f64),
+    tail: f64,
+    dt: f32,
+) -> (foamcraft_render::trails::TrailSettings, bool) {
+    use foamcraft_render::trails::{DEFAULT_K, points_per_trail};
+    let k = points_per_trail(spec.count, DEFAULT_K);
+    let length = spec
+        .trail_length
+        .unwrap_or(3.0 * tail)
+        .clamp(tail, 10.0 * tail);
+    let every = (length / (f64::from(dt).max(1e-12) * f64::from(k - 1)))
+        .round()
+        .clamp(1.0, 10_000.0) as u32;
+    (
+        foamcraft_render::trails::TrailSettings {
+            k,
+            every,
+            width_px: spec.width.unwrap_or(2.5) as f32,
+            exposure: spec.exposure.unwrap_or(DEFAULT_TRAIL_EXPOSURE) as f32,
+            glow: spec.glow.unwrap_or(true),
+            by_speed: color == ParticleColor::Speed,
+            range: [range.0 as f32, range.1 as f32],
+            color: [1.0, 0.86, 0.62],
+        },
+        k < DEFAULT_K,
+    )
 }
 
 fn finest(grids: &[Grid]) -> Option<&Grid> {
@@ -52,7 +112,7 @@ fn max_of(grids: &[Grid], field: &str) -> (f64, f64) {
 }
 
 /// Start points (flow frame) of the region.
-fn seeds(
+pub(crate) fn seeds(
     project: &Project,
     region: &SeedRegionSpec,
     grids: &[Grid],
@@ -90,6 +150,18 @@ fn seeds(
                 out.extend(seed_points(&r, per, seed.wrapping_add(n as u32)));
             }
             out
+        }
+        "rake" => {
+            // Nozzles along u, each with a small scatter disc of radius |v|.
+            let radius = DVec3::from(region.v).length() as f32;
+            foamcraft_sim::particles::rake_points(
+                f(region.origin),
+                f(region.u),
+                radius,
+                crate::presets::RAKE_NOZZLES,
+                SEEDS,
+                seed,
+            )
         }
         "surface" => {
             let Some(job) = project.manifest.view.result_job.clone() else {
@@ -159,10 +231,58 @@ pub fn setup(project: &Project) -> Option<ParticleSetup> {
         ("smoke", _) => (ParticleColor::Constant, (0.0, 1.0)),
         (_, "age") => (ParticleColor::Age, (0.0, 1.0)),
         (_, "pressure") => (ParticleColor::Pressure, max_of(&grids, "p")),
+        (_, "slip") => (ParticleColor::Slip, (0.0, 0.25 * umax)),
         _ => (ParticleColor::Speed, (0.0, umax)),
     };
     let smoke = spec.style == "smoke";
+    let dt = (time_scale * spec.speed / FPS) as f32;
+    let heavy = spec.inertia.as_ref().map(|i| {
+        let job = crate::view::job_of(project).unwrap_or_default();
+        let m = crate::heavy::medium_of(project, &job);
+        let p = crate::heavy::particle_of(i);
+        let g = foamcraft_sim::heavy::gravity_accel(&p, &m);
+        let h = fine.spec.step().into_iter().fold(f64::MAX, f64::min);
+        let (restitution, friction) = match p.impact {
+            foamcraft_sim::heavy::Impact::Bounce {
+                restitution,
+                friction,
+            } => (restitution, friction),
+            foamcraft_sim::heavy::Impact::Stick => (0.0, 0.0),
+        };
+        (
+            foamcraft_render::particles::HeavySettings {
+                tau_p: foamcraft_sim::heavy::tau_p(&p, &m) as f32,
+                diameter: p.diameter as f32,
+                nu: m.kinematic_viscosity as f32,
+                stick: matches!(p.impact, foamcraft_sim::heavy::Impact::Stick),
+                gravity: [g.x as f32, g.y as f32, g.z as f32],
+                restitution: restitution as f32,
+                friction: friction as f32,
+                // 1.5 s on screen at 60 frames per second.
+                stick_time: dt * 90.0,
+                mark: (0.6 * h) as f32,
+                settle: {
+                    let v = foamcraft_sim::heavy::terminal_velocity(&p, &m);
+                    [v.x as f32, v.y as f32, v.z as f32]
+                },
+            },
+            crate::heavy::distance_field(project, &grids, yaw),
+        )
+    });
+    let tail = comet_tail(&grids);
+    let (trails, trails_shortened) = if spec.style == "trails" {
+        let (t, short) = trail_settings(&spec, color, range, tail, dt);
+        (Some(t), short)
+    } else {
+        (None, false)
+    };
     Some(ParticleSetup {
+        trails,
+        trails_shortened,
+        long_exposure: spec
+            .long_exposure
+            .filter(|_| spec.style == "trails")
+            .map(|h| h as f32),
         seeds: seeds(project, &spec.region, &grids, yaw, spec.seed),
         levels,
         settings: ParticleSettings {
@@ -176,9 +296,226 @@ pub fn setup(project: &Project) -> Option<ParticleSetup> {
             opacity: if smoke { 0.5 } else { 1.0 },
             yaw_deg: yaw as f32,
         },
-        dt: (time_scale * spec.speed / FPS) as f32,
+        dt,
         paused: spec.paused,
+        clip: project
+            .manifest
+            .view
+            .clip
+            .as_ref()
+            .filter(|_| project.manifest.view.clips("particles"))
+            .map(|c| (c.origin.map(|x| x as f32), c.normal.map(|x| x as f32))),
+        heavy,
     })
+}
+
+/// Trails for a long exposure: those of the view, or for other styles the shortest ring (the
+/// exposure draws only the newest piece of each step).
+pub fn exposure_trails(setup: &ParticleSetup) -> foamcraft_render::trails::TrailSettings {
+    setup
+        .trails
+        .clone()
+        .unwrap_or(foamcraft_render::trails::TrailSettings {
+            k: 2,
+            every: 1,
+            width_px: 2.0,
+            exposure: 1.0,
+            glow: true,
+            by_speed: setup.settings.color == ParticleColor::Speed,
+            range: setup.settings.range,
+            color: [1.0, 0.86, 0.62],
+        })
+}
+
+/// Uploads the particles of a setup (massless or heavy).
+pub fn create_gpu(
+    renderer: &foamcraft_render::Renderer,
+    setup: &ParticleSetup,
+) -> foamcraft_render::particles::GpuParticles {
+    let mut p = match &setup.heavy {
+        Some((h, dist)) => {
+            renderer.create_heavy_particles(&setup.levels, &setup.seeds, &setup.settings, h, dist)
+        }
+        None => match &setup.trails {
+            Some(t) => {
+                let mut p = renderer.create_trail_particles(
+                    &setup.levels,
+                    &setup.seeds,
+                    &setup.settings,
+                    t,
+                );
+                renderer.set_trail_fade(&mut p, setup.long_exposure);
+                // One life ahead: the trails start spread over their way, not as one bright
+                // sheet at the seed area.
+                let warm = (setup.settings.max_age / setup.dt.max(1e-12))
+                    .ceil()
+                    .min(3000.0) as u32;
+                renderer.step_particles(&mut p, setup.dt, warm);
+                p
+            }
+            None => renderer.create_particles(&setup.levels, &setup.seeds, &setup.settings),
+        },
+    };
+    renderer.set_particle_clip(&mut p, setup.clip);
+    p
+}
+
+/// Ribbons and tubes of the view (Task_35): streamlines from the start region (at most 200),
+/// as triangles with time marks that run downstream and a colour by speed or by swirl.
+pub fn ribbon_geometry(project: &Project) -> Option<foamcraft_render::flow::FlowGeometry> {
+    use foamcraft_render::flow::{FlowGeometry, FlowVertex};
+    use foamcraft_sim::ribbons::{frames, ribbon, tube, vorticity};
+    let spec = project.manifest.view.particles.clone()?;
+    if !["ribbons", "tubes"].contains(&spec.style.as_str()) {
+        return None;
+    }
+    let (grids, yaw) = crate::view::load_grids(project).ok()?;
+    let levels: Vec<VelocityLevel> = grids
+        .iter()
+        .filter_map(|g| VelocityLevel::from_grid(g).ok())
+        .collect();
+    let fine = finest(&grids)?;
+    let h = fine.spec.step().into_iter().fold(f64::MAX, f64::min);
+    let length = (0..3)
+        .map(|k| fine.spec.max[k] - fine.spec.min[k])
+        .fold(0.0, f64::max);
+    let (_, umax) = max_of(&grids, "U_mag");
+    let model = crate::ride::load_flow(project).ok();
+    let (l, u_ref) = model
+        .as_ref()
+        .map_or((length / 4.0, umax), |rf| (rf.flow.length, rf.flow.u_ref));
+    let u_at = |p: DVec3| match foamcraft_sim::particles::sample(
+        &levels,
+        [p.x as f32, p.y as f32, p.z as f32],
+    ) {
+        foamcraft_sim::particles::Sample::Velocity(u) => Some(DVec3::new(
+            f64::from(u[0]),
+            f64::from(u[1]),
+            f64::from(u[2]),
+        )),
+        _ => None,
+    };
+    // Flow seconds per screen second, as the particle animation.
+    let time_scale = length / umax.max(1e-9) / CROSSING_SECONDS;
+    let dt = (length / umax.max(1e-9) / 400.0) as f32;
+    let starts = seeds(project, &spec.region, &grids, yaw, spec.seed);
+    let count = (spec.count as usize).clamp(1, 200);
+    // Swirl colour: hide weak vorticity (between the 50th and 90th percentile of |ω|).
+    let mut mags: Vec<f64> = (0..fine.spec.len())
+        .step_by(7)
+        .filter(|i| !fine.mask[*i])
+        .map(|i| {
+            let d = fine.spec.dims;
+            let k = (i / (d[0] * d[1]) as usize) as u32;
+            let j = ((i / d[0] as usize) % d[1] as usize) as u32;
+            let ii = (i % d[0] as usize) as u32;
+            vorticity(&u_at, DVec3::from(fine.spec.point(ii, j, k)), h).length()
+        })
+        .collect();
+    mags.sort_by(f64::total_cmp);
+    let pct = |q: f64| {
+        mags.get(((mags.len() as f64 * q) as usize).min(mags.len().saturating_sub(1)))
+            .copied()
+            .unwrap_or(0.0)
+    };
+    let (w50, w90) = (pct(0.5), pct(0.9).max(pct(0.5) + 1e-12));
+    let to_world = DMat3::from_rotation_z(yaw.to_radians());
+    let f3 = |v: DVec3| {
+        let w = to_world * v;
+        [w.x as f32, w.y as f32, w.z as f32]
+    };
+    let width = spec.width.unwrap_or(0.012).clamp(0.002, 0.05) * l;
+    let mark = (0.05 * l / u_ref.max(1e-9) / time_scale) as f32;
+    let paused = spec.paused;
+    let mut geo = FlowGeometry::default();
+    for s in starts.iter().take(count) {
+        let line = streamline(&levels, *s, dt, 2000);
+        if line.len() < 3 {
+            continue;
+        }
+        let pts: Vec<DVec3> = line.iter().map(|p| DVec3::from(p.map(f64::from))).collect();
+        let taus: Vec<f64> = (0..pts.len()).map(|i| i as f64 * f64::from(dt)).collect();
+        let speeds: Vec<f64> = pts
+            .iter()
+            .map(|p| u_at(*p).map_or(0.0, |u| u.length()))
+            .collect();
+        let omega: Vec<DVec3> = pts.iter().map(|p| vorticity(&u_at, *p, h)).collect();
+        let fr = frames(&pts, &taus, &speeds, &omega);
+        let color = |f: &foamcraft_sim::ribbons::Frame| -> [f32; 3] {
+            if spec.color_by == "swirl" {
+                let x = ((f.vorticity - w50) / (w90 - w50)).clamp(0.0, 1.0);
+                let weight = x * x * (3.0 - 2.0 * x);
+                let s = (f.swirl / (f.vorticity + 1e-12)) * weight;
+                // Blue for left-handed, orange for right-handed: told apart with common colour
+                // blindness.
+                let (neutral, right, left) =
+                    ([0.78, 0.78, 0.8], [0.96, 0.58, 0.12], [0.2, 0.5, 0.95]);
+                let side = if s >= 0.0 { right } else { left };
+                let a = s.abs() as f32;
+                [0, 1, 2].map(|k| neutral[k] + (side[k] - neutral[k]) * a)
+            } else {
+                foamcraft_sim::results::colormap(f.speed / umax.max(1e-9))
+            }
+        };
+        let p = |f: &foamcraft_sim::ribbons::Frame| {
+            [
+                (f.tau / time_scale) as f32,
+                0.0,
+                if paused { 0.0 } else { mark },
+                0.0,
+            ]
+        };
+        let base = geo.ribbons.len() as u32;
+        if spec.style == "ribbons" {
+            for (f, [a, b]) in fr.iter().zip(ribbon(&fr, width)) {
+                for q in [a, b] {
+                    geo.ribbons.push(FlowVertex {
+                        pos: f3(q),
+                        color: color(f),
+                        lateral: f3(f.n),
+                        p: p(f),
+                        q: 0.0,
+                    });
+                }
+            }
+            for i in 0..fr.len() as u32 - 1 {
+                let (a, b, c, d) = (
+                    base + 2 * i,
+                    base + 2 * i + 1,
+                    base + 2 * i + 2,
+                    base + 2 * i + 3,
+                );
+                geo.ribbon_indices.extend([a, b, d, a, d, c]);
+            }
+        } else {
+            let k = 8u32;
+            let rings = tube(&fr, u_ref, 0.5 * width, k as usize);
+            for (f, ring) in fr.iter().zip(&rings) {
+                for (j, (q, n)) in ring.iter().enumerate() {
+                    // A dark line along N shows the twist.
+                    let c = color(f);
+                    let c = if j == 0 { c.map(|x| x * 0.35) } else { c };
+                    geo.ribbons.push(FlowVertex {
+                        pos: f3(*q),
+                        color: c,
+                        lateral: f3(*n),
+                        p: p(f),
+                        q: 0.0,
+                    });
+                }
+            }
+            for i in 0..fr.len() as u32 - 1 {
+                for j in 0..k {
+                    let a = base + i * k + j;
+                    let b = base + i * k + (j + 1) % k;
+                    let c = a + k;
+                    let d = b + k;
+                    geo.ribbon_indices.extend([a, b, d, a, d, c]);
+                }
+            }
+        }
+    }
+    (!geo.ribbons.is_empty()).then_some(geo)
 }
 
 /// Streamlines of the view as one line mesh coloured by speed (world coordinates).
@@ -261,6 +598,39 @@ pub struct ParticleParams {
     pub paused: Option<bool>,
     #[serde(default)]
     pub region: Option<SeedRegionSpec>,
+    /// Heavy particles (material or own values); null switches back to massless particles.
+    #[serde(default, deserialize_with = "present")]
+    #[schemars(with = "Option<crate::heavy::InertiaParams>")]
+    pub inertia: Option<Option<crate::heavy::InertiaParams>>,
+    /// Light trails: length of a trail in flow seconds (limited to 1 to 10 comet tails).
+    #[serde(default)]
+    pub trail_length: Option<f64>,
+    /// Light trails: length in comet tails (1 to 10); sets `trail_length`.
+    #[serde(default)]
+    pub trail_factor: Option<f64>,
+    /// Light trails: width at the head, 1.5 to 4 pixels; ribbons and tubes: width as a share of
+    /// the model size (0.002 to 0.05).
+    #[serde(default)]
+    pub width: Option<f64>,
+    /// Light trails: soft glow around bright trails.
+    #[serde(default)]
+    pub glow: Option<bool>,
+    /// Light trails: brightness, 0.1 to 10.
+    #[serde(default)]
+    pub exposure: Option<f64>,
+    /// Light trails in the view: long exposure with this half-life, 0.5 to 8 s; null is off.
+    #[serde(default, deserialize_with = "present")]
+    #[schemars(with = "Option<f64>")]
+    pub long_exposure: Option<Option<f64>>,
+}
+
+/// A field that may be given as null: absent → None, null → Some(None).
+fn present<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    Option::<T>::deserialize(d).map(Some)
 }
 
 /// Upstream area of the finest grid (wind tunnel smoke), in the world.
@@ -288,7 +658,7 @@ fn set_particles(
     p: ParticleParams,
 ) -> Result<foamcraft_core::project::ViewSettings, FoamError> {
     let project = s.project()?;
-    crate::view::load_grids(project)?;
+    let (grids, _) = crate::view::load_grids(project)?;
     let mut spec = match p.preset.as_deref() {
         Some("wind_tunnel_smoke") => ParticleSpec {
             style: "smoke".into(),
@@ -298,6 +668,12 @@ fn set_particles(
             speed: 1.0,
             paused: false,
             region: upstream_area(project)?,
+            inertia: None,
+            trail_length: None,
+            width: None,
+            glow: None,
+            exposure: None,
+            long_exposure: None,
         },
         Some("internal_flow") => ParticleSpec {
             style: "comets".into(),
@@ -312,6 +688,12 @@ fn set_particles(
                 u: [0.0; 3],
                 v: [0.0; 3],
             },
+            inertia: None,
+            trail_length: None,
+            width: None,
+            glow: None,
+            exposure: None,
+            long_exposure: None,
         },
         Some(other) => return Err(FoamError::new("view.unknown_preset", other.to_string())),
         None => match project.manifest.view.particles.clone() {
@@ -324,20 +706,39 @@ fn set_particles(
                 speed: 1.0,
                 paused: false,
                 region: upstream_area(project)?,
+                inertia: None,
+                trail_length: None,
+                width: None,
+                glow: None,
+                exposure: None,
+                long_exposure: None,
             },
         },
     };
     if let Some(v) = p.style {
-        if !["comets", "smoke", "streamlines"].contains(&v.as_str()) {
+        if ![
+            "comets",
+            "smoke",
+            "streamlines",
+            "trails",
+            "ribbons",
+            "tubes",
+        ]
+        .contains(&v.as_str())
+        {
             return Err(FoamError::new(
                 "view.invalid_particles",
                 format!("style {v}"),
             ));
         }
+        // Pixels for trails, a share of the model for ribbons: a width does not carry over.
+        if v != spec.style {
+            spec.width = None;
+        }
         spec.style = v;
     }
     if let Some(v) = p.color_by {
-        if !["speed", "pressure", "age"].contains(&v.as_str()) {
+        if !["speed", "pressure", "age", "slip", "swirl"].contains(&v.as_str()) {
             return Err(FoamError::new(
                 "view.invalid_particles",
                 format!("colour {v}"),
@@ -364,13 +765,81 @@ fn set_particles(
         spec.paused = v;
     }
     if let Some(r) = p.region {
-        if !["area", "inlets", "surface"].contains(&r.kind.as_str()) {
+        if !["area", "inlets", "surface", "rake"].contains(&r.kind.as_str()) {
             return Err(FoamError::new(
                 "view.invalid_particles",
                 format!("region {}", r.kind),
             ));
         }
         spec.region = r;
+    }
+    match p.inertia {
+        Some(Some(i)) => {
+            let job = crate::view::job_of(project)?;
+            let medium = crate::heavy::medium_of(project, &job);
+            spec.inertia = Some(crate::heavy::resolve(&i, &medium)?);
+            // Heavy particles are comets: the tail along their own velocity.
+            if spec.style == "streamlines" {
+                spec.style = "comets".into();
+            }
+        }
+        Some(None) => {
+            spec.inertia = None;
+            if spec.color_by == "slip" {
+                spec.color_by = "speed".into();
+            }
+        }
+        None => {}
+    }
+    let bad = |what: &str, v: f64| FoamError::new("view.invalid_particles", format!("{what} {v}"));
+    if let Some(f) = p.trail_factor {
+        if !(1.0..=10.0).contains(&f) {
+            return Err(bad("trail_factor", f));
+        }
+        spec.trail_length = Some(f * comet_tail(&grids));
+    }
+    if let Some(v) = p.trail_length {
+        if !(v.is_finite() && v > 0.0) {
+            return Err(bad("trail_length", v));
+        }
+        spec.trail_length = Some(v);
+    }
+    if let Some(v) = p.width {
+        let ribbon = ["ribbons", "tubes"].contains(&spec.style.as_str());
+        let ok = if ribbon {
+            (0.002..=0.05).contains(&v)
+        } else {
+            (1.5..=4.0).contains(&v)
+        };
+        if !ok {
+            return Err(bad("width", v));
+        }
+        spec.width = Some(v);
+    }
+    if let Some(v) = p.glow {
+        spec.glow = Some(v);
+    }
+    if let Some(v) = p.exposure {
+        if !(0.1..=10.0).contains(&v) {
+            return Err(bad("exposure", v));
+        }
+        spec.exposure = Some(v);
+    }
+    match p.long_exposure {
+        Some(Some(v)) => {
+            if !(0.5..=8.0).contains(&v) {
+                return Err(bad("long_exposure", v));
+            }
+            spec.long_exposure = Some(v);
+        }
+        Some(None) => spec.long_exposure = None,
+        None => {}
+    }
+    if spec.color_by == "slip" && spec.inertia.is_none() {
+        return Err(FoamError::new(
+            "view.invalid_particles",
+            "colour slip needs heavy particles",
+        ));
     }
     project.manifest.view.particles = Some(spec);
     project.save()?;
@@ -391,6 +860,8 @@ pub fn register(r: &mut Registry) {
                 "results.none",
                 "view.unknown_preset",
                 "view.invalid_particles",
+                "particles.too_light",
+                "particles.invalid_material",
             ],
             example: json!({"preset": "wind_tunnel_smoke"}),
         },

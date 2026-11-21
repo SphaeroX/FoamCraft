@@ -31,6 +31,22 @@ foamcraft-geometry = { path = "../foamcraft-geometry" }
 foamcraft-sim = { path = "../foamcraft-sim" }
 
 [[test]]
+name = "heavy_particles"
+path = "../../tests/render/heavy_particles.rs"
+
+[[test]]
+name = "trails"
+path = "../../tests/render/trails.rs"
+
+[[test]]
+name = "flow"
+path = "../../tests/render/flow.rs"
+
+[[test]]
+name = "ride"
+path = "../../tests/render/ride.rs"
+
+[[test]]
 name = "picking"
 path = "../../tests/render/picking.rs"
 
@@ -41,6 +57,10 @@ path = "../../tests/render/particles.rs"
 [[test]]
 name = "split"
 path = "../../tests/render/split.rs"
+
+[[test]]
+name = "handles"
+path = "../../tests/render/handles.rs"
 
 [[test]]
 name = "camera_path"

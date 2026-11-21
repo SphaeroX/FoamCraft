@@ -22,11 +22,12 @@ use foamcraft_sim::internal::{
     evaluate_openings,
 };
 use foamcraft_sim::internal_case::{InternalPlan, write_internal_case};
+use foamcraft_sim::jets::FLOW_OBJECT;
 use foamcraft_sim::mesh::MeshPlan;
 use foamcraft_sim::solve::{
     Assessment, Coefficients, ConvergenceSettings, History, PART_PREFIX, PartResult,
     ReferenceValues, SolverLog, TOTAL_FORCES, Verdict, WindTunnelResult, assess, assess_series,
-    cautious_numerics, forces_from, remaining_seconds, y_plus_hint,
+    assess_with_flow, cautious_numerics, forces_from, remaining_seconds, y_plus_hint,
 };
 use foamcraft_sim::{cell_budget, flow_direction, frontal_area, medium_properties};
 use serde::{Deserialize, Serialize};
@@ -63,6 +64,9 @@ enum Kind {
         regions: Vec<String>,
         reference: ReferenceValues,
         wind: WindTunnel,
+        /// The scenario has sources of air: the run also watches the mean speed in the domain.
+        #[serde(default)]
+        sources: bool,
     },
     InternalFlow {
         flow: InternalFlow,
@@ -164,7 +168,17 @@ pub fn prepare(
     let max_iterations = iterations.unwrap_or(expected * LIMIT_FACTOR).max(1);
     let case = store.dir(&record.id).join("case");
     let kind = match scenario {
-        Scenario::WindTunnel(wind) => {
+        Scenario::WindTunnel(mut wind) => {
+            // With sources of air the reference speed is the fastest jet.
+            if let Some(v) = project
+                .manifest
+                .jets
+                .iter()
+                .map(|j| j.speed_m_s)
+                .reduce(f64::max)
+            {
+                wind.speed_m_s = v;
+            }
             let plan: MeshPlan = read_plan(&store, &mesh)?;
             let prepared = prepare_models(project)?;
             let medium = medium_properties(&wind.medium);
@@ -178,6 +192,13 @@ pub fn prepare(
                 })
                 .collect();
             write_wind_tunnel_case(&case, &plan, &models, &wind, &medium, max_iterations)?;
+            let jets: Vec<foamcraft_sim::jets::JetFlow> = project
+                .manifest
+                .jets
+                .iter()
+                .map(|j| foamcraft_sim::jets::to_flow(j, wind.direction_deg))
+                .collect();
+            foamcraft_sim::jets::apply_jets(&case, &plan, &jets)?;
             let mut regions: Vec<String> = prepared.regions.iter().flatten().cloned().collect();
             regions.sort();
             regions.dedup();
@@ -194,6 +215,7 @@ pub fn prepare(
                 regions,
                 reference,
                 wind,
+                sources: !jets.is_empty(),
             }
         }
         Scenario::InternalFlow(flow) => {
@@ -259,7 +281,7 @@ fn upload_setup(job: &SolveJob, container: &Container) -> Result<(), FoamError> 
     let r = job.runner.as_ref();
     // Old solver output and stage markers of an earlier attempt.
     let clean = "cd /work/case && rm -rf processor* postProcessing stop [1-9]* \
-                 log.decompose log.solve log.reconstruct log.potentialFoam \
+                 system/fvOptions log.decompose log.solve log.reconstruct log.potentialFoam \
                  .exit.decompose .exit.solve .exit.reconstruct";
     let out = r.exec(container, &["sh", "-c", clean], &mut |_| {})?;
     if out.status != 0 {
@@ -312,6 +334,9 @@ struct Watch {
     density: f64,
     pressure_loss: Vec<f64>,
     outflow: Vec<f64>,
+    /// Mean speed in the domain per iteration (wind tunnel with sources of air).
+    flow: Option<FieldValueLog>,
+    speed: Vec<f64>,
     /// Number of values when the run was judged settled.
     decided: Option<usize>,
     diverged: bool,
@@ -333,6 +358,10 @@ impl Watch {
             ),
             Kind::WindTunnel { .. } => (None, Vec::new(), 1.0),
         };
+        let flow = match &setup.kind {
+            Kind::WindTunnel { sources: true, .. } => Some(FieldValueLog::new(1)),
+            _ => None,
+        };
         Self {
             log: SolverLog::default(),
             fields,
@@ -340,6 +369,8 @@ impl Watch {
             density,
             pressure_loss: Vec::new(),
             outflow: Vec::new(),
+            flow,
+            speed: Vec::new(),
             decided: None,
             diverged: false,
             settings: setup.settings.clone(),
@@ -381,6 +412,12 @@ impl Watch {
                 }),
             ));
         }
+        if let Some(flow) = self.flow.as_mut()
+            && flow.feed(line)
+        {
+            let value = flow.samples.last().and_then(|s| s.get(FLOW_OBJECT));
+            self.speed.push(value.copied().unwrap_or(f64::NAN));
+        }
         let new_total = self.log.samples[before..]
             .iter()
             .any(|s| s.object == TOTAL_FORCES);
@@ -389,7 +426,7 @@ impl Watch {
         }
         let history = self.log.history(TOTAL_FORCES);
         if self.decided.is_none() && !self.diverged {
-            self.judge(assess(&history, &self.settings).verdict, history.len());
+            self.judge(self.assess_forces(&history).verdict, history.len());
         }
         let last = history.last().copied().unwrap_or_default();
         Some((
@@ -402,6 +439,16 @@ impl Watch {
                 "max_iterations": self.settings.max_iterations,
             }),
         ))
+    }
+
+    /// Verdict on the coefficients; with sources of air the mean speed must have settled too.
+    fn assess_forces(&self, history: &[Coefficients]) -> Assessment {
+        if self.flow.is_some() {
+            let n = history.len().min(self.speed.len());
+            assess_with_flow(history, &self.speed[..n], &self.settings)
+        } else {
+            assess(history, &self.settings)
+        }
     }
 
     fn judge(&mut self, verdict: Verdict, n: usize) {
@@ -584,6 +631,7 @@ fn evaluate_wind(
         regions,
         reference: rv,
         wind,
+        ..
     } = &job.setup.kind
     else {
         unreachable!("wind tunnel setup")
@@ -591,7 +639,7 @@ fn evaluate_wind(
     let log = &watch.log;
     let history = log.history(TOTAL_FORCES);
     let n = watch.decided.unwrap_or(history.len()).min(history.len());
-    let a = assess(&history[..n], &job.setup.settings);
+    let a = watch.assess_forces(&history[..n]);
     let assessment = Assessment {
         verdict: if watch.decided.is_some() {
             a.verdict
@@ -639,6 +687,10 @@ fn evaluate_wind(
     let mut hints = vec![reason_hint(assessment.verdict)];
     if restarted {
         hints.push("run.restarted".into());
+    }
+    // Sources of air: the coefficients refer to the fastest jet, not to an oncoming flow.
+    if job.case.join("system").join("fvOptions").is_file() {
+        hints.push("run.jet_reference".into());
     }
     if !y_plus.is_empty() {
         let average = y_plus.iter().map(|y| y.average).sum::<f64>() / y_plus.len() as f64;

@@ -1,4 +1,4 @@
-# Task_37: Zeitabhängige Rechnung mit Zeitleiste
+# Task_37: Leistungsmessung und CPU-Tuning
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,62 +7,56 @@
 
 ## Ziel
 
-Der Nutzer rechnet eine Strömung zeitabhängig, spielt den Verlauf in der 3D-Ansicht ab und sieht Kräfte über der Zeit. Damit werden Wirbelablösung und schwankende Lasten sichtbar.
+Es gibt eine wiederholbare Leistungsmessung, und die Standardwerte für Kerne, Zerlegung und Löser sind so eingestellt, dass FoamCraft auf der vorhandenen CPU messbar schneller rechnet als mit den bisherigen Vorgaben.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_19 ist archiviert (Zeitachse, Videoexport); Task_14 bis Task_16 liefern Raster und Partikel.
-- **Relevantes Vorwissen:** Erkenntnisse aus Task_10 (Konvergenz), Task_14 (Speicherbudget der Raster) und Task_16 (Partikel). Zeitabhängige Rechnungen dauern deutlich länger; Speicherbedarf der Zeitreihen ist das Hauptrisiko.
+- **Voraussetzung:** Task_13 ist archiviert (beide Grundfälle mit Validierungstests); Task_14 bis Task_36 liegen davor.
+- **Relevantes Vorwissen:** Referenzrechner: i9-13900HX mit 8 P-Kernen und 16 E-Kernen, 64 GB. Hybrid-CPUs verhalten sich bei OpenFOAM anders als gleichförmige Kerne. Die Validierungstests aus Task_10 und Task_13 dürfen sich nicht verschlechtern.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Rechenart "zeitabhängig" für beide Szenarien mit pimpleFoam, Start aus der stationären Lösung
-- Adaptiver Zeitschritt über eine Ziel-Courant-Zahl; Vorschlag für die Dauer aus Durchströmzeiten
-- Turbulenz: URANS mit k-ω SST; eine detailreichere Variante (DDES) als Option mit Hinweis auf den Netzbedarf
-- Kräfte über der Zeit, Mittelwert, Schwankung, dominante Frequenz
-- Zeitreihen der Volumenraster mit Speicherbudget und Kompression
-- Ansicht: Zeitleiste, Abspielen der Felder, Partikel im zeitabhängigen Feld
-- Videoexport der Zeitreihe
-- Monitor: Fortschritt in Simulationszeit, Courant-Zahl; Abbruch mit nutzbarem Teilergebnis
+- Befehl `foamcraft bench` mit festen Fällen (Außenströmung klein und mittel, Innenströmung): Zeit je Stufe, Durchsatz, Speicher; Ablage und Vergleich mit einer Basislinie
+- Untersuchung: Kernzahl und Kernauswahl (P- und E-Kerne, Bindung), Zerlegungsverfahren, Umnummerierung des Netzes, Löser- und Vorkonditionierer-Einstellungen, Schreibformat, parallele Vernetzung, Ressourcen des Containers
+- Übernahme nur von Maßnahmen, die messbar gewinnen
+- Hardware-abhängige Standardwerte
+- `docs/performance.md` mit Messwerten und Schlussfolgerungen
 
 **Gehört nicht dazu:**
 
-- Freie Wasseroberfläche (Task_41)
-- Bewegte Netze
+- GPU-Löser (Task_38), adaptive Verfeinerung (Task_39)
 
 ## Umsetzungsschritte
 
-1. Tests zuerst für Zeitschritt- und Dauer-Vorschläge und für die Statistik (Mittelwert, Schwankung, Frequenz) an synthetischen Signalen.
-2. Fallvorlagen und Ablauf (stationär, dann zeitabhängig) umsetzen.
-3. Zeitreihen-Cache mit Budget umsetzen.
-4. Zeitleiste und Abspielen im Renderer umsetzen; Partikel an zeitabhängige Felder anpassen.
-5. Monitor und Videoexport erweitern.
-6. Validierungstest schreiben.
+1. Tests zuerst für die Messung (Fake-Runner) und die Kernauswahl-Logik.
+2. `foamcraft bench` umsetzen und eine Basislinie aufzeichnen.
+3. Die Maßnahmen einzeln messen und jeweils Gewinn oder Befund festhalten.
+4. Gewinnbringende Maßnahmen als Standardwerte übernehmen.
+5. Validierungstests erneut laufen lassen.
+6. `docs/performance.md` schreiben.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Statistik an synthetischen Signalen; Vorschläge für Zeitschritt und Dauer.
-- Der Zeitreihen-Cache hält das Budget ein; die Zeitleiste interpoliert korrekt.
-- `validation_`: Zylinderumströmung bei kleiner Reynolds-Zahl, Strouhal-Zahl innerhalb von 10 % des Literaturwerts.
-- Golden Images einzelner Zeitpunkte.
+- Die Messung erfasst Zeiten je Stufe korrekt (Fake-Runner).
+- Kernauswahl für Beispiel-Topologien: 8 P-Kerne plus 16 E-Kerne, 16 gleiche Kerne, 4 Kerne.
+- Die `validation_`-Tests bleiben grün.
+- Ignorierter Regressionstest: Messung gegen die Basislinie mit Toleranz.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] Ein zeitabhängiger Lauf ist für beide Szenarien wählbar und abspielbar
-- [ ] Kräfte über der Zeit mit Mittelwert und Frequenz stehen in den Kennzahlen
-- [ ] Der Validierungstest läuft grün
-- [ ] Ein Video der Zeitreihe lässt sich exportieren
+- [ ] `foamcraft bench` liefert einen wiederholbaren Bericht
+- [ ] `docs/performance.md` nennt je Maßnahme den gemessenen Gewinn oder den Befund "kein Gewinn"
+- [ ] Die Validierungstests laufen mit den neuen Standardwerten grün
 
 ## Offene Fragen / Annahmen
 
-- Annahme: Zeitreihen werden nur für ein Teilgebiet und in begrenzter Zahl gespeichert; die Grenzen werden hier festgelegt.
-- Ob DDES auf einem Laptop sinnvoll nutzbar ist, wird hier gemessen und ehrlich dokumentiert.
+- Kein Gewinn ist ein zulässiges Ergebnis einer Maßnahme, solange es gemessen und dokumentiert ist.
 
 ## Notizen zu diesem Task
 

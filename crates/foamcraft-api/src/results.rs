@@ -202,6 +202,15 @@ fn convert(input: &ExtractInput, raw: &Path) -> Result<CacheMeta, FoamError> {
                 .collect(),
         ),
     ];
+    // The vector itself (world, Pa) for the lines and tufts on the surface (Task_33).
+    for (k, name) in ["wss_x", "wss_y", "wss_z"].iter().enumerate() {
+        fields.push((
+            (*name).to_string(),
+            wss.iter()
+                .map(|v| ((turn * DVec3::from(*v))[k] * rho) as f32)
+                .collect(),
+        ));
+    }
     if let Ok(bytes) = std::fs::read(model.join("scalarField/yPlus")) {
         fields.push((
             "y_plus".to_string(),
@@ -232,6 +241,8 @@ fn convert(input: &ExtractInput, raw: &Path) -> Result<CacheMeta, FoamError> {
     let mut infos: Vec<FieldInfo> = surface
         .fields
         .iter()
+        // The components of the wall shear stress are not fields to colour by.
+        .filter(|(n, _)| !n.starts_with("wss_"))
         .map(|(n, v)| {
             let (min, max) = range(v);
             FieldInfo {
@@ -392,7 +403,22 @@ pub fn load_meta(root: &Path, job: &str) -> Result<CacheMeta, FoamError> {
 }
 
 pub fn load_surface(root: &Path, job: &str) -> Result<Surface, FoamError> {
-    Surface::from_bytes(&read(&cache_dir(root, job).join("surface.bin"))?)
+    let mut s = Surface::from_bytes(&read(&cache_dir(root, job).join("surface.bin"))?)?;
+    // With the wall shear stress vector: the map "attached / reverse flow" (Task_33).
+    if s.field("attached").is_none() {
+        let yaw = load_meta(root, job).map_or(0.0, |m| m.yaw_deg);
+        if let Some(a) = crate::surface_flow::attached_field(&s, yaw) {
+            s.fields.push(("attached".into(), a));
+        }
+    }
+    // The latest impact map of heavy particles (Task_34).
+    if let Some(map) = crate::heavy::latest_map(root, job)
+        && map.impact.len() == s.triangles.len()
+    {
+        s.fields.push(("impact".into(), map.impact));
+        s.fields.push(("impact_speed".into(), map.impact_speed));
+    }
+    Ok(s)
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -426,9 +452,49 @@ pub struct Probe {
     pub distance_m: Option<f64>,
 }
 
+/// The cache meta of a run with the derived surface fields: without the wall shear stress
+/// components, with the map "attached / reverse flow" of a wind tunnel run that has them.
+pub fn meta_with_derived(project: &Project, job: &str) -> Result<CacheMeta, FoamError> {
+    let mut meta = load_meta(&project.root, job)?;
+    meta.fields.retain(|f| !f.name.starts_with("wss_"));
+    let wind = !matches!(
+        project.manifest.scenario,
+        Some(foamcraft_core::project::Scenario::InternalFlow(_))
+    );
+    if wind
+        && !meta.fields.iter().any(|f| f.name == "attached")
+        && load_surface(&project.root, job).is_ok_and(|s| s.field("attached").is_some())
+    {
+        meta.fields.push(FieldInfo {
+            name: "attached".into(),
+            unit: "-".into(),
+            location: "surface".into(),
+            min: -1.0,
+            max: 1.0,
+        });
+    }
+    if let Ok(s) = load_surface(&project.root, job) {
+        for (name, unit) in [("impact", "-"), ("impact_speed", "m/s")] {
+            if let Some(v) = s.field(name)
+                && !meta.fields.iter().any(|f| f.name == name)
+            {
+                let (min, max) = range(v);
+                meta.fields.push(FieldInfo {
+                    name: name.into(),
+                    unit: unit.into(),
+                    location: "surface".into(),
+                    min,
+                    max,
+                });
+            }
+        }
+    }
+    Ok(meta)
+}
+
 fn probe(project: &Project, p: ProbeParams) -> Result<Probe, FoamError> {
     let job = current_job(project, p.job_id.as_deref())?;
-    let meta = load_meta(&project.root, &job)?;
+    let meta = meta_with_derived(project, &job)?;
     let field = p
         .field
         .or_else(|| project.manifest.view.surface_field.clone())
@@ -499,7 +565,8 @@ fn set_surface_field(s: &mut Session, p: SurfaceFieldParams) -> Result<Value, Fo
     let project = s.project()?;
     if let Some(field) = &p.field {
         let job = current_job(project, p.job_id.as_deref())?;
-        let meta = load_meta(&project.root, &job)?;
+        // Derived fields (the attached map, the impact map) count as well.
+        let meta = meta_with_derived(project, &job)?;
         if !meta
             .fields
             .iter()
@@ -538,7 +605,7 @@ pub fn register(r: &mut Registry) {
         |s, p: JobParams| {
             let project = s.project()?;
             let job = current_job(project, p.job_id.as_deref())?;
-            let mut meta = load_meta(&project.root, &job)?;
+            let mut meta = meta_with_derived(project, &job)?;
             meta.colormap = colormap_hex();
             Ok(meta)
         },

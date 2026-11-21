@@ -31,7 +31,7 @@ Ein KI-Agent richtet über MCP ein Projekt ein, startet einen Lauf, wertet ihn a
 **Gehört nicht dazu:**
 
 - HTTP-Transport
-- Report-Werkzeug (kommt mit Task_20), Vorschau-Werkzeug (Task_43)
+- Report-Werkzeug (kommt mit Task_20), Vorschau-Werkzeug (Task_47)
 
 ## Umsetzungsschritte
 
@@ -96,5 +96,5 @@ Vor der Archivierung vom Agenten auszufüllen. Schreibe so, dass ein Agent, der 
 - **Umgesetzt (und Abweichungen vom Plan):** Neue Crate `foamcraft-mcp` (`Server` mit kuratierten Werkzeugen, je ein Befehl mit dessen Parameterschema; dazu `run_wait`, `view_render`, `commands_list`, `command_describe`, `command_run`; `McpHandler` für rmcp; Anweisungen und Leitfaden `foamcraft://guide`), `foamcraft mcp --root … [--app]`, Brücke `foamcraft_api::bridge` (App startet sie in `ApiState`), Dialog "Agenten" in der App mit kopierbarer Konfiguration (`cli_path` liefert den Pfad der CLI neben der App), Anleitung `docs/mcp.md`. Zusätzlich: `run.status` hat `busy`.
 - **Learnings & Stolpersteine:** rmcp 3.x hat eine andere API als ältere Beispiele (`ServerConfig`, `CallToolResponse`, `ContentBlock`) – im Quellcode nachsehen. Werkzeugfehler als `CallToolResult::error` mit `{code, message, fix, detail}` zurückgeben, nicht als Protokollfehler (sonst sieht der Agent die Meldung nicht). Blockierende Befehle im Handler mit `spawn_blocking`. Ein hart beendeter App-Prozess hinterlässt `app-bridge.json`; Clients bekommen dann `bridge.no_app`, weil der Port nicht antwortet.
 - **Wichtige Entscheidungen und ihre Gründe:** Warten macht der MCP-Server (Abfrage von `run.status`), kein Befehl – ein minutenlang blockierender Befehl würde die Sitzung der App sperren. Sandbox über Schlüsselnamen (`path`, `folder`, `file`, `dir`, `source`, `root`, `*_path`, `*_dir`), nur absolute Pfade in den Wurzeln. Kennzahlen in MCP-Antworten nur mit englischem Text (kompakt). Brücke: Loopback-TCP mit Token (plattformgleich, nur Standardbibliothek).
-- **Auswirkungen auf Folge-Tasks:** Task_19 (Export) und Task_20 (Report) tragen ihre Werkzeuge in die Tabelle `CURATED` in `crates/foamcraft-mcp/src/lib.rs` ein (Name mit Unterstrich, Befehl, Beschreibung) und ergänzen `tests/mcp/tools.rs` sowie `docs/mcp.md`; Pfad-Parameter heißen `path` o. ä., damit die Sandbox greift. Task_32 muss `foamcraft.exe` neben die App installieren (der Dialog "Agenten" erwartet sie dort).
+- **Auswirkungen auf Folge-Tasks:** Task_19 (Export) und Task_20 (Report) tragen ihre Werkzeuge in die Tabelle `CURATED` in `crates/foamcraft-mcp/src/lib.rs` ein (Name mit Unterstrich, Befehl, Beschreibung) und ergänzen `tests/mcp/tools.rs` sowie `docs/mcp.md`; Pfad-Parameter heißen `path` o. ä., damit die Sandbox greift. Task_36 muss `foamcraft.exe` neben die App installieren (der Dialog "Agenten" erwartet sie dort).
 - **Hinweise zu Tests und Befehlen:** `cargo test -p foamcraft-mcp`, `cargo test -p foamcraft-api --test bridge`, `cargo test -p foamcraft-cli --test cli_mcp`, echter Lauf `cargo test -p foamcraft-cli --test cli_mcp -- --ignored runtime_` (~4 min). Für eigene Versuche: `target/release/foamcraft.exe mcp --root <Ordner>`.

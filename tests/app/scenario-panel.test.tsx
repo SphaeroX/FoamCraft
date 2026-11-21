@@ -61,8 +61,9 @@ describe("scenario panel", () => {
     const api = fakeApi();
     renderPanel(api);
     fireEvent.change(await screen.findByLabelText("Speed (km/h)"), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/greater than zero/);
+    // Longer than the delay of the automatic apply.
+    await new Promise((r) => setTimeout(r, 600));
     expect(api.call).not.toHaveBeenCalledWith("scenario.set_wind_tunnel", expect.anything());
   });
 
@@ -71,7 +72,6 @@ describe("scenario panel", () => {
     renderPanel(api);
     fireEvent.change(await screen.findByLabelText("Speed (km/h)"), { target: { value: "180" } });
     fireEvent.change(screen.getByLabelText("Ground"), { target: { value: "fixed" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     await waitFor(() =>
       expect(api.call).toHaveBeenCalledWith("scenario.set_wind_tunnel", {
         speed_m_s: 50,

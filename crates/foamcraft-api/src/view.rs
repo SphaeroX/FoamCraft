@@ -38,7 +38,7 @@ fn unit_of(name: &str) -> &'static str {
 }
 
 /// The job whose result the view shows (or the newest).
-fn job_of(project: &Project) -> Result<String, FoamError> {
+pub(crate) fn job_of(project: &Project) -> Result<String, FoamError> {
     if let Some(j) = &project.manifest.view.result_job
         && cache_dir(&project.root, j).join("meta.json").is_file()
     {
@@ -148,6 +148,9 @@ pub struct UpdateSlice {
     pub field: Option<String>,
     #[serde(default)]
     pub range: Option<[f64; 2]>,
+    /// Hide the slice (kept in the list) or show it again.
+    #[serde(default)]
+    pub hidden: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -166,9 +169,16 @@ pub struct IdParams {
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ClipParams {
-    /// Plane to cut the model along; null shows the whole model.
+    /// Plane to cut along; null shows everything whole.
     pub plane: Option<PlaneSpec>,
+    /// What the plane cuts: model, particles (also smoke), streamlines, isosurfaces. Missing:
+    /// keep the current choice (new projects: the model only).
+    #[serde(default)]
+    pub targets: Option<Vec<String>>,
 }
+
+/// Names accepted by `view.render` as `view`.
+pub use foamcraft_render::camera::VIEW_NAMES;
 
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -179,6 +189,15 @@ pub struct RenderParams {
     pub width: Option<u32>,
     #[serde(default)]
     pub height: Option<u32>,
+    /// Standard view: `front` (from -X, against the default flow), `back`, `left`, `right`,
+    /// `top`, `bottom`, edges such as `top_front` or `front_right`, corners such as
+    /// `top_front_right`, or `default`. Missing: the default view.
+    #[serde(default)]
+    pub view: Option<String>,
+    /// Screen time (s) of the stored ride: a still from the rider's view instead of the standard
+    /// view.
+    #[serde(default)]
+    pub ride_t: Option<f64>,
 }
 
 #[derive(Debug, Serialize, JsonSchema)]
@@ -186,6 +205,8 @@ pub struct Rendered {
     pub path: String,
     pub width: u32,
     pub height: u32,
+    /// The standard view used.
+    pub view: String,
 }
 
 fn render(project: &Project, p: RenderParams) -> Result<Rendered, FoamError> {
@@ -193,9 +214,18 @@ fn render(project: &Project, p: RenderParams) -> Result<Rendered, FoamError> {
         p.width.unwrap_or(1280).clamp(16, 8192),
         p.height.unwrap_or(800).clamp(16, 8192),
     );
+    let view = p.view.unwrap_or_else(|| "default".into());
+    let (yaw, pitch) = foamcraft_render::camera::named_view(&view)
+        .ok_or_else(|| FoamError::new("view.unknown_view", &view))?;
     let renderer = Renderer::new_headless().ok_or_else(|| FoamError::new("view.no_gpu", ""))?;
-    let mut camera = OrbitCamera::default();
-    let pixels = if let Some((a, b)) = crate::scene::compare_scenes(project) {
+    let mut camera = OrbitCamera {
+        yaw,
+        pitch,
+        ..OrbitCamera::default()
+    };
+    let pixels = if let Some(t) = p.ride_t {
+        crate::ride::render_still(project, &renderer, w, h, t, false)?
+    } else if let Some((a, b)) = crate::scene::compare_scenes(project) {
         let (centre, radius) = a.focus.unwrap_or_else(|| a.scene.bounding_sphere());
         camera.fit(centre, radius * 1.1, (w / 2) as f32 / h as f32);
         renderer.render_offscreen_split(
@@ -209,7 +239,7 @@ fn render(project: &Project, p: RenderParams) -> Result<Rendered, FoamError> {
         let built = crate::scene::project_scene(Some(project));
         let (centre, radius) = built.focus.unwrap_or_else(|| built.scene.bounding_sphere());
         camera.fit(centre, radius * 1.1, w as f32 / h as f32);
-        renderer.render_offscreen(&built.scene, &camera, w, h)
+        renderer.render_offscreen_gpu(&built.upload(&renderer, 0.0), &camera, w, h)
     };
     foamcraft_render::write_png(&p.path, w, h, &pixels)
         .map_err(|e| FoamError::new("view.write_failed", e.to_string()))?;
@@ -217,6 +247,7 @@ fn render(project: &Project, p: RenderParams) -> Result<Rendered, FoamError> {
         path: p.path.display().to_string(),
         width: w,
         height: h,
+        view,
     })
 }
 
@@ -313,8 +344,21 @@ fn iso_color(field: &str) -> [f32; 3] {
     }
 }
 
+/// A slice or isosurface of the view as a render mesh (world coordinates).
+pub struct FlowPart {
+    pub mesh: Mesh,
+    /// For a slice: its id, plane (world) and how far it can move along its normal and still
+    /// cut the coarsest grid.
+    pub slice: Option<(String, PlaneSpec, [f32; 2])>,
+}
+
 /// Slices and isosurfaces of the view as render meshes (world coordinates).
 pub fn flow_meshes(project: &Project) -> Vec<Mesh> {
+    flow_parts(project).into_iter().map(|p| p.mesh).collect()
+}
+
+/// Slices (hidden ones left out) and isosurfaces of the view with what they are.
+pub fn flow_parts(project: &Project) -> Vec<FlowPart> {
     let view = &project.manifest.view;
     if view.slices.is_empty() && view.isosurfaces.is_empty() {
         return vec![];
@@ -325,7 +369,7 @@ pub fn flow_meshes(project: &Project) -> Vec<Mesh> {
     let to_world = DMat3::from_rotation_z(yaw.to_radians());
     let to_flow = to_world.transpose();
     let mut out = Vec::new();
-    for s in &view.slices {
+    for s in view.slices.iter().filter(|s| !s.hidden) {
         let origin = (to_flow * DVec3::from(s.plane.origin)).into();
         let normal = (to_flow * DVec3::from(s.plane.normal)).into();
         let m = slice(&grids, &s.field, origin, normal, SLICE_RESOLUTION);
@@ -346,7 +390,19 @@ pub fn flow_meshes(project: &Project) -> Vec<Mesh> {
             .iter()
             .map(|v| colormap((f64::from(*v) - lo) / span))
             .collect();
-        out.push(to_render_mesh(&m, to_world, Some(colors), [0.5; 3]));
+        let range = grids.first().map_or([0.0, 0.0], |g| {
+            let f = |v: [f64; 3]| v.map(|x| x as f32);
+            foamcraft_render::handles::slice_range(
+                f(origin),
+                f(normal),
+                f(g.spec.min),
+                f(g.spec.max),
+            )
+        });
+        out.push(FlowPart {
+            mesh: to_render_mesh(&m, to_world, Some(colors), [0.5; 3]),
+            slice: Some((s.id.clone(), s.plane.clone(), range)),
+        });
     }
     for iso in &view.isosurfaces {
         let m = isosurface(&grids, &iso.field, iso.value);
@@ -355,9 +411,33 @@ pub fn flow_meshes(project: &Project) -> Vec<Mesh> {
         }
         let mut mesh = to_render_mesh(&m, to_world, None, iso_color(&iso.field));
         mesh.opacity = 0.5;
-        out.push(mesh);
+        out.push(FlowPart { mesh, slice: None });
     }
     out
+}
+
+/// Hides the line segments of a line mesh on the side of the clip plane the normal points to.
+pub fn clip_lines(mesh: &mut Mesh, plane: &PlaneSpec) {
+    let o = DVec3::from(plane.origin);
+    let n = DVec3::from(plane.normal);
+    let keep: Vec<u32> = mesh
+        .indices
+        .chunks(2)
+        .filter(|seg| {
+            let c = seg
+                .iter()
+                .map(|i| {
+                    let p = mesh.vertices[*i as usize].position;
+                    DVec3::new(f64::from(p[0]), f64::from(p[1]), f64::from(p[2]))
+                })
+                .sum::<DVec3>()
+                / seg.len().max(1) as f64;
+            (c - o).dot(n) <= 0.0
+        })
+        .flatten()
+        .copied()
+        .collect();
+    mesh.indices = keep;
 }
 
 /// Hides the triangles on the side of the clip plane the normal points to.
@@ -429,6 +509,7 @@ pub fn register(r: &mut Registry) {
                 plane,
                 field: p.field,
                 range: p.range,
+                hidden: false,
             });
             changed(s)
         },
@@ -472,6 +553,9 @@ pub fn register(r: &mut Registry) {
             }
             if p.range.is_some() {
                 slice.range = p.range;
+            }
+            if let Some(h) = p.hidden {
+                slice.hidden = h;
             }
             changed(s)
         },
@@ -524,14 +608,28 @@ pub fn register(r: &mut Registry) {
         "Cut the model open along a plane (the side the normal points to is hidden); null: whole model.",
         Options {
             undoable: false,
-            errors: &["project.none_open", "view.invalid_plane"],
-            example: json!({"plane": {"origin": [0.0, 0.0, 0.0], "normal": [0.0, -1.0, 0.0]}}),
+            errors: &[
+                "project.none_open",
+                "view.invalid_plane",
+                "view.unknown_clip_target",
+            ],
+            example: json!({"plane": {"origin": [0.0, 0.0, 0.0], "normal": [0.0, -1.0, 0.0]},
+                            "targets": ["model", "particles"]}),
         },
         |s, p: ClipParams| {
             if let Some(plane) = &p.plane {
                 check_plane(plane)?;
             }
-            s.project()?.manifest.view.clip = p.plane;
+            if let Some(t) = p.targets.iter().flatten().find(|t| {
+                !foamcraft_core::project::CLIP_TARGETS.contains(&t.as_str())
+            }) {
+                return Err(FoamError::new("view.unknown_clip_target", t.clone()));
+            }
+            let view = &mut s.project()?.manifest.view;
+            view.clip = p.plane;
+            if let Some(t) = p.targets {
+                view.clip_targets = t;
+            }
             changed(s)
         },
     );
@@ -555,8 +653,15 @@ pub fn register(r: &mut Registry) {
         "Draw the current scene of the project into a PNG file (no window needed).",
         Options {
             undoable: false,
-            errors: &["project.none_open", "view.no_gpu", "view.write_failed"],
-            example: json!({"path": "C:/Temp/scene.png", "width": 1280, "height": 800}),
+            errors: &[
+                "project.none_open",
+                "view.unknown_view",
+                "view.no_gpu",
+                "view.write_failed",
+                "ride.none",
+                "ride.no_path",
+            ],
+            example: json!({"path": "C:/Temp/scene.png", "width": 1280, "height": 800, "view": "front"}),
         },
         |s, p: RenderParams| render(s.project()?, p),
     );

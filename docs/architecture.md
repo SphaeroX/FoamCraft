@@ -100,17 +100,78 @@ Rust side creates a wgpu surface on the same window and draws the 3D view into i
 layer is composited above it by Windows, so interface panels float over the native view. This was
 proven on Windows 11 (DX12/Vulkan). Mouse input always reaches the web view first: a full-window
 `ViewportInput` layer underneath the panels turns drags and wheel events that start on the free
-area into camera actions and sends them to Rust (`viewport_camera` command), which redraws.
-Linux and macOS are checked in Task_32. Colours are written to non-sRGB targets so the viewport
+area into camera actions and sends them to Rust (`viewport_camera` command), which redraws and
+answers with the camera yaw and pitch.
+
+**Standard views and view cube (Task_24).** `foamcraft_render::camera::named_view` maps the 27
+names in `VIEW_NAMES` (six faces, twelve edges such as `top_front`, eight corners such as
+`top_front_right`, and `default`) to yaw and pitch. `front` looks from -X towards +X, against the
+default flow; top and bottom stop at the pitch limit and keep yaw 180°, so the front is at the
+bottom of the image from above and at the top from below. `CameraTransition` eases from one
+camera to another in 0.35 s, turning the short way round. The `view` camera action starts such a
+move (ending fitted); the 16 ms clock thread in the app draws it and emits `viewport://camera` so
+the `ViewCube` component (`app/src/view-cube.ts`, CSS `matrix3d` from the same camera maths)
+turns along. Moving the camera by hand ends a running move.
+Linux and macOS are checked in Task_36. Colours are written to non-sRGB targets so the viewport
 and offscreen frames show identical pixel values.
+
+**Assistant layout (Task_29).** The toolbar holds the project name, the step rail
+(`StepRail`: four numbered stations on a line that fills as steps are done; states from the pure
+function `stepStates` in `app/src/steps.ts` fed by `geometry.list/info`, `scenario.info` and
+`results.list_fields` on every project change), fit, export, report, close and one menu
+(`AppMenu`: language, expert mode, system, agents, tour, about). A guide card under the left panel
+says in one sentence what the step is for and has Back/Next (`StepFooter`; Next is blocked with the
+reason until the step is done). Simple mode hides faces, groups, openings, rotation angles,
+normals, residuals, coefficients, mesh details, logs, particle and slice editors. On start the app
+asks `project.info`, so a reloaded page shows the open project again.
+
+**Several scenarios (Task_30, schema 13).** The manifest keeps `scenario` and `mesh` as the
+active scenario; `scenarios` lists all named scenarios (`scenario-N`, name, scenario, mesh),
+`active_scenario` names the active one and `run_scenarios` maps each run to its scenario.
+`Manifest::normalize` writes the active fields into their entry (on open, create and save; an old
+project gets `scenario-1`). Commands: `scenario.list`, `scenario.add` (copy by default),
+`scenario.rename`, `scenario.remove` (not the active one), `scenario.activate` (takes a fitting
+mesh of another scenario). The mesh key (`mesh::mesh_key`) holds direction, ground, quality and the
+first-layer height in steps of √2 (∝ ν^0.9/U^0.9), so close speeds share a mesh; a mesh volume is
+removed only when no scenario uses it. `run.start_all` runs scenarios one after another in a
+background thread, each on a copy of the project with that scenario active, reusing meshes built
+earlier in the queue; events `run.queue` and `run.queue_finished`; `run.cancel_queue` stops it.
+`results.compare_many {jobs, reference}` gives one row per figure with a value and a relative
+change per run; `export.report {compare_runs}` prints that table (one column per run).
+
+**Sources of air (Task_31).** A wind tunnel scenario may have up to four sources
+(`manifest.jets`, per scenario; `scenario.set_jets`, `scenario.move_jet`, `scenario.rotate_jet`):
+round or rectangular openings with centre, direction, size and speed. With sources the
+surroundings are still and the reference speed is the fastest jet. A source is not a boundary but
+a velocity constraint in a small cylinder (`vectorFixedValueConstraint`, `selectionMode geometric`,
+in `system/fvOptions`), so it can sit anywhere and point anywhere; a rectangle counts with the
+diameter of equal area. `foamcraft_sim::jets` turns the written wind tunnel case into a free-jet
+case (`apply_jets`): all tunnel faces open (`pressureInletOutletVelocity` / `totalPressure`, k and ω
+`inletOutlet`), plain SIMPLE with relaxation U 0.5 / p 0.3 (SIMPLEC at 0.9 diverged in the trial
+runs), refinement along each jet in three steps (core with 10 cells over d, up to 10 d one level
+coarser, up to the middle of the model region two levels coarser; widening 0.2 per length).
+`extend_plan` grows the box by 10 d around each source and coarsens the background in steps of two
+(raising all levels) when the box would need more than twice the cells, so the cells at the model
+stay. The solve stage skips `potentialFoam` when `system/fvOptions` exists (it fails on still air
+with open boundaries only) and starts from rest. Stop rule with sources: the forces on a model
+stay near zero until a jet arrives (and for good when it blows past the model), so settled forces
+alone would end the run after two windows, long before the jet has its shape. `apply_jets`
+therefore adds two function objects ahead of the forces (`jetSpeed`: |U| as a field; `jetFlow`: its
+volume average over the domain, printed every iteration), and the run stops only when the forces
+are settled and this mean speed lies within the 1 % band of its window
+(`solve::assess_with_flow`; window means that merely agree do not count for the speed, they agree
+while the front of the jet still crosses the domain). Plausibility: a source inside a model or
+blowing past all models gives a warning. Results carry the hint `run.jet_reference` (coefficients
+refer to the fastest jet; forces in newtons count). In the view a source is a disc with an arrow
+(`jet:N`); clicking it in the Scenario step puts the move and rotate handles on it.
 
 ## Runtime (decided in Task_02)
 
 - **OpenFOAM release:** v2606 (OpenCFD, released 2026-06-26, build `_481094f-20260618`), base
   image `opencfd/openfoam-run:2606` pinned by digest in `runtime/Dockerfile`. Reason: the current
   OpenCFD release; the small `-run` image holds every solver and mesher we need (no tutorials,
-  no compilers). GPU plugins (Task_34) need a development image or their own build stage; at the
-  time of writing OpenCFD had not yet published `openfoam-dev:2606` (only up to 2512), so Task_34
+  no compilers). GPU plugins (Task_38) need a development image or their own build stage; at the
+  time of writing OpenCFD had not yet published `openfoam-dev:2606` (only up to 2512), so Task_38
   checks plugin compatibility and may add a build stage. Image labels
   `org.foamcraft.openfoam.version`, `.source` and `.build` name the exact upstream source.
 - **Docker access:** through the `docker` command line, not a client library: no extra dependency,
@@ -230,6 +291,19 @@ and offscreen frames show identical pixel values.
 - **Commands:** `geometry.import`, `geometry.list`, `geometry.info`, `geometry.set_unit`,
   `geometry.set_transform`, `geometry.place_on_ground`, `geometry.fix_normals`, `geometry.remove`.
   Undo keeps copied files in `geometry/`.
+- **Moving and turning in the view (Task_25):** `geometry.pivot` returns box centre, volume
+  centre (signed tetrahedra) and origin; `geometry.move_by {id, delta}` and
+  `geometry.rotate_about {id, axis, angle_deg, pivot}` change the placement (turn about a world axis
+  through the pivot, yaw/pitch/roll recomputed by `foamcraft_geometry::rotation_to_deg`). The
+  handle technique lives in `foamcraft_render::handles`: drag maths on camera rays (`AxisDrag`,
+  `RingDrag`, `snap`, `move_step`) and arrow/ring meshes with pick keys `handle:move-x` …
+  `handle:rotate-z`. `Renderer::set_handles` draws them in a second pass with fresh depth (in front
+  of the model, also for picking); every mesh has a model matrix (`set_model_transform`, identity by
+  default) used for the preview while dragging. `ProjectScene.models` maps each model to its meshes
+  (model and caps). The app commands `viewport_set_handles`, `viewport_handle_begin/drag/end/cancel`
+  preview the drag and `end` returns exactly one command, which the interface runs (one undo step).
+  `ViewportInput` starts a handle drag when the last hover pick was a `handle:` key. The camera is
+  fitted again only when the project or its set of models changes.
 - **Display:** the renderer uploads a scene once (`Renderer::upload` returns a `GpuScene`) and only
   redraws on camera moves; models are flat-shaded, coordinate axes (X red, Y green, Z blue) are drawn
   at the origin. The app calls `viewport_sync` after every `project.changed` event.
@@ -286,8 +360,15 @@ curved faces. Names and colours from the files are not read yet.
 
 - **Scenario** (manifest schema 5, `scenario`): `wind_tunnel` with speed (m/s), flow direction (yaw in
   degrees in the ground plane, 0 = +X), ground (`none`, `fixed`, `moving` – moving is stored but
-  computed only from Task_39 on), medium and quality level. Commands `scenario.set_wind_tunnel`
-  (undoable) and `scenario.info` return the derived values.
+  computed only from Task_43 on), medium and quality level. Commands `scenario.set_wind_tunnel`
+  (undoable) and `scenario.info` return the derived values; `scenario.set_wind_direction` turns only
+  the wind (stored in -180..180). Task_26: the Scenario step applies inputs 400 ms after the last one
+  (no Apply button; loading a saved scenario does not apply it), offers a wind rose (SVG slider,
+  arrow keys ±5°), quick speeds and the ground as picture buttons. In the view the wind is a handle
+  (`handle:wind`, `foamcraft_render::handles::wind_arrow_mesh` upstream of the models,
+  `wind_direction_deg` from the mouse ray on the horizontal plane through the model centre); while
+  dragging, the tunnel meshes (`ProjectScene.tunnel_meshes`) turn with the preview matrix, and the
+  end runs `scenario.set_wind_direction` (5° snapping, Shift free).
 - **Media:** air at 101 325 Pa (ideal gas, R = 287.05 J/(kg K), Sutherland viscosity, speed of sound
   √(1.4 R T)); water (Thiesen density, Vogel viscosity, 0.5-99 °C); custom density and kinematic
   viscosity.
@@ -303,7 +384,7 @@ curved faces. Names and colours from the files are not read yet.
   100 000 cells; never below 100 000). Time estimate: meshing 20 000 cells per core and second plus
   solving 100 000 cell iterations per core and second (Task_03 measured about 140 000). The
   budget uses the computer's memory and physical cores; the memory of the container runtime is
-  checked when meshing (Task_09). Re-measure in Task_09 and Task_33.
+  checked when meshing (Task_09). Re-measure in Task_09 and Task_37.
 - **Warnings:** Mach above 0.3 (`scenario.mach_high`, the solvers are incompressible); largest
   model dimension outside 1 mm to 200 m (`scenario.unit_suspect`).
 - **Display:** tunnel edges, ground plate and a flow arrow (`foamcraft_render::scene::tunnel`); the
@@ -404,7 +485,7 @@ off by 10-20 % and the swinging itself has no physical frequency. Separation fro
 surfaces (spheres, rounded rear ends) is hard to predict with RANS models: drag can be too high or
 too low by more than 20 %. Wall functions assume an average y+ between 30 and 300; outside, forces
 from friction are less reliable (hint in the result). For exact values of blunt bodies a
-time-dependent simulation is needed (planned: Task_37).
+time-dependent simulation is needed (planned: Task_41).
 
 ## Run in one step (decided in Task_23)
 
@@ -576,7 +657,8 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   `view.update_slice`, `view.add_isosurface`, `view.remove`, `view.set_clip`, `view.state`,
   `view.volume_fields`. Opening the project shows the same scene.
 - **Scene building** moved from the app into `foamcraft_api::scene::project_scene`, so the app,
-  and `view.render {path, width, height}` (headless renderer, PNG) draw the same picture.
+  and `view.render {path, width, height, view}` (headless renderer, PNG, optional standard view)
+  draw the same picture.
 - **Slices** (`foamcraft_sim::visual::slice`): 160 × 160 points across the box of the coarsest
   grid, value from the finest grid that has one (`sample_levels`), quads with four values become
   triangles; coloured per vertex with the FoamCraft scale (range of the slice or by hand).
@@ -588,6 +670,119 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   differences (one-sided at edges and next to masked points).
 - **Cutting the model open:** triangles of the models (or the result surface) whose centre lies on
   the side the clip normal points to are hidden; "Other side" flips the normal.
+- **Dragging slices and cutting the flow open (Task_27, schema 12):** slices carry `hidden`;
+  `view.update_slice` takes `hidden` and the view leaves hidden slices out. `view.clip_targets`
+  (default `["model"]`, so older projects behave as before) chooses what the clip plane cuts:
+  `model`, `particles` (also smoke), `streamlines`, `isosurfaces`; `view.set_clip {plane, targets}`.
+  Isosurfaces are cut by triangle centre, streamlines by segment centre (`view::clip_lines`).
+  Particles are cut on the GPU: `Renderer::set_particle_clip` puts the plane (world) into the
+  particle parameters, and `write()` draws a particle beyond it with zero length while it keeps
+  moving (no plane = exactly the old picture); `foamcraft_sim::particles::visible_positions` is the
+  CPU reference. Shown slices are pickable (`slice:<id>`, `ProjectScene.slices` with mesh index,
+  plane and `slice_range`: offsets along the normal that keep the plane inside the coarsest
+  grid). Pressing on a slice drags it along its normal (preview: the mesh is translated with its
+  model matrix; release: one `view.update_slice` that resamples it); a click without moving selects
+  it. The selected slice is interface state, highlighted with the selection colour.
+- **Ready-made views and demo (Task_28):** `foamcraft_api::presets`: `view.presets` lists the
+  views that fit the scenario (wind tunnel: `smoke_lines`, `smoke_curtain`, `mid_slice`,
+  `surface_pressure`, `vortices`, `wake`; internal flow: `internal_path`, `internal_slice`,
+  `surface_pressure`) with a standard camera view and the catalog code `preset.<id>` of a
+  one-sentence explanation (en/de, `{share}` is filled with the pressure share of the drag from
+  `results.summary`). `view.apply_preset` replaces slices, isosurfaces, clip, particles and surface
+  field in one undoable step (it changes only the manifest; the registry saves and emits). Presets
+  adapt to the run: model box in the flow frame from the placed models, wind direction from the
+  result, Q isovalue = 90th percentile of the positive Q of the finest grid. Smoke lines use the
+  seed region `rake` (`foamcraft_sim::particles::rake_points`: 13 nozzles on a vertical line half a
+  model length upstream, scatter radius half a cell). The demo (`app/src/demo.ts`, `DemoPlayer`)
+  shows the presets one after another for 8 s each with a camera move and the explanation; at the
+  end it undoes the presets it applied.
+- **Ride along a particle (Task_32):** the result is steady, so a particle's path is a
+  streamline fixed by one point on it. `foamcraft_sim::distance::WallDistance` (cell grid of
+  2 h over the result surface, exact point-triangle distance, "far" at 8 h) gives the wall
+  distance; Task_33 and Task_34 reuse it. `foamcraft_sim::ride` (pure logic, flow frame): `Flow`
+  samples the grids with masked points as resting wall (velocity zero; a point closer to solid
+  than to fluid is blocked), `trace` integrates backward and forward with a step of at most a
+  quarter grid step, halving the step in front of a wall (so paths slide along it and stall at
+  a stagnation point), and resamples to equal arc length with speed, pressure, Cp, wall distance,
+  acceleration and Q. `Path::trimmed` keeps the stretch from one model length in front of the
+  model box to 1.5 behind it. `timing` (calm: compressed speeds, slower near the wall; coaster:
+  proportional to the flow, 10 to 45 s) is a precomputed screen-time table; `camera_track`
+  samples the camera every 1/120 s (look ahead, smoothing, level horizon or twist-free frame
+  with banking) and `camera_at` interpolates it, so the window at 60 fps and the video at 30 fps
+  show the same ride. `events` finds approach, stagnation, acceleration, suction, near_wall,
+  reverse, vortex and calm (texts `ride.event.*`), `suggest` picks up to five paths from
+  about 600 candidates on all cores (only paths that come in and leave again; the stagnation
+  ride must pass the model). Commands `ride.suggest`, `ride.start`, `ride.telemetry`,
+  `ride.stop` (`foamcraft_api::ride`); `view.ride` stores only the start point and the
+  settings (schema 14). The renderer takes any `ViewCamera` (`OrbitCamera` or `FreeCamera`) and
+  draws an inset with `render_inset_gpu` (background quad first). The app keeps a `Flight` in the
+  view state (clock, look-around, entry move, inset scene); the clock thread moves the GPU
+  particles by the rider's flow time and sends `viewport://ride`; the interface interpolates the
+  readings itself. Export: camera preset `ride` and `ride_t` for stills.
+- **Flow on the surface (Task_33):** the result cache keeps the wall shear stress vector per
+  triangle (`wss_x`, `wss_y`, `wss_z`, world, Pa); the components are hidden from the field
+  list. The direction of the near-wall flow is `-wss` (checked in a real pipe run:
+  `runtime_minus_wall_shear_stress_points_downstream_in_a_pipe`). Runs evaluated before have no
+  vector: the direction comes from the velocity 1.5 grid steps off the wall without its normal
+  part, flagged "approximate". `load_surface` derives the map `attached` (cosine between the
+  near-wall flow and the oncoming flow in the face plane; listed for wind tunnels only), and
+  `results.summary` adds `reverse_flow_area` (% of the surface with `attached < 0`).
+  `foamcraft_sim::surface_flow`: welded `SurfaceMesh` with neighbours, `TangentField` (corner
+  vectors averaged over the faces around a point within 40°), `advance` (a step across edges,
+  folding the direction about the shared edge), `trace` (midpoint rule, ends at the boundary,
+  at a zero of the field or by a stop test), `even_lines` (seeds in a fixed random order, a
+  line stops half a spacing before another, lines shorter than four spacings are dropped),
+  `tuft_feet`, `tuft_rest` (four links along the field, lifted 8°, hanging along gravity below
+  2 % of the 90th percentile strength), `flutter_amplitude`/`flutter_angle`. The fluid side of
+  the surface is decided by the grid (votes on sample faces), so imported models and OpenFOAM
+  surfaces both work. `foamcraft_api::surface_flow` builds the geometry (cached per run,
+  settings and clip plane) for `ProjectScene.flow`; the renderer draws it with its own pipelines
+  (`flow.wgsl`, `FlowVertex`): lines with a light that runs along the running time, tufts that
+  flutter in the vertex shader; both depend only on `GpuScene.time` (the app advances it at
+  60 Hz, the export sets it from the frame time), so images and videos repeat exactly. Commands
+  `view.set_surface_flow`, `view.surface_flow_off`, `view.surface_flow_info`; manifest
+  `view.surface_flow` (schema 15); presets `oil_film` (dark model) and `tufts` (with the map
+  `attached` when the run has it).
+- **Heavy particles (Task_34):** `foamcraft_sim::heavy`: spheres with drag after Schiller and
+  Naumann (`tau_e = tau_p / f(Re_p)`), gravity minus buoyancy along -Z, one-way coupled. Left
+  out (fine while the particle is much denser than the medium): lift, added mass, history force,
+  deformation of large drops, turbulent scattering; `density <= medium` is refused
+  (`particles.too_light`), below five times the medium the interface says "rough
+  approximation". The integrator is the exact solution for a locally constant flow (two passes,
+  flow in the middle), stable for any step; `track` checks every step's segment against the
+  result surface (`WallDistance::candidates`, Möller–Trumbore) and sticks or bounces
+  (restitution, wall friction, at most five bounces). The critical Stokes numbers 1/8 (cylinder)
+  and 1/12 (sphere) are a test. The GPU animation (`particles_heavy.wgsl`, `create_heavy_particles`)
+  uses a distance field per grid point instead of triangles (`foamcraft_api::heavy::distance_field`:
+  real distances on the finest grid, the sign from the mask elsewhere; it takes the place of the
+  pressure buffer because a stage allows 8 storage buffers); `foamcraft_sim::heavy_gpu` is its CPU
+  reference. The impact map (`results.impact`, background thread with progress and cancel,
+  blocks of 1024 particles summed in order so the result does not depend on the cores) is kept as
+  `cache/results/<run>/impact-<key>.json` with `impact-latest.json` naming the shown one;
+  `load_surface` adds the fields `impact` (β: hits per area over the free-stream flux; internal
+  flow: over the mean) and `impact_speed`. Rides on a heavy particle (`RideSpec.particle`, by
+  default the particle of the view) start at the release point and end with the event `impact`.
+- **Light trails, ribbons and tubes (Task_35):** style `trails` keeps a ring of K points per
+  particle (`particles_trails.wgsl`, ring and its uniform take bindings 5 and 6 of the line
+  vertices; `w` = speed, -1 marks a new start so the piece before it is not drawn). K = 24, fewer
+  when `count · K` would pass 2.4 million points (`points_per_trail`, the interface says "trails
+  shortened"); a point every `every` steps from `trail_length` (flow s, 1 to 10 comet tails,
+  `trail_factor` in the command). `trails.wgsl` builds screen-space quads straight from the ring
+  (vertex number → particle, piece, corner; cut at the near plane, `trails::cut_near` is the
+  same on the CPU), additive into an `Rgba16Float` light image with a depth test against the
+  stored scene depth (the scene pass keeps its depth only when trails are on). `trails_post.wgsl`:
+  quarter-size copy, two 9-tap blurs (glow, 60 %), then `c = 1 − exp(−light)` blended as a
+  screen onto the target; alpha = max (transparent exports get cover where it glows). Without
+  trails none of this runs and every image is unchanged. The long exposure of `export.image`
+  (`exposure_s`, `Renderer::render_offscreen_exposure`) runs the particles one life ahead, then
+  adds the newest piece of each step; in the view `long_exposure` fades the light with a
+  half-life instead of clearing it (blend with a constant), and a moved camera or another size
+  clears it. Trails particles also run one life ahead when created, so a video does not start
+  with one bright sheet at the seed area. Heavy particles keep their comets (no trails). Ribbons
+  and tubes: `foamcraft_sim::ribbons` (parallel-transported frame plus a twist of ½ (ω·T) dτ,
+  tube radius from the speed, time marks), meshes in `particles::ribbon_geometry` (at most 200
+  lines), drawn by the flow pipeline of Task_33 (`vs_ribbons`, both sides, stripes running with
+  the time); colour `swirl` is orange for right-handed, blue for left-handed swirl.
 - **Moving a slice** in the app: the slider in the panel (the scene updates while dragging);
   dragging inside the 3D view itself is not part of this version.
 
@@ -722,7 +917,7 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   `system.check`, `system.diagnostics` (plain text, home folder replaced by `~`),
   `system.setup_state` / `system.finish_setup` (`<data dir>/setup.json`), `system.provide_image`
   (builds the image from the repository in the background with `system.image_progress` events;
-  from Task_32 on it downloads the release image instead).
+  from Task_36 on it downloads the release image instead).
 - **Hardware profile:** default cores = min(physical cores, cores of the container runtime); the
   largest mesh = 60 % of the container memory at 1.5 GiB per million cells (the cell budget rule
   of Task_08); recommended quality = the highest level whose cell count fits.

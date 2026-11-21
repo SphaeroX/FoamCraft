@@ -449,6 +449,16 @@
       "fix": "Zuerst einen Windkanal einrichten."
     }
   },
+  "scenario.not_wind_tunnel": {
+    "en": {
+      "text": "The project has no wind tunnel whose wind could be turned.",
+      "fix": "Set up a wind tunnel in the Scenario step first."
+    },
+    "de": {
+      "text": "Das Projekt hat keinen Windkanal, dessen Wind sich drehen ließe.",
+      "fix": "Zuerst im Schritt Szenario einen Windkanal einrichten."
+    }
+  },
   "scenario.no_geometry": {
     "en": {
       "text": "The project contains no model.",
@@ -907,6 +917,26 @@
     "de": {
       "text": "Für das Bild steht kein Grafikadapter zur Verfügung.",
       "fix": "Den Grafiktreiber aktualisieren oder FoamCraft auf einem Rechner mit Grafikkarte ausführen."
+    }
+  },
+  "view.unknown_clip_target": {
+    "en": {
+      "text": "The clip plane cannot cut this.",
+      "fix": "Use model, particles, streamlines or isosurfaces."
+    },
+    "de": {
+      "text": "Das kann die Schnittebene nicht aufschneiden.",
+      "fix": "model, particles, streamlines oder isosurfaces verwenden."
+    }
+  },
+  "view.unknown_view": {
+    "en": {
+      "text": "There is no standard view with this name.",
+      "fix": "Use front, back, left, right, top, bottom, an edge such as top_front, a corner such as top_front_right, or default."
+    },
+    "de": {
+      "text": "Eine Standardansicht mit diesem Namen gibt es nicht.",
+      "fix": "front, back, left, right, top, bottom, eine Kante wie top_front, eine Ecke wie top_front_right oder default verwenden."
     }
   },
   "view.write_failed": {
@@ -1587,6 +1617,536 @@
     "de": {
       "text": "Die Laufzeit kann hier nicht gebaut werden: Die Bauanleitung fehlt.",
       "fix": "Eine FoamCraft-Version installieren, die die Laufzeit fertig mitbringt."
+    }
+  },
+  "preset.smoke_lines": {
+    "en": {
+      "text": "Thin smoke lines from a row of nozzles show how the air flows around the model and where it breaks away.",
+      "fix": "Ask: do the lines hug the surface, or do they separate early and swirl behind the model?"
+    },
+    "de": {
+      "text": "Dünne Rauchfäden aus einer Düsenreihe zeigen, wie die Luft das Modell umströmt und wo sie abreißt.",
+      "fix": "Achte darauf: Liegen die Fäden am Modell an, oder lösen sie sich früh und verwirbeln dahinter?"
+    }
+  },
+  "preset.smoke_curtain": {
+    "en": {
+      "text": "A thin curtain of smoke in the middle plane shows the flow pattern around the model like a section.",
+      "fix": "Dark gaps behind the model are the slow wake."
+    },
+    "de": {
+      "text": "Ein dünner Rauchvorhang in der Mittelebene zeigt das Strömungsbild um das Modell wie einen Schnitt.",
+      "fix": "Dunkle Lücken hinter dem Modell sind der langsame Nachlauf."
+    }
+  },
+  "preset.mid_slice": {
+    "en": {
+      "text": "The colours show the speed in the middle plane: fast flow over the top, slow flow in front of and behind the model.",
+      "fix": "Blue regions are slower than the oncoming flow, yellow ones faster."
+    },
+    "de": {
+      "text": "Die Farben zeigen die Geschwindigkeit in der Mittelebene: schnell über das Modell, langsam davor und dahinter.",
+      "fix": "Blaue Bereiche sind langsamer als die Anströmung, gelbe schneller."
+    }
+  },
+  "preset.surface_pressure": {
+    "en": {
+      "text": "The pressure on the model: high at the front where the flow stops, low where it speeds up. {share}% of the drag comes from pressure.",
+      "fix": "Large high-pressure areas at the front and low pressure at the back cause most of the drag."
+    },
+    "de": {
+      "text": "Der Druck auf dem Modell: hoch vorne, wo die Strömung aufprallt, niedrig, wo sie schneller wird. {share} % des Widerstands entstehen aus Druck.",
+      "fix": "Große Hochdruckflächen vorne und Unterdruck hinten verursachen den größten Teil des Widerstands."
+    }
+  },
+  "preset.vortices": {
+    "en": {
+      "text": "These surfaces wrap the strongest vortices; they form where the flow separates from the model.",
+      "fix": "Fewer and smaller vortices usually mean less drag."
+    },
+    "de": {
+      "text": "Diese Flächen umhüllen die kräftigsten Wirbel; sie entstehen, wo sich die Strömung vom Modell löst.",
+      "fix": "Weniger und kleinere Wirbel bedeuten meist weniger Widerstand."
+    }
+  },
+  "preset.wake": {
+    "en": {
+      "text": "A cross-section behind the model: the slow region is the wake the model leaves in the air.",
+      "fix": "A small, round wake is good; a wide one costs energy."
+    },
+    "de": {
+      "text": "Ein Querschnitt hinter dem Modell: Der langsame Bereich ist der Nachlauf, den das Modell in der Luft hinterlässt.",
+      "fix": "Ein kleiner, runder Nachlauf ist gut; ein breiter kostet Energie."
+    }
+  },
+  "preset.internal_path": {
+    "en": {
+      "text": "Streamlines from the inlets show the path the fluid takes through the part.",
+      "fix": "Lines that circle in place mark dead zones where the fluid hardly moves."
+    },
+    "de": {
+      "text": "Stromlinien von den Einlässen zeigen den Weg, den das Fluid durch das Bauteil nimmt.",
+      "fix": "Linien, die auf der Stelle kreisen, markieren Totzonen, in denen das Fluid kaum strömt."
+    }
+  },
+  "preset.internal_slice": {
+    "en": {
+      "text": "A lengthwise slice shows where the fluid is fast and where it is slow inside the part.",
+      "fix": "Sudden colour jumps point to narrow passages or sharp edges with losses."
+    },
+    "de": {
+      "text": "Ein Längsschnitt zeigt, wo das Fluid im Bauteil schnell und wo es langsam ist.",
+      "fix": "Plötzliche Farbsprünge weisen auf Engstellen oder scharfe Kanten mit Verlusten hin."
+    }
+  },
+  "scenario.not_found": {
+    "en": {
+      "text": "There is no scenario with this id.",
+      "fix": "Use an id from scenario.list."
+    },
+    "de": {
+      "text": "Ein Szenario mit dieser Kennung gibt es nicht.",
+      "fix": "Eine Kennung aus scenario.list verwenden."
+    }
+  },
+  "scenario.remove_active": {
+    "en": {
+      "text": "The active scenario cannot be removed.",
+      "fix": "Activate another scenario first, then remove this one."
+    },
+    "de": {
+      "text": "Das aktive Szenario lässt sich nicht entfernen.",
+      "fix": "Zuerst ein anderes Szenario aktivieren, dann dieses entfernen."
+    }
+  },
+  "results.compare_needs_two": {
+    "en": {
+      "text": "A comparison needs at least two runs.",
+      "fix": "Choose two or more runs."
+    },
+    "de": {
+      "text": "Für einen Vergleich braucht es mindestens zwei Läufe.",
+      "fix": "Zwei oder mehr Läufe auswählen."
+    }
+  },
+  "scenario.jet_inside_model": {
+    "en": {
+      "text": "A source of air lies inside a model.",
+      "fix": "Move the source out of the model, in front of the surface it should blow at."
+    },
+    "de": {
+      "text": "Eine Luftquelle liegt im Modell.",
+      "fix": "Die Quelle aus dem Modell heraus vor die Fläche setzen, die sie anblasen soll."
+    }
+  },
+  "scenario.jet_misses_model": {
+    "en": {
+      "text": "A source of air blows past the model.",
+      "fix": "Turn the source towards the model or move it in front of the model."
+    },
+    "de": {
+      "text": "Eine Luftquelle bläst am Modell vorbei.",
+      "fix": "Die Quelle zum Modell drehen oder vor das Modell setzen."
+    }
+  },
+  "run.jet_reference": {
+    "en": {
+      "text": "The air comes from sources in still surroundings: the coefficients refer to the fastest jet speed and the frontal area; the forces in newtons are what counts.",
+      "fix": "Compare runs by their forces; read the coefficients only next to runs with the same jets."
+    },
+    "de": {
+      "text": "Die Luft kommt aus Quellen in ruhender Umgebung: Die Beiwerte beziehen sich auf die größte Strahlgeschwindigkeit und die Stirnfläche; aussagekräftig sind die Kräfte in Newton.",
+      "fix": "Läufe über ihre Kräfte vergleichen; Beiwerte nur neben Läufen mit denselben Quellen lesen."
+    }
+  },
+  "ride.no_path": {
+    "en": {
+      "text": "No ride starts here: the point lies inside the model or outside the flow.",
+      "fix": "Click closer to the flow or pick one of the suggested rides."
+    },
+    "de": {
+      "text": "Hier beginnt kein Mitflug: Der Punkt liegt im Modell oder außerhalb der Strömung.",
+      "fix": "Näher an der Strömung klicken oder einen Vorschlag wählen."
+    }
+  },
+  "ride.none": {
+    "en": {
+      "text": "There is no ride in the view.",
+      "fix": "Start one with ride.start, from a suggestion or a point."
+    },
+    "de": {
+      "text": "In der Ansicht läuft kein Mitflug.",
+      "fix": "Mit ride.start einen starten, aus einem Vorschlag oder von einem Punkt."
+    }
+  },
+  "ride.unknown_suggestion": {
+    "en": {
+      "text": "This suggested ride does not exist for the shown result.",
+      "fix": "Use an id from ride.suggest."
+    },
+    "de": {
+      "text": "Diesen Vorschlag gibt es für das gezeigte Ergebnis nicht.",
+      "fix": "Eine Kennung aus ride.suggest verwenden."
+    }
+  },
+  "ride.invalid_option": {
+    "en": {
+      "text": "This ride setting is not valid.",
+      "fix": "Mode calm or coaster, view first_person, chase or overview, speed a number."
+    },
+    "de": {
+      "text": "Diese Einstellung des Mitflugs ist ungültig.",
+      "fix": "Flugart calm oder coaster, Ansicht first_person, chase oder overview, Tempo als Zahl."
+    }
+  },
+  "ride.suggestion.stagnation": {
+    "en": {
+      "text": "Towards the stagnation point",
+      "fix": "Ride straight at the model and see the flow come almost to a halt."
+    },
+    "de": {
+      "text": "Auf den Staupunkt zu",
+      "fix": "Direkt auf das Modell zu: Die Strömung kommt fast zum Stehen."
+    }
+  },
+  "ride.suggestion.hugging": {
+    "en": {
+      "text": "Close along the surface",
+      "fix": "The particle that stays closest to the model for the longest way."
+    },
+    "de": {
+      "text": "Dicht an der Oberfläche",
+      "fix": "Das Teilchen, das am längsten dicht am Modell entlanggleitet."
+    }
+  },
+  "ride.suggestion.fast": {
+    "en": {
+      "text": "Over the fastest spot",
+      "fix": "Where the flow is fastest and the pressure lowest."
+    },
+    "de": {
+      "text": "Über die schnellste Stelle",
+      "fix": "Wo die Strömung am schnellsten und der Druck am niedrigsten ist."
+    }
+  },
+  "ride.suggestion.wake": {
+    "en": {
+      "text": "Into the wake",
+      "fix": "Behind the model the flow turns back and swirls."
+    },
+    "de": {
+      "text": "In den Nachlauf",
+      "fix": "Hinter dem Modell kehrt die Strömung um und verwirbelt."
+    }
+  },
+  "ride.suggestion.turn": {
+    "en": {
+      "text": "The strongest turn",
+      "fix": "The path that the model deflects most."
+    },
+    "de": {
+      "text": "Die stärkste Umlenkung",
+      "fix": "Die Bahn, die das Modell am stärksten umlenkt."
+    }
+  },
+  "ride.suggestion.long": {
+    "en": {
+      "text": "The longest way",
+      "fix": "The particle that stays in the part the longest."
+    },
+    "de": {
+      "text": "Der längste Weg",
+      "fix": "Das Teilchen, das am längsten im Bauteil bleibt."
+    }
+  },
+  "ride.event.approach": {
+    "en": {
+      "text": "The flow piles up in front of the model: you slow down, the pressure rises.",
+      "fix": "Speed {value} % of the oncoming flow."
+    },
+    "de": {
+      "text": "Vor dem Modell staut sich die Strömung: Du wirst langsamer, der Druck steigt.",
+      "fix": "Tempo {value} % der Anströmung."
+    }
+  },
+  "ride.event.stagnation": {
+    "en": {
+      "text": "Almost at a standstill at the stagnation point. The pressure is highest here.",
+      "fix": "Cp {value}."
+    },
+    "de": {
+      "text": "Fast Stillstand am Staupunkt. Hier ist der Druck am höchsten.",
+      "fix": "Cp {value}."
+    }
+  },
+  "ride.event.acceleration": {
+    "en": {
+      "text": "Around the edge the flow speeds up and the pressure drops.",
+      "fix": "Up to {value} % of the oncoming flow."
+    },
+    "de": {
+      "text": "Um die Kante wird die Strömung schneller, der Druck fällt.",
+      "fix": "Bis {value} % der Anströmung."
+    }
+  },
+  "ride.event.suction": {
+    "en": {
+      "text": "Lowest pressure of the trip: here the flow pulls at the model.",
+      "fix": "Cp {value}."
+    },
+    "de": {
+      "text": "Tiefster Druck der Reise: Hier zieht die Strömung am Modell.",
+      "fix": "Cp {value}."
+    }
+  },
+  "ride.event.near_wall": {
+    "en": {
+      "text": "You glide close along the surface.",
+      "fix": "Wall distance {value}."
+    },
+    "de": {
+      "text": "Du gleitest dicht an der Oberfläche entlang.",
+      "fix": "Wandabstand {value}."
+    }
+  },
+  "ride.event.reverse": {
+    "en": {
+      "text": "Reverse flow: you are in the dead water behind the model.",
+      "fix": "The flow runs against the main direction here."
+    },
+    "de": {
+      "text": "Rückströmung: Du bist im Totwasser hinter dem Modell.",
+      "fix": "Die Strömung läuft hier gegen die Hauptrichtung."
+    }
+  },
+  "ride.event.vortex": {
+    "en": {
+      "text": "Vortex: the flow turns around an axis here.",
+      "fix": "Strong swirl along this stretch."
+    },
+    "de": {
+      "text": "Wirbel: Die Strömung dreht sich hier um eine Achse.",
+      "fix": "Starke Drehung auf diesem Stück."
+    }
+  },
+  "ride.event.calm": {
+    "en": {
+      "text": "The flow has calmed down again.",
+      "fix": "Speed {value} % of the oncoming flow."
+    },
+    "de": {
+      "text": "Die Strömung hat sich beruhigt.",
+      "fix": "Tempo {value} % der Anströmung."
+    }
+  },
+  "view.invalid_surface_flow": {
+    "en": {
+      "text": "This setting of the surface flow is not valid.",
+      "fix": "Lines: color_by plain or wall_shear_stress, density between 1/120 and 1/30. Tufts: color_by plain or state, spacing between 1/50 and 1/12. Speed above 0."
+    },
+    "de": {
+      "text": "Diese Einstellung der Oberflächenströmung ist ungültig.",
+      "fix": "Linien: color_by plain oder wall_shear_stress, Dichte zwischen 1/120 und 1/30. Fäden: color_by plain oder state, Abstand zwischen 1/50 und 1/12. Tempo über 0."
+    }
+  },
+  "surface_flow.approximate": {
+    "en": {
+      "text": "Approximate: this run has no wall shear stress vector, so the direction comes from the flow just off the wall.",
+      "fix": "Run the case again to get the exact directions."
+    },
+    "de": {
+      "text": "Genähert: Dieser Lauf hat keinen Vektor der Wandschubspannung, die Richtung stammt aus der Strömung knapp über der Wand.",
+      "fix": "Den Fall erneut rechnen, um die genauen Richtungen zu erhalten."
+    }
+  },
+  "preset.oil_film": {
+    "en": {
+      "text": "Lines like an oil film show the flow right at the surface: where they run together, the flow breaks away.",
+      "fix": "Look at the back: do the lines meet in a line and stop? That is where the flow separates."
+    },
+    "de": {
+      "text": "Linien wie ein Ölanstrich zeigen die Strömung direkt an der Oberfläche: Wo sie zusammenlaufen, löst sich die Strömung ab.",
+      "fix": "Schau auf die Rückseite: Laufen die Linien in einer Linie zusammen und enden? Dort löst sich die Strömung ab."
+    }
+  },
+  "preset.tufts": {
+    "en": {
+      "text": "Wool tufts lie flat where the flow is attached and flutter or hang where it has broken away.",
+      "fix": "Green on the model means attached, red reverse flow. The flutter is an illustration, not a time-accurate calculation."
+    },
+    "de": {
+      "text": "Wollfäden liegen glatt, wo die Strömung anliegt, und zappeln oder hängen, wo sie abgelöst ist.",
+      "fix": "Grün am Modell heißt anliegend, rot Rückströmung. Das Zappeln ist eine Veranschaulichung, keine zeitgenaue Rechnung."
+    }
+  },
+  "figure.reverse_flow_area": {
+    "en": {
+      "text": "Share of the model surface where the flow at the wall runs against the oncoming flow.",
+      "fix": "A large share means a large separated area behind the model and usually more drag."
+    },
+    "de": {
+      "text": "Anteil der Modelloberfläche, an dem die wandnahe Strömung gegen die Anströmung läuft.",
+      "fix": "Ein großer Anteil bedeutet ein großes abgelöstes Gebiet hinter dem Modell und meist mehr Widerstand."
+    }
+  },
+  "particles.too_light": {
+    "en": {
+      "text": "These particles are not heavier than the medium; they would float or rise.",
+      "fix": "Choose a density above that of the medium (air about 1.2, water about 1000 kg/m³)."
+    },
+    "de": {
+      "text": "Diese Teilchen sind nicht schwerer als das Medium; sie würden schweben oder aufsteigen.",
+      "fix": "Eine Dichte über der des Mediums wählen (Luft etwa 1,2, Wasser etwa 1000 kg/m³)."
+    }
+  },
+  "particles.invalid_material": {
+    "en": {
+      "text": "This particle material or value is not valid.",
+      "fix": "Use fine_dust, spray, rain, sand or snow, a diameter above 0 and below 0.1 m, and stick or bounce."
+    },
+    "de": {
+      "text": "Dieser Teilchenstoff oder Wert ist ungültig.",
+      "fix": "fine_dust, spray, rain, sand oder snow verwenden, einen Durchmesser über 0 und unter 0,1 m und stick oder bounce."
+    }
+  },
+  "impact.not_found": {
+    "en": {
+      "text": "There is no impact map with this id.",
+      "fix": "Use the impact_id that results.impact answered with."
+    },
+    "de": {
+      "text": "Eine Trefferkarte mit dieser Kennung gibt es nicht.",
+      "fix": "Die impact_id aus der Antwort von results.impact verwenden."
+    }
+  },
+  "impact.cancelled": {
+    "en": {
+      "text": "The impact map was cancelled; nothing was written.",
+      "fix": "Start it again with results.impact."
+    },
+    "de": {
+      "text": "Die Trefferkarte wurde abgebrochen; es wurde nichts gespeichert.",
+      "fix": "Mit results.impact erneut starten."
+    }
+  },
+  "particles.stokes.low": {
+    "en": {
+      "text": "Follows the flow almost like smoke and hardly hits the model.",
+      "fix": "Stokes number below 0.05."
+    },
+    "de": {
+      "text": "Folgt der Strömung fast wie Rauch und trifft das Modell kaum.",
+      "fix": "Stokes-Zahl unter 0,05."
+    }
+  },
+  "particles.stokes.middle": {
+    "en": {
+      "text": "Is carried around the model but cuts the corners. Some of it hits.",
+      "fix": "Stokes number between 0.05 and 2."
+    },
+    "de": {
+      "text": "Wird um das Modell getragen, schneidet aber die Kurven. Ein Teil trifft.",
+      "fix": "Stokes-Zahl zwischen 0,05 und 2."
+    }
+  },
+  "particles.stokes.high": {
+    "en": {
+      "text": "Flies almost straight and hits the model where it is in the way.",
+      "fix": "Stokes number above 2."
+    },
+    "de": {
+      "text": "Fliegt fast geradeaus und trifft das Modell dort, wo es im Weg steht.",
+      "fix": "Stokes-Zahl über 2."
+    }
+  },
+  "particles.rough": {
+    "en": {
+      "text": "Rough approximation: the particle is less than five times denser than the medium.",
+      "fix": "Forces such as added mass are left out; the paths show the tendency only."
+    },
+    "de": {
+      "text": "Grobe Näherung: Das Teilchen ist weniger als fünfmal so dicht wie das Medium.",
+      "fix": "Kräfte wie die mitbewegte Masse fehlen; die Bahnen zeigen nur die Tendenz."
+    }
+  },
+  "impact.estimate": {
+    "en": {
+      "text": "Estimate: spheres that do not change the flow, without turbulent scattering.",
+      "fix": "In reality eddies carry fine particles to walls as well; for fine dust the map shows too little."
+    },
+    "de": {
+      "text": "Abschätzung: Kugeln, die die Strömung nicht verändern, ohne turbulente Streuung.",
+      "fix": "In Wirklichkeit tragen Wirbel feine Teilchen zusätzlich an Wände; für Feinstaub zeigt die Karte zu wenig."
+    }
+  },
+  "preset.rain": {
+    "en": {
+      "text": "Raindrops fly almost straight and hit the front of the model.",
+      "fix": "Compute the impact map to see where they land and how much of the rain hits."
+    },
+    "de": {
+      "text": "Regentropfen fliegen fast geradeaus und treffen die Vorderseite des Modells.",
+      "fix": "Die Trefferkarte berechnen, um zu sehen, wo sie landen und wie viel vom Regen trifft."
+    }
+  },
+  "ride.event.impact": {
+    "en": {
+      "text": "Impact at {value} m/s at {extra}° to the surface.",
+      "fix": "The particle hits the model here."
+    },
+    "de": {
+      "text": "Aufprall mit {value} m/s unter {extra}° zur Fläche.",
+      "fix": "Hier trifft das Teilchen auf das Modell."
+    }
+  },
+  "ride.suggestion.impact_front": {
+    "en": {
+      "text": "Hit near the front",
+      "fix": "A particle that hits the model near the stagnation point."
+    },
+    "de": {
+      "text": "Treffer vorn",
+      "fix": "Ein Teilchen, das das Modell nahe dem Staupunkt trifft."
+    }
+  },
+  "ride.suggestion.impact_grazing": {
+    "en": {
+      "text": "Grazing hit",
+      "fix": "The flattest impact on the model."
+    },
+    "de": {
+      "text": "Streifender Treffer",
+      "fix": "Der flachste Aufprall auf das Modell."
+    }
+  },
+  "ride.suggestion.near_miss": {
+    "en": {
+      "text": "Near miss",
+      "fix": "The particle that comes closest to the model without hitting it."
+    },
+    "de": {
+      "text": "Knapp vorbei",
+      "fix": "Das Teilchen, das dem Modell am nächsten kommt, ohne es zu treffen."
+    }
+  },
+  "preset.light_trails": {
+    "en": {
+      "text": "Particles draw long glowing trails; where many paths run together the light gets brighter.",
+      "fix": "Bright bundles show where much air flows the same way; dark gaps behind the model are the wake."
+    },
+    "de": {
+      "text": "Partikel ziehen lange, leuchtende Spuren; wo viele Bahnen zusammenlaufen, wird es heller.",
+      "fix": "Helle Bündel zeigen, wo viel Luft denselben Weg nimmt; dunkle Lücken hinter dem Modell sind der Nachlauf."
+    }
+  },
+  "preset.ribbons": {
+    "en": {
+      "text": "Ribbons twist the way the air turns around them and show the swirl of the large vortices.",
+      "fix": "Orange turns right, blue turns left; stripes close together mean slow flow."
+    },
+    "de": {
+      "text": "Bänder verdrehen sich so, wie sich die Luft um sie dreht, und zeigen den Drall der großen Wirbel.",
+      "fix": "Orange dreht rechts herum, Blau links herum; eng liegende Streifen bedeuten langsame Strömung."
     }
   }
 }

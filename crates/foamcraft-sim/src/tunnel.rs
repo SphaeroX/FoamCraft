@@ -15,7 +15,7 @@ pub const BELOW: f64 = 5.0;
 
 /// Share of the memory a simulation may use.
 pub const USABLE_MEMORY_SHARE: f64 = 0.6;
-/// Peak memory per million cells (snappyHexMesh is the peak); re-measured in Task_09 and Task_33.
+/// Peak memory per million cells (snappyHexMesh is the peak); re-measured in Task_09 and Task_37.
 pub const BYTES_PER_MILLION_CELLS: f64 = 1.5 * 1024.0 * 1024.0 * 1024.0;
 /// Solver speed for the time estimate: cell iterations per core and second (measured on the
 /// reference case in Task_03: about 140 000; rounded down).

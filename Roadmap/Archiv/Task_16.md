@@ -28,7 +28,7 @@ Die Strömung wird mit animierten Partikeln und Stromlinien sichtbar, in Echtzei
 
 **Gehört nicht dazu:**
 
-- Zeitabhängige Felder (Task_37)
+- Zeitabhängige Felder (Task_41)
 - Videoexport (Task_19)
 
 ## Umsetzungsschritte
@@ -86,5 +86,5 @@ Reihenfolge und Details stehen in `AGENTS.md`, Abschnitt "Abschluss- und Archivi
 - **Umgesetzt (und Abweichungen vom Plan):** `foamcraft_sim::particles` (CPU-Referenz, Startpunkte, Stromlinien, PCG), `foamcraft-render` `particles.rs` + `particles.wgsl` (Compute-Advektion, Linien-Ausgabe, Druck-Färbung, Drehung), `foamcraft_api::particles` (Voreinstellungen, Startbereiche, `setup` für die App, Stromlinien), Animations-Takt in `app/src-tauri/src/main.rs`, `ParticlesSection`, Manifest Schema 10. Abweichung: Stromlinien als Linien statt Bänder.
 - **Learnings & Stolpersteine:** Compute-Ausgabe direkt als Vertexpuffer (`STORAGE | VERTEX`) spart jede Kopie. WGSL: dynamisch indizierte Arrays brauchen `var`. `get_mapped_range` liefert in wgpu 30 ein `Result`. Bei undurchsichtigen Körpern sind innen liegende Partikel/Schnitte nur nach dem Aufschneiden sichtbar (Rückseiten werden weggeschnitten). Ein Klick per Skript auf "Projekt schließen" kurz nach anderen Aktionen ging verloren – Bildschirmfoto prüfen.
 - **Wichtige Entscheidungen und ihre Gründe:** Startpunkte als Liste (alle Bereichsarten gleich behandelt, deterministisch). Gleiche Zufallszahlen auf CPU und GPU (testbar). Zeitmaßstab aus Rastergröße und größter Geschwindigkeit, damit jedes Modell gleich lebendig wirkt.
-- **Auswirkungen auf Folge-Tasks:** Task_19 (Videoexport): `Renderer::create_particles` + `step_particles` mit festem Startwert und `render_offscreen_gpu` liefern reproduzierbare Bilder; Zeitschritt pro Bild aus `particles::setup(...).dt`. Task_37 (zeitabhängig): Raster je Zeitschritt austauschen. Die Kamera wird bei jedem `project.changed` neu eingepasst (`viewport_sync` → `fit`) – bei häufigen Ansichtsänderungen störend, ggf. in Task_17/18 ändern.
+- **Auswirkungen auf Folge-Tasks:** Task_19 (Videoexport): `Renderer::create_particles` + `step_particles` mit festem Startwert und `render_offscreen_gpu` liefern reproduzierbare Bilder; Zeitschritt pro Bild aus `particles::setup(...).dt`. Task_41 (zeitabhängig): Raster je Zeitschritt austauschen. Die Kamera wird bei jedem `project.changed` neu eingepasst (`viewport_sync` → `fit`) – bei häufigen Ansichtsänderungen störend, ggf. in Task_17/18 ändern.
 - **Hinweise zu Tests und Befehlen:** `cargo test -p foamcraft-sim --test particles`, `cargo test -p foamcraft-render --test particles` (GPU; ohne Adapter übersprungen), Leistung: `cargo test -p foamcraft-render --release --test particles -- --ignored --nocapture performance`, `cargo test -p foamcraft-api --test view`, `npx vitest run tests/app/particles-section.test.tsx`. Golden Images: `tests/golden/particles_*.png`, `streamlines.png`.

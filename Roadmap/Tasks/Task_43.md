@@ -1,4 +1,4 @@
-# Task_43: Sofort-Vorschau in der App
+# Task_43: Rotierende Teile und bewegter Boden
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,63 +7,56 @@
 
 ## Ziel
 
-Der Nutzer sieht die Strömung wenige Sekunden nach dem Einrichten live in der 3D-Ansicht und kann Geschwindigkeit und Richtung ändern, während die Vorschau läuft. Ein Knopf übergibt das Szenario an die genaue OpenFOAM-Rechnung.
+Der Nutzer markiert Teile als rotierend (Lüfter, Propeller, Räder) und schaltet im Windkanal einen bewegten Boden ein. Ergebnisse sind Schub, Drehmoment und Leistung.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_16 (Partikel, Schnitte auf Rastern) und Task_42 (GPU-Löser) sind archiviert.
-- **Relevantes Vorwissen:** Der GPU-Löser und der Renderer nutzen dieselbe GPU; Felder sollen ohne Umweg über Dateien in die Ansicht gelangen. Die Vorschau ist eine Schätzung und muss als solche erkennbar sein.
+- **Voraussetzung:** Task_10 ist archiviert (Außenströmung); die Teile-Auswahl aus Task_06 und das Szenario aus Task_08 sind vorhanden.
+- **Relevantes Vorwissen:** Der bewegte Boden ist in Task_08 als Option vorgesehen. Die Vernetzung aus Task_09 muss Zellzonen für rotierende Bereiche erzeugen können.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Modus "Vorschau" neben "Genau": startet den GPU-Löser direkt aus dem Szenario, ohne Container
-- Felder des Lösers als gemeinsame GPU-Texturen im Renderer; Partikel und Schnitte live während der Rechnung
-- Live-Kennzahlen (gleitend gemittelt) mit der Kennzeichnung "Schätzung"
-- Änderungen von Geschwindigkeit und Richtung wirken ohne Neustart
-- Regler zwischen Auflösung und Bildrate
-- Genauigkeitshinweis und Knopf "Jetzt genau rechnen"
-- Hinweis, wenn die GPU ungeeignet ist
-- MCP-Werkzeug für die Vorschau
-- Anzeige des Unterschieds zwischen Vorschau und genauer Rechnung, wenn beide vorliegen
+- Teil als rotierend markieren: Achse (Vorschlag aus der Geometrie, anpassbar) und Drehzahl
+- Zwei Modelle: rotierende Wand (Räder, glatte Rotationskörper) und rotierendes Bezugssystem in einer Zone (Lüfter, Propeller); die Zone entsteht automatisch um das Teil
+- Bewegter Boden im Windkanal und passende Drehzahl der Räder aus Fahrgeschwindigkeit und Radius
+- Ergebnisse: Schub, Drehmoment, Leistung, Wirkungsgrad; beim Lüfter Volumenstrom und Druckaufbau
+- Klartext-Hinweis zu den Grenzen des Modells (der Rotor steht im Bild still)
 
 **Gehört nicht dazu:**
 
-- Ersatz der OpenFOAM-Rechnung durch die Vorschau
+- Echte Drehung mit gleitenden Netzen
 
 ## Umsetzungsschritte
 
-1. Tests zuerst für die Kopplung (Offscreen-Bild nach einer festen Schrittzahl, wiederholbar) und die Glättung der Kennzahlen.
-2. Gemeinsame Texturen zwischen Löser und Renderer umsetzen.
-3. Modus, Live-Kennzahlen und Regler in der Oberfläche umsetzen (Vitest zuerst).
-4. Änderungen im laufenden Betrieb umsetzen.
-5. Übergabe an die genaue Rechnung und die Vergleichsanzeige umsetzen.
-6. MCP-Werkzeug ergänzen.
-7. Leistung und Abweichung zur OpenFOAM-Rechnung für die Vergleichsfälle messen und dokumentieren.
+1. Testkörper erzeugen (Zylinder, einfacher Propeller).
+2. Tests zuerst für den Achsvorschlag, die Umfangsgeschwindigkeit und die Drehzahl aus der Fahrgeschwindigkeit.
+3. Rotierende Wand und bewegten Boden umsetzen.
+4. Zonen-Erzeugung in der Vernetzung und das rotierende Bezugssystem umsetzen.
+5. Auswertung (Schub, Drehmoment, Leistung) umsetzen.
+6. Oberfläche, Kennzahlen und Report erweitern.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Kopplung: Das Offscreen-Bild nach N Schritten ist wiederholbar.
-- Eine Parameteränderung wirkt, ohne dass das Feld neu initialisiert wird.
-- Glättung der Kennzahlen an synthetischen Signalen.
-- Vitest: Umschalten des Modus, Genauigkeitshinweis ist sichtbar.
-- Abweichung der Vorschau zur OpenFOAM-Rechnung für die Vergleichsfälle innerhalb von 30 %; die Messwerte stehen in der Doku.
+- Achsvorschlag für Zylinder und Propeller; Umfangsgeschwindigkeit; Drehzahl aus Fahrgeschwindigkeit.
+- Snapshot der Zonen-Erzeugung.
+- `runtime_`: Ein rotierender Zylinder im Querstrom erzeugt Auftrieb mit dem richtigen Vorzeichen; der Propeller liefert Schub in Achsrichtung.
+- Leistung gleich Drehmoment mal Winkelgeschwindigkeit.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] In der App läuft die Vorschau für beide Grundfälle live mit Partikeln (Bildrate in den Notizen)
-- [ ] Geschwindigkeit und Richtung lassen sich während der Vorschau ändern
-- [ ] "Jetzt genau rechnen" startet die OpenFOAM-Rechnung mit demselben Szenario
-- [ ] Die Vorschau ist in Ansicht, Kennzahlen und Report als Schätzung gekennzeichnet
+- [ ] Ein Teil lässt sich in der App als rotierend markieren und rechnen
+- [ ] Der bewegte Boden ist im Windkanal wählbar
+- [ ] Schub, Drehmoment und Leistung stehen in den Kennzahlen
 
 ## Offene Fragen / Annahmen
 
-- Die Toleranz von 30 % zur OpenFOAM-Rechnung ist eine Annahme und wird hier mit Messwerten bestätigt oder begründet angepasst.
+- Echte Drehung mit gleitenden Netzen ist ein Wunsch für später.
 
 ## Notizen zu diesem Task
 

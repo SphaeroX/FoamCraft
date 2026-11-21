@@ -60,6 +60,8 @@ pub struct WindTunnelInfo {
     pub memory_bytes: u64,
     pub cores: u32,
     pub warnings: Vec<Localized>,
+    /// Sources of air (empty: the whole inlet wall blows).
+    pub jets: Vec<foamcraft_core::project::JetSource>,
 }
 
 /// Total memory and physical cores of this computer.
@@ -140,6 +142,13 @@ fn evaluate(project: &Project, scenario: &Scenario) -> Result<WindTunnelInfo, Fo
     if unit_suspect(largest) {
         warnings.push(localized("scenario.unit_suspect"));
     }
+    let jets = project.manifest.jets.clone();
+    if !jets.is_empty() {
+        let refs: Vec<&Mesh> = meshes.clone();
+        for code in crate::jets::check_jets(&refs, &jets) {
+            warnings.push(localized(code));
+        }
+    }
     Ok(WindTunnelInfo {
         scenario: scenario.clone(),
         frontal_area_m2: frontal_area(&meshes, dir),
@@ -153,7 +162,85 @@ fn evaluate(project: &Project, scenario: &Scenario) -> Result<WindTunnelInfo, Fo
         cores,
         medium,
         warnings,
+        jets,
     })
+}
+
+/// Parameters of `scenario.set_jets`.
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct JetsParams {
+    /// Up to four sources; an empty list makes the whole inlet wall blow again.
+    pub jets: Vec<foamcraft_core::project::JetSource>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct MoveJetParams {
+    /// Position of the source in the list (from 0).
+    pub index: usize,
+    /// Shift in metres along world X, Y, Z.
+    pub delta: [f64; 3],
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct RotateJetParams {
+    pub index: usize,
+    /// World axis: x, y or z.
+    pub axis: String,
+    pub angle_deg: f64,
+}
+
+/// Changes one source of the active scenario and evaluates it again.
+fn change_jet(
+    s: &mut Session,
+    index: usize,
+    change: impl FnOnce(&mut foamcraft_core::project::JetSource),
+) -> Result<WindTunnelInfo, FoamError> {
+    let project = s.project()?;
+    let scenario = project
+        .manifest
+        .scenario
+        .clone()
+        .ok_or_else(|| FoamError::new("scenario.none", ""))?;
+    let jet = project
+        .manifest
+        .jets
+        .get_mut(index)
+        .ok_or_else(|| invalid("no source with this index"))?;
+    change(jet);
+    check_jet(jet)?;
+    evaluate(project, &scenario)
+}
+
+fn check_jet(j: &foamcraft_core::project::JetSource) -> Result<(), FoamError> {
+    let finite = j
+        .center
+        .iter()
+        .chain(&j.direction)
+        .chain(&j.size)
+        .all(|x| x.is_finite());
+    let length = j.direction.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if !finite || length < 1e-9 {
+        return Err(invalid("jet position and direction"));
+    }
+    if !["circle", "rectangle"].contains(&j.shape.as_str()) {
+        return Err(invalid("jet shape must be circle or rectangle"));
+    }
+    let size_ok = j.size[0] > 0.0 && (j.shape == "circle" || j.size[1] > 0.0);
+    if !size_ok || !(j.speed_m_s.is_finite() && j.speed_m_s > 0.0) {
+        return Err(invalid("jet size and speed must be positive"));
+    }
+    Ok(())
+}
+
+/// Parameters of `scenario.set_wind_direction`.
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct WindDirection {
+    /// Direction the wind blows towards, degrees in the ground plane: 0 = +X, 90 = +Y.
+    pub direction_deg: f64,
 }
 
 pub fn register(r: &mut Registry) {
@@ -178,6 +265,123 @@ pub fn register(r: &mut Registry) {
             let info = evaluate(project, &scenario)?;
             project.manifest.scenario = Some(scenario);
             Ok(info)
+        },
+    );
+    r.add(
+        "scenario.set_wind_direction",
+        "Turn the wind of the wind tunnel; everything else stays. Degrees, 0 = towards +X, 90 = towards +Y.",
+        Options {
+            undoable: true,
+            errors: &[
+                "project.none_open",
+                "scenario.not_wind_tunnel",
+                "scenario.no_geometry",
+                "scenario.invalid_input",
+            ],
+            example: json!({"direction_deg": 30.0}),
+        },
+        |s: &mut Session, p: WindDirection| {
+            let project = s.project()?;
+            let Some(Scenario::WindTunnel(w)) = project.manifest.scenario.clone() else {
+                return Err(FoamError::new("scenario.not_wind_tunnel", ""));
+            };
+            if !p.direction_deg.is_finite() {
+                return Err(FoamError::new("scenario.invalid_input", "direction_deg"));
+            }
+            let mut w = w;
+            // Keep the angle in -180..180 so the same direction is stored the same way.
+            w.direction_deg = (p.direction_deg + 180.0).rem_euclid(360.0) - 180.0;
+            validate(&w)?;
+            let scenario = Scenario::WindTunnel(w);
+            let info = evaluate(project, &scenario)?;
+            project.manifest.scenario = Some(scenario);
+            Ok(info)
+        },
+    );
+    r.add(
+        "scenario.set_jets",
+        "Let the air come from up to four sources (round or rectangular openings with centre, \
+         direction, size and speed, like fans or nozzles) in still surroundings instead of the \
+         whole inlet wall; an empty list goes back to the wind tunnel.",
+        Options {
+            undoable: true,
+            errors: &[
+                "project.none_open",
+                "scenario.not_wind_tunnel",
+                "scenario.no_geometry",
+                "scenario.invalid_input",
+            ],
+            example: json!({"jets": [{"shape": "circle", "center": [-0.3, 0.0, 0.1],
+                "direction": [1.0, 0.0, 0.0], "size": [0.08, 0.08], "speed_m_s": 15.0}]}),
+        },
+        |s: &mut Session, p: JetsParams| {
+            if p.jets.len() > 4 {
+                return Err(invalid("at most four jets"));
+            }
+            for j in &p.jets {
+                check_jet(j)?;
+            }
+            let project = s.project()?;
+            let Some(Scenario::WindTunnel(mut w)) = project.manifest.scenario.clone() else {
+                return Err(FoamError::new("scenario.not_wind_tunnel", ""));
+            };
+            // The reference speed is the fastest jet; the case lines up with the first one.
+            if let Some(v) = p.jets.iter().map(|j| j.speed_m_s).reduce(f64::max) {
+                w.speed_m_s = v;
+            }
+            if let Some(dir) = crate::jets::direction_of(&p.jets) {
+                w.direction_deg = (dir + 180.0).rem_euclid(360.0) - 180.0;
+            }
+            let scenario = Scenario::WindTunnel(w);
+            project.manifest.jets = p.jets;
+            let info = evaluate(project, &scenario)?;
+            project.manifest.scenario = Some(scenario);
+            Ok(info)
+        },
+    );
+    r.add(
+        "scenario.move_jet",
+        "Move one source of air by a distance along the world axes (metres).",
+        Options {
+            undoable: true,
+            errors: &[
+                "project.none_open",
+                "scenario.none",
+                "scenario.invalid_input",
+            ],
+            example: json!({"index": 0, "delta": [0.0, 0.0, 0.05]}),
+        },
+        |s: &mut Session, p: MoveJetParams| {
+            change_jet(s, p.index, |j| {
+                for k in 0..3 {
+                    j.center[k] += p.delta[k];
+                }
+            })
+        },
+    );
+    r.add(
+        "scenario.rotate_jet",
+        "Turn the direction of one source of air about a world axis (degrees).",
+        Options {
+            undoable: true,
+            errors: &[
+                "project.none_open",
+                "scenario.none",
+                "scenario.invalid_input",
+            ],
+            example: json!({"index": 0, "axis": "z", "angle_deg": 15.0}),
+        },
+        |s: &mut Session, p: RotateJetParams| {
+            let axis = match p.axis.as_str() {
+                "x" => glam::DVec3::X,
+                "y" => glam::DVec3::Y,
+                "z" => glam::DVec3::Z,
+                _ => return Err(invalid("axis must be x, y or z")),
+            };
+            let turn = glam::DMat3::from_axis_angle(axis, p.angle_deg.to_radians());
+            change_jet(s, p.index, |j| {
+                j.direction = (turn * glam::DVec3::from(j.direction)).into();
+            })
         },
     );
     r.add(

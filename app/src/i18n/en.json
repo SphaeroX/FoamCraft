@@ -118,13 +118,15 @@
     "cells": "{n} cells",
     "memoryLimited": "limited by memory",
     "time": "Estimated time",
-    "minutes": "about {n} min"
+    "minutes": "about {n} min",
+    "details": "Details"
   },
   "steps": {
     "geometry": "Geometry",
     "scenario": "Scenario",
     "run": "Run",
-    "results": "Results"
+    "results": "Results",
+    "label": "Steps"
   },
   "mesh": {
     "title": "Mesh",
@@ -249,7 +251,10 @@
       "Uz": "Velocity z",
       "k": "Turbulent kinetic energy",
       "U_mag": "Speed",
-      "Q": "Q criterion (vortices)"
+      "Q": "Q criterion (vortices)",
+      "attached": "Attached / reverse flow",
+      "impact": "Impact rate",
+      "impact_speed": "Impact speed"
     }
   },
   "flowView": {
@@ -267,7 +272,19 @@
       "y": "Across y",
       "z": "Across z"
     },
-    "flip": "Other side"
+    "flip": "Other side",
+    "select": "Select",
+    "visible": "Visible",
+    "alongAxis": "Normal along {axis}",
+    "cutAtSelected": "Cut at the selected slice",
+    "cutTargets": "The cut opens",
+    "target": {
+      "model": "Model",
+      "particles": "Smoke and particles",
+      "streamlines": "Streamlines",
+      "isosurfaces": "Isosurfaces"
+    },
+    "dragHint": "Drag a slice in the view to move it along its normal."
   },
   "particles": {
     "title": "Particles",
@@ -285,7 +302,19 @@
     "pause": "Pause",
     "play": "Play",
     "seed": "Start value",
-    "areaPosition": "Start area position"
+    "areaPosition": "Start area position",
+    "colorSlip": "Slip against the flow",
+    "trails": "Light trails",
+    "ribbons": "Ribbons",
+    "tubes": "Tubes",
+    "colorSwirl": "Swirl (left … right)",
+    "trailLength": "Trail length",
+    "width": "Width",
+    "brightness": "Brightness",
+    "glow": "Glow",
+    "longExposure": "Long exposure",
+    "halfLife": "Half-life (s)",
+    "trailsShortened": "Trails shortened: with this many particles each trail keeps fewer points."
   },
   "figures": {
     "title": "Key figures",
@@ -343,7 +372,8 @@
       "mass_flow_kg_s": "Mass flow",
       "share": "Share of outflow",
       "total_pressure_pa": "Total pressure",
-      "mass_balance_error": "Mass balance error"
+      "mass_balance_error": "Mass balance error",
+      "reverse_flow_area": "Surface in reverse flow"
     },
     "differenceScale": "Colours on the model: {field} of the second run minus the first, {range} {unit}; the middle colour means no change."
   },
@@ -388,7 +418,9 @@
     "failed": "The export failed.",
     "note": "Videos are Motion JPEG in an AVI file: every player on Windows opens them; the files are large.",
     "saveImage": "Save image",
-    "saveVideo": "Save video"
+    "saveVideo": "Save video",
+    "longExposure": "Long exposure",
+    "exposureTime": "Exposure time (s)"
   },
   "report": {
     "button": "Report",
@@ -415,7 +447,8 @@
     },
     "logo": "Choose logo",
     "save": "Save report",
-    "saved": "Written: {files}"
+    "saved": "Written: {files}",
+    "compareRuns": "Compare with several runs"
   },
   "setup": {
     "button": "System",
@@ -454,11 +487,11 @@
     "count": "Step {n} of {of}",
     "geometry": {
       "title": "1 · Geometry",
-      "text": "Import your model (STL, OBJ, 3MF, STEP, IGES), check the unit and the diagnosis, and select faces to name them or to close openings."
+      "text": "Load a model (STL, OBJ, 3MF, STEP, IGES), check its size and place it with the arrows and rings in the view. Faces and openings are in expert mode (menu)."
     },
     "scenario": {
       "title": "2 · Scenario",
-      "text": "Choose a wind tunnel for flow around the model, or internal flow through it with inlets and outlets; set speed, medium and quality."
+      "text": "Choose the wind: speed with one click, direction on the wind rose or with the orange arrow in the view. Changes apply on their own."
     },
     "run": {
       "title": "3 · Run",
@@ -466,7 +499,7 @@
     },
     "results": {
       "title": "4 · Results",
-      "text": "Colour the model, add slices and particles, read the key figures with the reliability light, compare runs and export images, videos and reports."
+      "text": "Pick a ready-made view such as smoke lines or the wake, or start the demo. Key figures, comparisons and exports are there too."
     },
     "next": "Next",
     "back": "Back",
@@ -480,5 +513,223 @@
   "console": {
     "title": "Console",
     "empty": "No output yet."
+  },
+  "viewCube": {
+    "front": "View from the front",
+    "back": "View from the back",
+    "left": "View from the left",
+    "right": "View from the right",
+    "top": "View from the top",
+    "bottom": "View from the bottom",
+    "front_left": "View from front and left",
+    "front_right": "View from front and right",
+    "back_left": "View from back and left",
+    "back_right": "View from back and right",
+    "top_front": "View from top and front",
+    "top_back": "View from top and back",
+    "top_left": "View from top and left",
+    "top_right": "View from top and right",
+    "bottom_front": "View from bottom and front",
+    "bottom_back": "View from bottom and back",
+    "bottom_left": "View from bottom and left",
+    "bottom_right": "View from bottom and right",
+    "top_front_left": "View from top, front and left",
+    "top_front_right": "View from top, front and right",
+    "top_back_left": "View from top, back and left",
+    "top_back_right": "View from top, back and right",
+    "bottom_front_left": "View from bottom, front and left",
+    "bottom_front_right": "View from bottom, front and right",
+    "bottom_back_left": "View from bottom, back and left",
+    "bottom_back_right": "View from bottom, back and right",
+    "short": {
+      "front": "Front",
+      "back": "Back",
+      "left": "Left",
+      "right": "Right",
+      "top": "Top",
+      "bottom": "Bottom"
+    },
+    "default": "Default view",
+    "defaultShort": "Home",
+    "label": "View direction"
+  },
+  "move": {
+    "pivot": "Handle position",
+    "pivots": {
+      "center": "Box centre",
+      "centroid": "Centre of volume",
+      "origin": "Model origin"
+    },
+    "hint": "Drag an arrow to move, a ring to turn. Shift: no snapping, Esc: cancel. Moving makes a new mesh necessary.",
+    "wind": "Wind"
+  },
+  "wind": {
+    "rose": "Wind direction",
+    "from": "Wind comes from {deg}°",
+    "towards": "flows towards {deg}°"
+  },
+  "presets": {
+    "title": "Understand the flow",
+    "smoke_lines": "Smoke lines",
+    "smoke_curtain": "Smoke curtain",
+    "mid_slice": "Speed in the middle",
+    "surface_pressure": "Pressure on the model",
+    "vortices": "Vortices",
+    "wake": "Wake",
+    "internal_path": "Path through the part",
+    "internal_slice": "Speed lengthwise",
+    "startDemo": "Start demo",
+    "demo": "Demo",
+    "pause": "Pause",
+    "play": "Play",
+    "back": "Back",
+    "forward": "Next",
+    "end": "End demo",
+    "step": "View {n} of {of}",
+    "oil_film": "Oil film",
+    "tufts": "Wool tufts",
+    "rain": "Rain",
+    "light_trails": "Light trails",
+    "ribbons": "Ribbons"
+  },
+  "stepState": {
+    "open": "not possible yet",
+    "ready": "to do",
+    "done": "done",
+    "attention": "done, worth a look"
+  },
+  "missing": {
+    "model": "Load a model first.",
+    "scenario": "Set up the wind first.",
+    "run": "Start the calculation to see results.",
+    "running": "The calculation is running."
+  },
+  "nav": {
+    "back": "Back",
+    "next": "Next"
+  },
+  "menu": {
+    "label": "Menu"
+  },
+  "mode": {
+    "expert": "Expert mode",
+    "hint": "Shows faces, groups, roles, mesh figures and logs."
+  },
+  "assistant": {
+    "geometry": "Load your model and check its size. Drag the arrows to place it.",
+    "scenario": "Choose how fast and from where the wind blows.",
+    "run": "Start the calculation. FoamCraft builds the mesh and stops when the result is stable.",
+    "results": "Pick a ready-made view or start the demo to see what the flow does."
+  },
+  "scenarios": {
+    "title": "Scenarios",
+    "unnamed": "Scenario {n}",
+    "add": "Add scenario",
+    "name": "Scenario name",
+    "remove": "Remove {name}"
+  },
+  "queue": {
+    "start": "Run all scenarios",
+    "stop": "Stop queue",
+    "progress": "{n} of {of}: {name}",
+    "stopped": "Queue stopped.",
+    "done": "All scenarios are calculated.",
+    "failed": "Finished; {n} scenario(s) failed."
+  },
+  "compareMany": {
+    "title": "Compare runs",
+    "hint": "Tick two or more runs; the first one ticked is the reference.",
+    "table": "Runs side by side"
+  },
+  "jets": {
+    "title": "Where the air comes from",
+    "wall": "The whole wall (wind tunnel)",
+    "sources": "Nozzles or fans",
+    "hint": "The air around stands still; only the sources blow. Drag a source in the view to place and turn it.",
+    "item": "Source {n}",
+    "shape": "Shape",
+    "circle": "Round",
+    "rectangle": "Rectangular",
+    "remove": "Remove source {n}",
+    "diameter": "Diameter (mm)",
+    "width": "Width (mm)",
+    "height": "Height (mm)",
+    "speed": "Speed ({unit})",
+    "yaw": "Turned sideways (°)",
+    "pitch": "Tilted up (°)",
+    "add": "Add source"
+  },
+  "ride": {
+    "title": "Ride along a particle",
+    "intro": "Fly with one particle of the flow and see what it goes through on its way around or through the model.",
+    "duration": "about {s} s",
+    "pick": "Pick a particle in the view",
+    "pickHint": "Click a particle or a spot on the model.",
+    "readings": "Readings",
+    "speed": "Speed",
+    "pressure": "Pressure",
+    "wall": "Wall distance",
+    "accel": "Acceleration",
+    "factor": "Time",
+    "slowMotion": "slow motion × {f}",
+    "fastMotion": "fast motion × {f}",
+    "coasterNote": "The roller coaster moves the view a lot. Switch back to calm at any time.",
+    "ok": "OK",
+    "bar": "Ride",
+    "play": "Play",
+    "pause": "Pause",
+    "position": "Position",
+    "event": "event: {name}",
+    "tempo": "Speed",
+    "mode": "Ride mode",
+    "calm": "Calm",
+    "coaster": "Roller coaster",
+    "view": "View",
+    "views": {
+      "first_person": "First person",
+      "chase": "Chase",
+      "overview": "Overview"
+    },
+    "guide": "Guide line",
+    "stop": "End ride",
+    "demo": "Ride along",
+    "slip": "Slip"
+  },
+  "surfaceFlow": {
+    "title": "Flow on the surface",
+    "lines": "Lines (oil film)",
+    "tufts": "Wool tufts",
+    "density": "Line spacing",
+    "spacing": "Tuft spacing",
+    "colorLines": "Line colour",
+    "colorTufts": "Tuft colour",
+    "plain": "Plain",
+    "byStress": "By wall shear stress",
+    "byState": "Calm or fluttering",
+    "animate": "Animate",
+    "flutterNote": "The flutter shows where the flow is turbulent or separated. It is an illustration, not a time-accurate calculation.",
+    "approximate": "Approximate: this run has no wall shear stress vector, so the direction comes from the flow just off the wall.",
+    "attachedLegend": "attached … reverse flow",
+    "fine": "fine",
+    "coarse": "coarse"
+  },
+  "heavy": {
+    "title": "Particles with mass",
+    "materials": {
+      "fine_dust": "Fine dust",
+      "spray": "Spray",
+      "rain": "Raindrops",
+      "sand": "Sand",
+      "snow": "Snowflakes"
+    },
+    "massless": "Massless",
+    "diameter": "Diameter (µm)",
+    "density": "Density (kg/m³)",
+    "ownValues": "Use own values",
+    "stokes": "Stokes number {st}:",
+    "computeMap": "Compute impact map",
+    "progress": "Progress of the impact map",
+    "share": "{share} % hit ± {unc} %",
+    "showMap": "Show on the model"
   }
 }

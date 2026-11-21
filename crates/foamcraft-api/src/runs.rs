@@ -63,7 +63,35 @@ pub struct SummaryText {
 
 fn summary_of(project: &Project, job: Option<&str>) -> Result<(Summary, Value), FoamError> {
     let result = load_result(&project.root.join(RESULTS_DIR), job)?;
-    Ok((summarize(&result)?, result))
+    let mut summary = summarize(&result)?;
+    if summary.kind == "wind_tunnel"
+        && let Some(share) = reverse_flow_area(project, &summary.job_id)
+    {
+        summary.figures.push(foamcraft_sim::summary::Figure {
+            id: "reverse_flow_area".into(),
+            value: share * 100.0,
+            unit: "%".into(),
+            part: None,
+        });
+    }
+    Ok((summary, result))
+}
+
+/// Share of the model surface in reverse flow (from the wall shear stress vector), when the run
+/// has it.
+fn reverse_flow_area(project: &Project, job: &str) -> Option<f64> {
+    let s = crate::results::load_surface(&project.root, job).ok()?;
+    let a = s.field("attached")?;
+    let (mut back, mut total) = (0.0, 0.0);
+    for (t, v) in s.triangles.iter().zip(a) {
+        let [p, q, r] = t.map(|i| glam::DVec3::from(s.points[i as usize].map(f64::from)));
+        let area = 0.5 * (q - p).cross(r - p).length();
+        total += area;
+        if *v < 0.0 {
+            back += area;
+        }
+    }
+    (total > 0.0).then(|| back / total)
 }
 
 /// `results.summary` of a job as JSON (with the English and German texts).
@@ -122,6 +150,91 @@ pub struct JobParams {
     /// Default: the newest result.
     #[serde(default)]
     pub job_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CompareManyParams {
+    /// Two or more job ids, in the order of the columns.
+    pub jobs: Vec<String>,
+    /// Run the others are compared with; default: the first.
+    #[serde(default)]
+    pub reference: Option<String>,
+}
+
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct ManyRow {
+    pub id: String,
+    pub part: Option<String>,
+    pub unit: String,
+    /// One value per run (null where the run has no such figure).
+    pub values: Vec<Option<f64>>,
+    /// (value − reference) / |reference| per run.
+    pub relative: Vec<Option<f64>>,
+}
+
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct ManyComparison {
+    pub jobs: Vec<String>,
+    pub names: Vec<String>,
+    pub reference: String,
+    pub rows: Vec<ManyRow>,
+}
+
+/// Key figures of several runs side by side, each relative to a reference run.
+pub fn compare_many(project: &Project, p: CompareManyParams) -> Result<ManyComparison, FoamError> {
+    if p.jobs.len() < 2 {
+        return Err(FoamError::new("results.compare_needs_two", ""));
+    }
+    let reference = p.reference.unwrap_or_else(|| p.jobs[0].clone());
+    let summaries = p
+        .jobs
+        .iter()
+        .map(|j| summary_of(project, Some(j)).map(|(s, _)| s))
+        .collect::<Result<Vec<_>, _>>()?;
+    let ref_index = p.jobs.iter().position(|j| *j == reference).unwrap_or(0);
+    let mut keys: Vec<(String, Option<String>, String)> = Vec::new();
+    for f in summaries.iter().flat_map(|s| &s.figures) {
+        let k = (f.id.clone(), f.part.clone(), f.unit.clone());
+        if !keys.contains(&k) {
+            keys.push(k);
+        }
+    }
+    let rows = keys
+        .into_iter()
+        .map(|(id, part, unit)| {
+            let values: Vec<Option<f64>> = summaries
+                .iter()
+                .map(|s| {
+                    s.figures
+                        .iter()
+                        .find(|f| f.id == id && f.part == part)
+                        .map(|f| f.value)
+                })
+                .collect();
+            let base = values[ref_index];
+            let relative = values
+                .iter()
+                .map(|v| {
+                    v.zip(base)
+                        .and_then(|(x, b)| (b.abs() > 1e-30).then(|| (x - b) / b.abs()))
+                })
+                .collect();
+            ManyRow {
+                id,
+                part,
+                unit,
+                values,
+                relative,
+            }
+        })
+        .collect();
+    Ok(ManyComparison {
+        names: p.jobs.iter().map(|j| run_name(project, j)).collect(),
+        jobs: p.jobs,
+        reference,
+        rows,
+    })
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -442,6 +555,16 @@ pub fn register(r: &mut Registry, runner: SharedRunner) {
             example: json!({"a": "job-1", "b": "job-2"}),
         },
         |s, p: CompareParams| compare(s.project()?, p),
+    );
+    r.add(
+        "results.compare_many",
+        "Compare the key figures of two or more runs side by side, each relative to a reference run.",
+        Options {
+            undoable: false,
+            errors: &["project.none_open", "run.no_result", "results.compare_needs_two"],
+            example: json!({"jobs": ["job-1", "job-2", "job-3"], "reference": "job-1"}),
+        },
+        |s, p: CompareManyParams| compare_many(s.project()?, p),
     );
     r.add(
         "results.export",

@@ -77,6 +77,72 @@ impl Placement {
             part_tags: mesh.part_tags.clone(),
         }
     }
+
+    /// The placement turned by `angle` radians about the world axis `axis` through `pivot`
+    /// (metres). Scale and unit stay.
+    pub fn rotated_about(&self, axis: DVec3, angle: f64, pivot: DVec3) -> Placement {
+        let turn = DMat3::from_axis_angle(axis.normalize(), angle);
+        let rotation = turn * self.rotation();
+        let t = pivot + turn * (DVec3::from(self.translation) - pivot);
+        Placement {
+            rotation_deg: rotation_to_deg(rotation),
+            translation: t.into(),
+            ..self.clone()
+        }
+    }
+}
+
+/// Yaw, pitch and roll in degrees of a rotation `Rz(yaw)·Ry(pitch)·Rx(roll)`. At pitch ±90° the
+/// roll is set to zero and the yaw carries the whole turn about the vertical.
+pub fn rotation_to_deg(r: DMat3) -> [f64; 3] {
+    // glam stores columns: r.col(c)[row].
+    let m = |row: usize, col: usize| r.col(col)[row];
+    let s = (-m(2, 0)).clamp(-1.0, 1.0);
+    let pitch = s.asin();
+    let (yaw, roll) = if s.abs() > 1.0 - 1e-12 {
+        ((-m(0, 1)).atan2(m(1, 1)), 0.0)
+    } else {
+        (m(1, 0).atan2(m(0, 0)), m(2, 1).atan2(m(2, 2)))
+    };
+    [yaw, pitch, roll].map(f64::to_degrees)
+}
+
+/// Points a model can be moved and turned about, in metres.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct Pivots {
+    /// Centre of the bounding box.
+    pub center: [f64; 3],
+    /// Centre of the enclosed volume (the box centre for an open or flat model).
+    pub centroid: [f64; 3],
+    /// Origin of the model file, i.e. the translation.
+    pub origin: [f64; 3],
+}
+
+/// Pivots of a model in world coordinates; `origin` is its translation.
+pub fn pivots(world: &Mesh, origin: [f64; 3]) -> Pivots {
+    let (min, max) = world.bounds();
+    let center = [0, 1, 2].map(|k| (f64::from(min[k]) + f64::from(max[k])) / 2.0);
+    // Sum over signed tetrahedra (triangle plus the box centre, for accuracy far from zero).
+    let c = DVec3::from(center);
+    let mut volume = 0.0;
+    let mut moment = DVec3::ZERO;
+    for t in &world.triangles {
+        let [a, b, d] = t.map(|v| DVec3::from(world.positions[v as usize].map(f64::from)) - c);
+        let v = a.dot(b.cross(d)) / 6.0;
+        volume += v;
+        moment += v * (a + b + d) / 4.0;
+    }
+    let size = DVec3::from(max.map(f64::from)) - DVec3::from(min.map(f64::from));
+    let centroid = if volume.abs() > 1e-9 * size.x.max(size.y).max(size.z).powi(3).max(1e-30) {
+        (c + moment / volume).into()
+    } else {
+        center
+    };
+    Pivots {
+        center,
+        centroid,
+        origin,
+    }
 }
 
 /// Vertical shift that puts the lowest point of `world` at z = 0.

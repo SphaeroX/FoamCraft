@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::{
-    Diagnosis, Format, Mesh, Placement, Severity, diagnose, fix_normals, format_of, ground_offset,
-    read_mesh, suggest_unit, unit_scale,
+    Diagnosis, Format, Mesh, Pivots, Placement, Severity, diagnose, fix_normals, format_of,
+    ground_offset, pivots, read_mesh, suggest_unit, unit_scale,
 };
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -54,6 +54,73 @@ pub struct TransformParams {
     /// Extra uniform scale factor.
     #[serde(default)]
     pub scale: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct MoveByParams {
+    pub id: String,
+    /// Shift in metres along world X, Y and Z.
+    pub delta: [f64; 3],
+}
+
+/// A world axis.
+#[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
+
+impl Axis {
+    fn vector(self) -> glam::DVec3 {
+        match self {
+            Axis::X => glam::DVec3::X,
+            Axis::Y => glam::DVec3::Y,
+            Axis::Z => glam::DVec3::Z,
+        }
+    }
+}
+
+/// A named pivot of the model.
+#[derive(Debug, Clone, Copy, Default, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum PivotKind {
+    /// Centre of the bounding box.
+    #[default]
+    Center,
+    /// Centre of the enclosed volume.
+    Centroid,
+    /// Origin of the model file.
+    Origin,
+}
+
+/// A named pivot or a point in metres.
+#[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum PivotSpec {
+    Named(PivotKind),
+    Point([f64; 3]),
+}
+
+impl Default for PivotSpec {
+    fn default() -> Self {
+        PivotSpec::Named(PivotKind::Center)
+    }
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct RotateAboutParams {
+    pub id: String,
+    /// World axis to turn about: x, y or z.
+    pub axis: Axis,
+    /// Angle in degrees, counter-clockwise looking against the axis.
+    pub angle_deg: f64,
+    /// center (default), centroid, origin or a point [x, y, z] in metres.
+    #[serde(default)]
+    pub pivot: PivotSpec,
 }
 
 #[derive(Debug, Serialize, JsonSchema)]
@@ -282,6 +349,12 @@ fn update(
     info(&root, &entry)
 }
 
+/// The pivots of a model in world coordinates.
+fn entry_pivots(root: &Path, e: &GeometryEntry) -> Result<Pivots, FoamError> {
+    let world = placement(e).apply(&load_entry(root, e)?);
+    Ok(pivots(&world, e.translation))
+}
+
 /// Geometry and surface commands without CAD import (STEP and IGES report
 /// `geometry.cad_unavailable`).
 pub fn register(r: &mut Registry) {
@@ -387,6 +460,70 @@ fn register_geometry(r: &mut Registry, cad: Option<SharedCadConverter>) {
                 if let Some(k) = p.scale {
                     e.scale = k;
                 }
+                Ok(())
+            })
+        },
+    );
+    r.add(
+        "geometry.pivot",
+        "Points a model can be moved and turned about: box centre, volume centre and origin (metres).",
+        Options {
+            undoable: false,
+            errors,
+            example: json!({"id": "model-1"}),
+        },
+        |s, p: IdParams| {
+            let project = s.project()?;
+            let root = project.root.clone();
+            let entry = find(project, &p.id)?;
+            entry_pivots(&root, entry)
+        },
+    );
+    r.add(
+        "geometry.move_by",
+        "Move a model by a distance along the world axes (metres).",
+        Options {
+            undoable: true,
+            errors,
+            example: json!({"id": "model-1", "delta": [0.1, 0, 0]}),
+        },
+        |s, p: MoveByParams| {
+            update(s, &p.id, |_, e| {
+                for k in 0..3 {
+                    e.translation[k] += p.delta[k];
+                }
+                Ok(())
+            })
+        },
+    );
+    r.add(
+        "geometry.rotate_about",
+        "Turn a model about a world axis through a pivot (box centre by default).",
+        Options {
+            undoable: true,
+            errors,
+            example: json!({"id": "model-1", "axis": "z", "angle_deg": 90, "pivot": "center"}),
+        },
+        |s, p: RotateAboutParams| {
+            update(s, &p.id, |root, e| {
+                let point = match p.pivot {
+                    PivotSpec::Point(q) => q,
+                    PivotSpec::Named(kind) => {
+                        let all = entry_pivots(root, e)?;
+                        match kind {
+                            PivotKind::Center => all.center,
+                            PivotKind::Centroid => all.centroid,
+                            PivotKind::Origin => all.origin,
+                        }
+                    }
+                };
+                let turned = placement(e).rotated_about(
+                    p.axis.vector(),
+                    p.angle_deg.to_radians(),
+                    glam::DVec3::from(point),
+                );
+                e.rotation_deg = turned.rotation_deg;
+                e.translation = turned.translation;
                 Ok(())
             })
         },

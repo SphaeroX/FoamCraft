@@ -24,6 +24,44 @@ pub enum ParticleColor {
     Age,
     Constant,
     Pressure,
+    /// Heavy particles: how much slower or faster than the flow (|u - v|).
+    Slip,
+}
+
+/// Heavy particles (Task_34): drag towards the flow, gravity and impact on the surface.
+#[derive(Debug, Clone, PartialEq)]
+pub struct HeavySettings {
+    /// Response time in creeping flow, s.
+    pub tau_p: f32,
+    pub diameter: f32,
+    /// Kinematic viscosity of the medium, m²/s.
+    pub nu: f32,
+    pub stick: bool,
+    /// Gravity minus buoyancy in the flow frame, m/s².
+    pub gravity: [f32; 3],
+    pub restitution: f32,
+    pub friction: f32,
+    /// Flow seconds a stuck particle stays before it starts again.
+    pub stick_time: f32,
+    /// Length of the mark of a stuck particle, m.
+    pub mark: f32,
+    /// Settling velocity in still medium (flow frame), m/s: added to the flow at the start.
+    pub settle: [f32; 3],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct HeavyUniform {
+    tau_p: f32,
+    diameter: f32,
+    nu: f32,
+    stick: u32,
+    gravity: [f32; 4],
+    restitution: f32,
+    friction: f32,
+    stick_time: f32,
+    mark: f32,
+    settle: [f32; 4],
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -61,6 +99,7 @@ struct Params {
     _pad: f32,
     constant: [f32; 4],
     rot: [f32; 4],
+    clip: [f32; 4],
 }
 
 #[repr(C)]
@@ -84,6 +123,10 @@ pub struct GpuParticles {
     pub(crate) indices: wgpu::Buffer,
     pub(crate) object: wgpu::BindGroup,
     pub(crate) count: u32,
+    /// Heavy particles: velocity and stuck time per particle.
+    motion: Option<wgpu::Buffer>,
+    /// Light trails: the ring of the last positions (Task_35).
+    pub(crate) trails: Option<crate::trails::GpuTrails>,
 }
 
 impl GpuParticles {
@@ -118,6 +161,40 @@ impl Renderer {
         seeds: &[[f32; 3]],
         s: &ParticleSettings,
     ) -> GpuParticles {
+        self.create_any_particles(levels, seeds, s, None, None)
+    }
+
+    pub(crate) fn create_particles_with_trails(
+        &self,
+        levels: &[FlowLevel],
+        seeds: &[[f32; 3]],
+        s: &ParticleSettings,
+        trails: crate::trails::GpuTrails,
+    ) -> GpuParticles {
+        self.create_any_particles(levels, seeds, s, None, Some(trails))
+    }
+
+    /// Heavy particles: as `create_particles`, with the particle properties and the distance to
+    /// the surface at every grid point (same order as the grids, negative inside solids).
+    pub fn create_heavy_particles(
+        &self,
+        levels: &[FlowLevel],
+        seeds: &[[f32; 3]],
+        s: &ParticleSettings,
+        heavy: &HeavySettings,
+        distance: &[f32],
+    ) -> GpuParticles {
+        self.create_any_particles(levels, seeds, s, Some((heavy, distance)), None)
+    }
+
+    fn create_any_particles(
+        &self,
+        levels: &[FlowLevel],
+        seeds: &[[f32; 3]],
+        s: &ParticleSettings,
+        heavy: Option<(&HeavySettings, &[f32])>,
+        trails: Option<crate::trails::GpuTrails>,
+    ) -> GpuParticles {
         let device = &self.device;
         let mut field: Vec<[f32; 4]> = Vec::new();
         let mut pressure: Vec<f32> = Vec::new();
@@ -151,6 +228,7 @@ impl Renderer {
                 ParticleColor::Age => 1,
                 ParticleColor::Constant => 2,
                 ParticleColor::Pressure => 3,
+                ParticleColor::Slip => 4,
             },
             dt: 0.0,
             max_age: s.max_age,
@@ -165,6 +243,7 @@ impl Renderer {
                 0.0,
                 0.0,
             ],
+            clip: [0.0; 4],
         };
         let params_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("particle params"),
@@ -219,9 +298,51 @@ impl Renderer {
             contents: bytemuck::cast_slice(&index),
             usage: wgpu::BufferUsages::INDEX,
         });
+        let source = if heavy.is_some() {
+            include_str!("particles_heavy.wgsl")
+        } else if trails.is_some() {
+            include_str!("particles_trails.wgsl")
+        } else {
+            include_str!("particles.wgsl")
+        };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("particles"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("particles.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
+        // Heavy particles: velocity and stuck time, the distance field, the properties.
+        let extra = heavy.map(|(h, dist)| {
+            let motion = storage(
+                device,
+                "particle motion",
+                &vec![0u8; count as usize * 16],
+                wgpu::BufferUsages::COPY_SRC,
+            );
+            let mut d = dist.to_vec();
+            d.resize(field.len(), 1e30);
+            let dist_buf = storage(
+                device,
+                "distance",
+                bytemuck::cast_slice(&d),
+                wgpu::BufferUsages::empty(),
+            );
+            let u = HeavyUniform {
+                tau_p: h.tau_p,
+                diameter: h.diameter,
+                nu: h.nu,
+                stick: u32::from(h.stick),
+                gravity: [h.gravity[0], h.gravity[1], h.gravity[2], 0.0],
+                restitution: h.restitution,
+                friction: h.friction,
+                stick_time: h.stick_time,
+                mark: h.mark,
+                settle: [h.settle[0], h.settle[1], h.settle[2], 0.0],
+            };
+            let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("heavy"),
+                contents: bytemuck::bytes_of(&u),
+                usage: wgpu::BufferUsages::UNIFORM,
+            });
+            (motion, dist_buf, uniform)
         });
         let entry = |binding: u32, ty: wgpu::BufferBindingType| wgpu::BindGroupLayoutEntry {
             binding,
@@ -235,20 +356,17 @@ impl Renderer {
         };
         let read = wgpu::BufferBindingType::Storage { read_only: true };
         let write = wgpu::BufferBindingType::Storage { read_only: false };
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("particles"),
-            entries: &[
-                entry(0, wgpu::BufferBindingType::Uniform),
-                entry(1, read),
-                entry(2, read),
-                entry(3, read),
-                entry(4, write),
-                entry(5, write),
-                entry(6, write),
-                entry(7, read),
-            ],
-        });
-        let buffers = [
+        let mut layout_entries = vec![
+            entry(0, wgpu::BufferBindingType::Uniform),
+            entry(1, read),
+            entry(2, read),
+            entry(3, read),
+            entry(4, write),
+            entry(5, write),
+            entry(6, write),
+            entry(7, read),
+        ];
+        let mut buffers = vec![
             &params_buf,
             &levels_buf,
             &field_buf,
@@ -258,6 +376,23 @@ impl Renderer {
             &colors,
             &pressure_buf,
         ];
+        // Trails: the ring and its uniform take the places of the line vertices and colours.
+        if let Some(t) = &trails {
+            layout_entries[5] = entry(5, write);
+            layout_entries[6] = entry(6, wgpu::BufferBindingType::Uniform);
+            buffers[5] = &t.ring;
+            buffers[6] = t.uniform();
+        }
+        if let Some((motion, dist, uniform)) = &extra {
+            // The distance field replaces the pressure (at most 8 storage buffers per stage).
+            buffers[7] = dist;
+            layout_entries.extend([entry(8, write), entry(9, wgpu::BufferBindingType::Uniform)]);
+            buffers.extend([motion, uniform]);
+        }
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("particles"),
+            entries: &layout_entries,
+        });
         let entries: Vec<wgpu::BindGroupEntry<'_>> = buffers
             .iter()
             .enumerate()
@@ -299,6 +434,8 @@ impl Renderer {
             indices,
             object,
             count,
+            motion: extra.map(|e| e.0),
+            trails,
         };
         self.dispatch(&mut gp, true);
         gp
@@ -317,18 +454,52 @@ impl Renderer {
         self.queue.submit([encoder.finish()]);
     }
 
+    /// Cuts the particles open along a plane (origin, normal in world coordinates): particles
+    /// on the side the normal points to are not drawn but keep moving. `None` shows all.
+    pub fn set_particle_clip(&self, p: &mut GpuParticles, clip: Option<([f32; 3], [f32; 3])>) {
+        p.params.clip = match clip {
+            Some((o, n)) => {
+                let d = -(n[0] * o[0] + n[1] * o[1] + n[2] * o[2]);
+                [n[0], n[1], n[2], d]
+            }
+            None => [0.0; 4],
+        };
+        self.queue
+            .write_buffer(&p.params_buf, 0, bytemuck::bytes_of(&p.params));
+    }
+
     /// Advances the particles by `steps` time steps of `dt` seconds.
     pub fn step_particles(&self, p: &mut GpuParticles, dt: f32, steps: u32) {
         for _ in 0..steps {
             p.params.frame = p.params.frame.wrapping_add(1);
             p.params.dt = dt;
+            if let Some(t) = p.trails.as_mut() {
+                t.before_step(&self.queue, p.params.frame, dt);
+            }
             self.dispatch(p, false);
+        }
+    }
+
+    /// Heavy particles: velocity and stuck time `(vx, vy, vz, w)` of all particles (w < 0
+    /// flying, >= 0 stuck); empty for massless particles.
+    pub fn read_motion(&self, p: &GpuParticles) -> Vec<[f32; 4]> {
+        match &p.motion {
+            Some(m) => self.read_buffer(m, p.count),
+            None => Vec::new(),
         }
     }
 
     /// Positions and ages `(x, y, z, age)` of all particles (for tests and checks).
     pub fn read_particles(&self, p: &GpuParticles) -> Vec<[f32; 4]> {
-        let size = u64::from(p.count) * 16;
+        self.read_buffer(&p.state, p.count)
+    }
+
+    pub(crate) fn read_buffer_len(&self, buffer: &wgpu::Buffer, count: u32) -> Vec<[f32; 4]> {
+        self.read_buffer(buffer, count)
+    }
+
+    fn read_buffer(&self, buffer: &wgpu::Buffer, count: u32) -> Vec<[f32; 4]> {
+        let size = u64::from(count) * 16;
         let staging = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("particle readback"),
             size,
@@ -336,7 +507,7 @@ impl Renderer {
             mapped_at_creation: false,
         });
         let mut encoder = self.device.create_command_encoder(&Default::default());
-        encoder.copy_buffer_to_buffer(&p.state, 0, &staging, 0, size);
+        encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, size);
         self.queue.submit([encoder.finish()]);
         let slice = staging.slice(..);
         slice.map_async(wgpu::MapMode::Read, |_| {});

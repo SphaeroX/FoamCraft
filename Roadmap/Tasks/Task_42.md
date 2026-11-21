@@ -1,4 +1,4 @@
-# Task_42: GPU-Strömungslöser als Kern
+# Task_42: Wärme und Auftrieb
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,64 +7,58 @@
 
 ## Ziel
 
-FoamCraft bekommt einen eigenen Strömungslöser, der vollständig auf der GPU rechnet (Lattice-Boltzmann). Er läuft ohne Fenster und ist an Vergleichsfällen geprüft. Er ist die Grundlage der Sofort-Vorschau.
+Der Nutzer berücksichtigt Temperatur: beheizte Teile, warme und kalte Zuluft, aufsteigende Warmluft. Ergebnisse sind Temperaturfelder und Wärmeströme, mit einer Vorlage für Raumluft.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_13 ist archiviert (Szenarien für beide Grundfälle); der Renderer und seine GPU-Anbindung aus Task_01 und Task_14 sind vorhanden.
-- **Relevantes Vorwissen:** `docs/licensing.md`: Code oder Verfahren aus Quellen mit nicht erlaubter Lizenz dürfen nicht übernommen werden (ausdrücklich nicht aus FluidX3D). Verfahren aus wissenschaftlichen Veröffentlichungen eigenständig umsetzen. Der Löser ist eine Vorschau, kein Ersatz für die OpenFOAM-Rechnung. Referenz-GPU: 12 GB.
+- **Voraussetzung:** Task_13 ist archiviert (Innenströmung); Task_14 bis Task_17 liefern Darstellung und Kennzahlen.
+- **Relevantes Vorwissen:** Erkenntnisse aus Task_10 und Task_13 zu Vorlagen und Konvergenz. Der Nutzer hat ein eigenes Raumluft-Projekt und kennt den Anwendungsfall.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Neue Crate: Lattice-Boltzmann D3Q19 als Compute-Programm auf wgpu, unabhängig vom GPU-Hersteller
-- Ein Kollisionsmodell, das bei hohen Reynolds-Zahlen stabil bleibt; die Wahl wird begründet
-- Voxelisierung der Geometrie auf der GPU
-- Ränder: Einlass mit Geschwindigkeit, Auslass mit Druck, Wand, Boden, bewegter Boden
-- Windkanal und Innenströmung aus den vorhandenen Szenarien
-- Umrechnung zwischen physikalischen und Gitter-Einheiten, automatische Gitterauflösung aus dem GPU-Speicher
-- Kraftberechnung am Körper
-- CLI `foamcraft preview run`, Leistungsmessung
+- Option "Temperatur berücksichtigen" mit einem auftriebsfähigen Löser; die Modellwahl (ideales Gas oder Boussinesq-Näherung) wird begründet
+- Schwerkraftrichtung
+- Randbedingungen: Einlasstemperatur, feste Wandtemperatur, Wärmeleistung in Watt je Teil oder Fläche, wärmedicht
+- Ergebnisse: Temperatur auf Oberflächen und in Schnitten, Wärmeströme je Fläche, mittlere und höchste Temperatur, Auslasstemperatur, Luftwechselrate
+- Szenario-Vorlagen "Raumluft" und "Bauteilkühlung"
+- Klartext-Hinweis: Wärmeleitung im Festkörper und Strahlung werden nicht gerechnet
 
 **Gehört nicht dazu:**
 
-- Kopplung an die Ansicht (Task_43)
-- Wärme, zwei Phasen, rotierende Teile im GPU-Löser
+- Wärmeleitung in Festkörpern (gekoppelte Rechnung), Strahlung
 
 ## Umsetzungsschritte
 
-1. Verfahren aus Veröffentlichungen auswählen und die Wahl mit Quellen in den Notizen festhalten.
-2. Tests zuerst für Einheitenumrechnung, Voxelisierung und Massenerhaltung.
-3. Kern (Strömen und Kollidieren) auf der GPU umsetzen.
-4. Ränder umsetzen.
-5. Szenarien anbinden, automatische Auflösung umsetzen.
-6. Kraftberechnung umsetzen.
-7. Vergleichsfälle als Tests schreiben und die Leistung messen.
+1. Tests zuerst für die Umrechnung von Watt in Wärmestromdichte und die Fallvorlagen (Snapshots).
+2. Modellwahl treffen und begründen.
+3. Fallerzeugung und Randbedingungen umsetzen.
+4. Auswertung (Wärmeströme, Temperaturen, Luftwechsel) umsetzen.
+5. Temperaturfelder in Ansicht, Kennzahlen und Report aufnehmen.
+6. Vorlagen und Oberfläche umsetzen.
+7. Validierungstests schreiben.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Kanalströmung: Geschwindigkeitsprofil gegen die analytische Lösung (Toleranz 2 %).
-- Abklingender Wirbel: Abklingrate gegen die analytische Lösung.
-- Zylinder bei Reynolds-Zahl 100: Strouhal-Zahl innerhalb von 10 %.
-- Kugel oder Würfel: Widerstand innerhalb von 25 % des Literaturwerts.
-- Massenerhaltung; Volumen der voxelisierten Kugel innerhalb von 2 %.
-- Wiederholbarkeit; kleine Gitter laufen auf einem Software-Adapter, sonst als übersprungen melden.
+- Umrechnung Watt in Wärmestromdichte; Snapshots der Vorlagen.
+- `validation_`: beheiztes Rohr, Auslasstemperatur gegen die Energiebilanz (Toleranz 3 %).
+- `validation_`: beheizter Hohlraum mit natürlicher Konvektion, Nusselt-Zahl gegen einen veröffentlichten Vergleichswert (Toleranz 10 %); Quelle im Test.
+- Vitest für die Eingabe der Wärmequellen.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] `foamcraft preview run` rechnet ein Windkanal- und ein Innenströmungs-Szenario auf der GPU und liefert Kräfte beziehungsweise Druckverlust
-- [ ] Alle Vergleichsfälle laufen innerhalb ihrer Toleranz
-- [ ] Die gemessene Leistung auf der Referenz-GPU steht in `docs/performance.md`
+- [ ] Ein Lauf mit Temperatur liefert Temperaturfelder und Wärmeströme als Kennzahlen
+- [ ] Beide Validierungstests laufen grün
+- [ ] Die Vorlage "Raumluft" führt von der Geometrie eines Raums bis zum Ergebnis
 
 ## Offene Fragen / Annahmen
 
-- Die Genauigkeit an Wänden bei hohen Reynolds-Zahlen ist begrenzt; ob ein Wandmodell nötig ist, wird hier bewertet.
-- Annahme: einfache Genauigkeit (32 Bit) reicht für die Vorschau.
+- Wärmeleitung in Festkörpern und Strahlung sind Wünsche für später, keine Aufgaben dieses Tasks.
 
 ## Notizen zu diesem Task
 

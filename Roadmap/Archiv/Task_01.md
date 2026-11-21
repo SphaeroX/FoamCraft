@@ -65,7 +65,7 @@ Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder ei
 
 ## Offene Fragen / Annahmen
 
-- Annahme: Das Compositing wird hier nur unter Windows bewiesen. Linux und macOS werden in Task_32 geprüft.
+- Annahme: Das Compositing wird hier nur unter Windows bewiesen. Linux und macOS werden in Task_36 geprüft.
 - Offene Entscheidung aus `docs/architecture.md`: Web-View über wgpu oder Ausweichweg. Sie fällt in diesem Task; bei einem Wechsel des Ansatzes entscheidet der Nutzer.
 
 ## Notizen zu diesem Task

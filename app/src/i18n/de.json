@@ -118,13 +118,15 @@
     "cells": "{n} Zellen",
     "memoryLimited": "durch den Arbeitsspeicher begrenzt",
     "time": "Geschätzte Zeit",
-    "minutes": "etwa {n} min"
+    "minutes": "etwa {n} min",
+    "details": "Details"
   },
   "steps": {
     "geometry": "Geometrie",
     "scenario": "Szenario",
     "run": "Rechnen",
-    "results": "Ergebnisse"
+    "results": "Ergebnisse",
+    "label": "Schritte"
   },
   "mesh": {
     "title": "Netz",
@@ -195,7 +197,7 @@
     "notFlat": "nicht eben",
     "close": "Verschließen",
     "closeN": "Öffnung {n} verschließen",
-    "byClick": "Per Klick in der Ansicht verschließen",
+    "byClick": "Öffnung per Klick abdecken",
     "clickNow": "Öffnung in der Ansicht anklicken …",
     "caps": "Deckflächen",
     "roleOf": "Rolle von {key}",
@@ -249,7 +251,10 @@
       "Uz": "Geschwindigkeit z",
       "k": "Turbulente kinetische Energie",
       "U_mag": "Geschwindigkeit",
-      "Q": "Q-Kriterium (Wirbel)"
+      "Q": "Q-Kriterium (Wirbel)",
+      "attached": "Anliegend / Rückströmung",
+      "impact": "Auftreffrate",
+      "impact_speed": "Auftreffgeschwindigkeit"
     }
   },
   "flowView": {
@@ -267,7 +272,19 @@
       "y": "Quer zu y",
       "z": "Quer zu z"
     },
-    "flip": "Andere Seite"
+    "flip": "Andere Seite",
+    "select": "Auswählen",
+    "visible": "Sichtbar",
+    "alongAxis": "Normale entlang {axis}",
+    "cutAtSelected": "Am ausgewählten Schnitt aufschneiden",
+    "cutTargets": "Der Schnitt öffnet",
+    "target": {
+      "model": "Modell",
+      "particles": "Rauch und Partikel",
+      "streamlines": "Stromlinien",
+      "isosurfaces": "Isoflächen"
+    },
+    "dragHint": "Einen Schnitt in der Ansicht ziehen, um ihn entlang seiner Normalen zu verschieben."
   },
   "particles": {
     "title": "Partikel",
@@ -285,7 +302,19 @@
     "pause": "Pause",
     "play": "Weiter",
     "seed": "Startwert",
-    "areaPosition": "Lage des Startbereichs"
+    "areaPosition": "Lage des Startbereichs",
+    "colorSlip": "Schlupf gegen die Strömung",
+    "trails": "Leuchtspuren",
+    "ribbons": "Bänder",
+    "tubes": "Röhren",
+    "colorSwirl": "Drall (links … rechts)",
+    "trailLength": "Spurlänge",
+    "width": "Breite",
+    "brightness": "Helligkeit",
+    "glow": "Schein",
+    "longExposure": "Langzeitbelichtung",
+    "halfLife": "Halbwertszeit (s)",
+    "trailsShortened": "Spuren gekürzt: Bei so vielen Partikeln behält jede Spur weniger Stützstellen."
   },
   "figures": {
     "title": "Kennzahlen",
@@ -343,7 +372,8 @@
       "mass_flow_kg_s": "Massenstrom",
       "share": "Anteil am Abfluss",
       "total_pressure_pa": "Gesamtdruck",
-      "mass_balance_error": "Fehler der Massenbilanz"
+      "mass_balance_error": "Fehler der Massenbilanz",
+      "reverse_flow_area": "Fläche in Rückströmung"
     },
     "differenceScale": "Farben am Modell: {field} des zweiten Laufs minus des ersten, {range} {unit}; die mittlere Farbe heißt unverändert."
   },
@@ -388,7 +418,9 @@
     "failed": "Der Export ist fehlgeschlagen.",
     "note": "Videos sind Motion-JPEG in einer AVI-Datei: Jeder Player unter Windows öffnet sie; die Dateien sind groß.",
     "saveImage": "Bild speichern",
-    "saveVideo": "Video speichern"
+    "saveVideo": "Video speichern",
+    "longExposure": "Langzeitbelichtung",
+    "exposureTime": "Belichtungszeit (s)"
   },
   "report": {
     "button": "Bericht",
@@ -415,7 +447,8 @@
     },
     "logo": "Logo wählen",
     "save": "Bericht speichern",
-    "saved": "Geschrieben: {files}"
+    "saved": "Geschrieben: {files}",
+    "compareRuns": "Mit mehreren Läufen vergleichen"
   },
   "setup": {
     "button": "System",
@@ -454,11 +487,11 @@
     "count": "Schritt {n} von {of}",
     "geometry": {
       "title": "1 · Geometrie",
-      "text": "Modell importieren (STL, OBJ, 3MF, STEP, IGES), Einheit und Diagnose prüfen und Flächen auswählen, um sie zu benennen oder Öffnungen zu verschließen."
+      "text": "Modell laden (STL, OBJ, 3MF, STEP, IGES), Größe prüfen und mit Pfeilen und Ringen in der Ansicht zurechtlegen. Flächen und Öffnungen gibt es im Expertenmodus (Menü)."
     },
     "scenario": {
       "title": "2 · Szenario",
-      "text": "Windkanal für die Umströmung wählen oder Innenströmung mit Ein- und Auslässen; Geschwindigkeit, Medium und Qualität festlegen."
+      "text": "Wind wählen: Geschwindigkeit mit einem Klick, Richtung an der Windrose oder am orangen Pfeil in der Ansicht. Änderungen wirken sofort."
     },
     "run": {
       "title": "3 · Rechnen",
@@ -466,7 +499,7 @@
     },
     "results": {
       "title": "4 · Ergebnisse",
-      "text": "Das Modell einfärben, Schnitte und Partikel zeigen, Kennzahlen mit Verlässlichkeits-Ampel lesen, Läufe vergleichen und Bilder, Videos und Berichte exportieren."
+      "text": "Eine fertige Ansicht wie Rauchfäden oder Nachlauf wählen oder die Vorführung starten. Kennzahlen, Vergleiche und Export gibt es dort auch."
     },
     "next": "Weiter",
     "back": "Zurück",
@@ -480,5 +513,223 @@
   "console": {
     "title": "Konsole",
     "empty": "Noch keine Ausgabe."
+  },
+  "viewCube": {
+    "front": "Ansicht von vorn",
+    "back": "Ansicht von hinten",
+    "left": "Ansicht von links",
+    "right": "Ansicht von rechts",
+    "top": "Ansicht von oben",
+    "bottom": "Ansicht von unten",
+    "front_left": "Ansicht von vorn und links",
+    "front_right": "Ansicht von vorn und rechts",
+    "back_left": "Ansicht von hinten und links",
+    "back_right": "Ansicht von hinten und rechts",
+    "top_front": "Ansicht von oben und vorn",
+    "top_back": "Ansicht von oben und hinten",
+    "top_left": "Ansicht von oben und links",
+    "top_right": "Ansicht von oben und rechts",
+    "bottom_front": "Ansicht von unten und vorn",
+    "bottom_back": "Ansicht von unten und hinten",
+    "bottom_left": "Ansicht von unten und links",
+    "bottom_right": "Ansicht von unten und rechts",
+    "top_front_left": "Ansicht von oben, vorn und links",
+    "top_front_right": "Ansicht von oben, vorn und rechts",
+    "top_back_left": "Ansicht von oben, hinten und links",
+    "top_back_right": "Ansicht von oben, hinten und rechts",
+    "bottom_front_left": "Ansicht von unten, vorn und links",
+    "bottom_front_right": "Ansicht von unten, vorn und rechts",
+    "bottom_back_left": "Ansicht von unten, hinten und links",
+    "bottom_back_right": "Ansicht von unten, hinten und rechts",
+    "short": {
+      "front": "Vorn",
+      "back": "Hinten",
+      "left": "Links",
+      "right": "Rechts",
+      "top": "Oben",
+      "bottom": "Unten"
+    },
+    "default": "Standardansicht",
+    "defaultShort": "Start",
+    "label": "Blickrichtung"
+  },
+  "move": {
+    "pivot": "Lage der Griffe",
+    "pivots": {
+      "center": "Mitte der Hüllbox",
+      "centroid": "Schwerpunkt",
+      "origin": "Modellursprung"
+    },
+    "hint": "Pfeil ziehen verschiebt, Ring ziehen dreht. Umschalt: ohne Einrasten, Esc: abbrechen. Nach dem Bewegen wird neu vernetzt.",
+    "wind": "Wind"
+  },
+  "wind": {
+    "rose": "Windrichtung",
+    "from": "Wind kommt von {deg}°",
+    "towards": "strömt nach {deg}°"
+  },
+  "presets": {
+    "title": "Strömung verstehen",
+    "smoke_lines": "Rauchfäden",
+    "smoke_curtain": "Rauchvorhang",
+    "mid_slice": "Geschwindigkeit in der Mitte",
+    "surface_pressure": "Druck am Modell",
+    "vortices": "Wirbel",
+    "wake": "Nachlauf",
+    "internal_path": "Weg durch das Bauteil",
+    "internal_slice": "Geschwindigkeit längs",
+    "startDemo": "Vorführung starten",
+    "demo": "Vorführung",
+    "pause": "Pause",
+    "play": "Weiter abspielen",
+    "back": "Zurück",
+    "forward": "Weiter",
+    "end": "Vorführung beenden",
+    "step": "Ansicht {n} von {of}",
+    "oil_film": "Ölfilm",
+    "tufts": "Wollfäden",
+    "rain": "Regen",
+    "light_trails": "Leuchtspuren",
+    "ribbons": "Bänder"
+  },
+  "stepState": {
+    "open": "noch nicht möglich",
+    "ready": "zu tun",
+    "done": "erledigt",
+    "attention": "erledigt, bitte ansehen"
+  },
+  "missing": {
+    "model": "Zuerst ein Modell laden.",
+    "scenario": "Zuerst den Wind einstellen.",
+    "run": "Die Rechnung starten, um Ergebnisse zu sehen.",
+    "running": "Die Rechnung läuft."
+  },
+  "nav": {
+    "back": "Zurück",
+    "next": "Weiter"
+  },
+  "menu": {
+    "label": "Menü"
+  },
+  "mode": {
+    "expert": "Expertenmodus",
+    "hint": "Zeigt Flächen, Gruppen, Rollen, Netz-Kennwerte und Protokolle."
+  },
+  "assistant": {
+    "geometry": "Lade dein Modell und prüfe die Größe. Mit den Pfeilen legst du es zurecht.",
+    "scenario": "Wähle, wie schnell und aus welcher Richtung der Wind weht.",
+    "run": "Starte die Rechnung. FoamCraft vernetzt selbst und hört auf, wenn das Ergebnis stabil ist.",
+    "results": "Wähle eine fertige Ansicht oder starte die Vorführung, um zu sehen, was die Strömung tut."
+  },
+  "scenarios": {
+    "title": "Szenarien",
+    "unnamed": "Szenario {n}",
+    "add": "Szenario hinzufügen",
+    "name": "Name des Szenarios",
+    "remove": "{name} entfernen"
+  },
+  "queue": {
+    "start": "Alle Szenarien rechnen",
+    "stop": "Warteschlange anhalten",
+    "progress": "{n} von {of}: {name}",
+    "stopped": "Warteschlange angehalten.",
+    "done": "Alle Szenarien sind gerechnet.",
+    "failed": "Fertig; {n} Szenario(s) fehlgeschlagen."
+  },
+  "compareMany": {
+    "title": "Läufe vergleichen",
+    "hint": "Zwei oder mehr Läufe ankreuzen; der zuerst angekreuzte ist der Bezug.",
+    "table": "Läufe nebeneinander"
+  },
+  "jets": {
+    "title": "Woher die Luft kommt",
+    "wall": "Ganze Wand (Windkanal)",
+    "sources": "Düsen oder Lüfter",
+    "hint": "Die Luft ringsum steht still; nur die Quellen blasen. Eine Quelle in der Ansicht ziehen, um sie zu verschieben und zu drehen.",
+    "item": "Quelle {n}",
+    "shape": "Form",
+    "circle": "Rund",
+    "rectangle": "Rechteckig",
+    "remove": "Quelle {n} entfernen",
+    "diameter": "Durchmesser (mm)",
+    "width": "Breite (mm)",
+    "height": "Höhe (mm)",
+    "speed": "Geschwindigkeit ({unit})",
+    "yaw": "Seitlich gedreht (°)",
+    "pitch": "Nach oben geneigt (°)",
+    "add": "Quelle hinzufügen"
+  },
+  "ride": {
+    "title": "Mitflug mit einem Teilchen",
+    "intro": "Fliege mit einem Teilchen der Strömung mit und sieh, was es auf seinem Weg um oder durch das Modell erlebt.",
+    "duration": "etwa {s} s",
+    "pick": "Teilchen in der Ansicht wählen",
+    "pickHint": "Ein Teilchen oder eine Stelle am Modell anklicken.",
+    "readings": "Messwerte",
+    "speed": "Tempo",
+    "pressure": "Druck",
+    "wall": "Wandabstand",
+    "accel": "Beschleunigung",
+    "factor": "Zeit",
+    "slowMotion": "Zeitlupe × {f}",
+    "fastMotion": "Zeitraffer × {f}",
+    "coasterNote": "Die Achterbahn bewegt die Ansicht stark. Du kannst jederzeit zurück auf ruhig schalten.",
+    "ok": "OK",
+    "bar": "Mitflug",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "position": "Position",
+    "event": "Ereignis: {name}",
+    "tempo": "Tempo",
+    "mode": "Flugart",
+    "calm": "Ruhig",
+    "coaster": "Achterbahn",
+    "view": "Ansicht",
+    "views": {
+      "first_person": "Ich-Perspektive",
+      "chase": "Verfolger",
+      "overview": "Übersicht"
+    },
+    "guide": "Leitlinie",
+    "stop": "Mitflug beenden",
+    "demo": "Mitflug",
+    "slip": "Schlupf"
+  },
+  "surfaceFlow": {
+    "title": "Strömung an der Oberfläche",
+    "lines": "Linien (Ölfilm)",
+    "tufts": "Wollfäden",
+    "density": "Linienabstand",
+    "spacing": "Fadenabstand",
+    "colorLines": "Farbe der Linien",
+    "colorTufts": "Farbe der Fäden",
+    "plain": "Einfarbig",
+    "byStress": "Nach Wandschubspannung",
+    "byState": "Ruhig oder zappelnd",
+    "animate": "Bewegen",
+    "flutterNote": "Das Zappeln zeigt, wo die Strömung turbulent oder abgelöst ist. Es ist eine Veranschaulichung, keine zeitgenaue Rechnung.",
+    "approximate": "Genähert: Dieser Lauf hat keinen Vektor der Wandschubspannung, die Richtung stammt aus der Strömung knapp über der Wand.",
+    "attachedLegend": "anliegend … Rückströmung",
+    "fine": "fein",
+    "coarse": "grob"
+  },
+  "heavy": {
+    "title": "Teilchen mit Masse",
+    "materials": {
+      "fine_dust": "Feinstaub",
+      "spray": "Sprühnebel",
+      "rain": "Regentropfen",
+      "sand": "Sand",
+      "snow": "Schneeflocken"
+    },
+    "massless": "Masselos",
+    "diameter": "Durchmesser (µm)",
+    "density": "Dichte (kg/m³)",
+    "ownValues": "Eigene Werte verwenden",
+    "stokes": "Stokes-Zahl {st}:",
+    "computeMap": "Trefferkarte berechnen",
+    "progress": "Fortschritt der Trefferkarte",
+    "share": "{share} % treffen ± {unc} %",
+    "showMap": "Am Modell zeigen"
   }
 }

@@ -50,7 +50,8 @@ fn size(res: &Option<String>, w: Option<u32>, h: Option<u32>) -> Result<(u32, u3
 #[derive(Debug, Clone, Default, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CameraSpec {
-    /// `turntable`, `swing`, `rise`, `approach` or `still`.
+    /// `turntable`, `swing`, `rise`, `approach`, `still` or `ride` (the stored ride of the
+    /// view, from start to end unless `duration_s` is given).
     #[serde(default)]
     pub preset: Option<String>,
     /// Own key frames (time in seconds, angles in radians, metres); they win over `preset`.
@@ -60,7 +61,11 @@ pub struct CameraSpec {
 
 /// The scene with what the video needs from it.
 struct Prepared {
+    /// A copy of the project for the ride (the export runs in a background thread).
+    project: Project,
     scene: Scene,
+    /// Lines and tufts on the surface (Task_33).
+    flow: Option<foamcraft_render::flow::FlowGeometry>,
     base: OrbitCamera,
     particles: Option<crate::particles::ParticleSetup>,
     legend: Option<(f64, f64, String)>,
@@ -72,11 +77,17 @@ fn prepare(project: &Project, aspect: f32) -> Prepared {
     let (centre, radius) = built.focus.unwrap_or_else(|| built.scene.bounding_sphere());
     base.fit(centre, radius * 1.1, aspect);
     Prepared {
+        project: project.clone(),
+        flow: built.flow_geometry(),
         scene: built.scene,
         base,
         particles: crate::particles::setup(project),
         legend: crate::scene::legend(project),
     }
+}
+
+fn is_ride(spec: &CameraSpec) -> bool {
+    spec.keys.is_none() && spec.preset.as_deref() == Some("ride")
 }
 
 fn path_of(
@@ -90,10 +101,17 @@ fn path_of(
         return Ok(keys);
     }
     match spec.preset.as_deref().unwrap_or("turntable") {
-        "still" => Ok(vec![CameraKey::from_camera(0.0, base)]),
+        "still" | "ride" => Ok(vec![CameraKey::from_camera(0.0, base)]),
         name => preset(name, base, duration)
             .ok_or_else(|| FoamError::new("export.invalid", format!("camera {name}"))),
     }
+}
+
+/// The prepared scene on the GPU with its surface flow (at time 0).
+fn prepared_gpu(renderer: &Renderer, p: &Prepared) -> GpuScene {
+    let mut gpu = renderer.upload(&p.scene);
+    renderer.set_surface_flow(&mut gpu, p.flow.as_ref());
+    gpu
 }
 
 fn add_legend(pixels: &mut [u8], w: u32, h: u32, legend: &Option<(f64, f64, String)>) {
@@ -123,16 +141,20 @@ struct Timeline {
     keys: Vec<CameraKey>,
     base: OrbitCamera,
     dt: f32,
+    fps: f32,
+    project: Project,
+    /// The ride and the uploaded scene of its overview inset.
+    ride: Option<(crate::ride::Ride, GpuScene)>,
 }
 
 impl Timeline {
     fn new(p: &Prepared, keys: Vec<CameraKey>, fps: f32) -> Result<Self, FoamError> {
         let renderer = Renderer::new_headless().ok_or_else(no_gpu)?;
         let mut gpu = renderer.upload(&p.scene);
+        renderer.set_surface_flow(&mut gpu, p.flow.as_ref());
         let mut dt = 0.0;
         if let Some(setup) = &p.particles {
-            gpu.particles =
-                Some(renderer.create_particles(&setup.levels, &setup.seeds, &setup.settings));
+            gpu.particles = Some(crate::particles::create_gpu(&renderer, setup));
             // The app advances `setup.dt` per frame at 60 frames per second; keep that speed.
             dt = if setup.paused {
                 0.0
@@ -146,10 +168,46 @@ impl Timeline {
             keys,
             base: p.base,
             dt,
+            fps,
+            project: p.project.clone(),
+            ride: None,
         })
     }
 
+    /// Frames come from the ride: its camera, and the particles move with the rider's flow time.
+    fn with_ride(mut self, ride: crate::ride::Ride, scene: &Scene) -> Self {
+        let inset = self.renderer.upload(scene);
+        self.ride = Some((ride, inset));
+        self
+    }
+
     fn frame(&mut self, t: f32, w: u32, h: u32) -> Vec<u8> {
+        // The surface flow moves with the timeline: the same time gives the same frame.
+        self.gpu.time = crate::surface_flow::time_at(&self.project, f64::from(t));
+        if let Some((ride, inset)) = self.ride.as_mut() {
+            // Advance the particles by the flow time of this frame, in steps of at most the
+            // usual particle step.
+            if self.dt > 0.0
+                && let Some(p) = self.gpu.particles.as_mut()
+            {
+                let flow = ride.flow_dt(f64::from(t), 1.0 / f64::from(self.fps)) as f32;
+                let base = self.dt * self.fps / 60.0;
+                let steps = (flow / base.max(1e-12)).ceil().clamp(1.0, 64.0) as u32;
+                if flow > 0.0 {
+                    self.renderer.step_particles(p, flow / steps as f32, steps);
+                }
+            }
+            return crate::ride::draw_frame(
+                &self.renderer,
+                &mut self.gpu,
+                inset,
+                ride,
+                &self.base,
+                f64::from(t),
+                w,
+                h,
+            );
+        }
         if self.dt > 0.0
             && let Some(p) = self.gpu.particles.as_mut()
         {
@@ -176,7 +234,8 @@ pub fn render_view_png(
     if let Some(p) = pitch {
         camera.pitch = p;
     }
-    let mut pixels = renderer.render_offscreen(&prepared.scene, &camera, w, h);
+    let mut pixels =
+        renderer.render_offscreen_gpu(&prepared_gpu(&renderer, &prepared), &camera, w, h);
     add_legend(&mut pixels, w, h, &prepared.legend);
     let mut png = Vec::new();
     {
@@ -210,6 +269,13 @@ pub struct ImageParams {
     /// Camera; default the fitted standard view.
     #[serde(default)]
     pub camera: Option<CameraKey>,
+    /// Screen time (s) of the stored ride: a still from the ride instead of the camera.
+    #[serde(default)]
+    pub ride_t: Option<f64>,
+    /// Long exposure (s of animation, 0.1 to 30): the particles run this long at 60 steps per
+    /// second and leave their whole path as light. Needs particles in the view.
+    #[serde(default)]
+    pub exposure_s: Option<f64>,
 }
 
 fn yes() -> bool {
@@ -226,7 +292,53 @@ fn image(project: &Project, p: ImageParams) -> Result<Value, FoamError> {
     let camera = p
         .camera
         .map_or(prepared.base, |k| interpolate(&[k], 0.0, &prepared.base));
-    let mut pixels = renderer.render_offscreen(&prepared.scene, &camera, w, h);
+    let mut pixels = match (p.ride_t, p.exposure_s) {
+        (Some(_), Some(_)) => {
+            return Err(FoamError::new(
+                "export.invalid",
+                "exposure_s and ride_t together",
+            ));
+        }
+        (Some(t), None) => crate::ride::render_still(project, &renderer, w, h, t, p.transparent)?,
+        (None, Some(seconds)) => {
+            if !(0.1..=30.0).contains(&seconds) {
+                return Err(FoamError::new(
+                    "export.invalid",
+                    format!("exposure_s {seconds}"),
+                ));
+            }
+            let setup = prepared
+                .particles
+                .as_ref()
+                .filter(|s| s.heavy.is_none())
+                .ok_or_else(|| {
+                    FoamError::new(
+                        "export.invalid",
+                        "a long exposure needs massless particles in the view",
+                    )
+                })?;
+            let mut gpu = prepared_gpu(&renderer, &prepared);
+            let mut particles = renderer.create_trail_particles(
+                &setup.levels,
+                &setup.seeds,
+                &setup.settings,
+                &crate::particles::exposure_trails(setup),
+            );
+            renderer.set_particle_clip(&mut particles, setup.clip);
+            // Spread the particles over their way first: otherwise all of them start on the
+            // seed area and the picture is one bright plane.
+            let warm = (setup.settings.max_age / setup.dt.max(1e-12))
+                .ceil()
+                .min(3000.0) as u32;
+            renderer.step_particles(&mut particles, setup.dt, warm);
+            gpu.particles = Some(particles);
+            let steps = (seconds * 60.0).round() as u32;
+            renderer.render_offscreen_exposure(&mut gpu, &camera, w, h, steps, setup.dt)
+        }
+        (None, None) => {
+            renderer.render_offscreen_gpu(&prepared_gpu(&renderer, &prepared), &camera, w, h)
+        }
+    };
     if p.legend {
         add_legend(&mut pixels, w, h, &prepared.legend);
     }
@@ -311,6 +423,10 @@ fn encode(
     id: &str,
 ) -> Result<(), FoamError> {
     let mut timeline = Timeline::new(prepared, keys, fps as f32)?;
+    if is_ride(&p.camera) {
+        let ride = crate::ride::current(&prepared.project)?;
+        timeline = timeline.with_ride(ride, &prepared.scene);
+    }
     let mut writer =
         AviWriter::create(&p.path, w, h, fps, p.quality.unwrap_or(90)).map_err(write_failed)?;
     for i in 0..frames {
@@ -347,7 +463,16 @@ fn video(project: &Project, events: &EventBus, p: VideoParams) -> Result<Value, 
     // Motion JPEG works on 16 × 8 blocks; even sizes keep every player happy.
     let (w, h) = (w & !1, h & !1);
     let fps = p.fps.unwrap_or(30).clamp(1, 120);
-    let duration = p.duration_s.unwrap_or(8.0).clamp(0.1, 600.0);
+    let ride_length = if is_ride(&p.camera) {
+        Some(crate::ride::current(project)?.duration() as f32)
+    } else {
+        None
+    };
+    let duration = p
+        .duration_s
+        .or(ride_length)
+        .unwrap_or(8.0)
+        .clamp(0.1, 600.0);
     let frames = ((duration * fps as f32).round() as u32).max(1);
     let prepared = prepare(project, w as f32 / h as f32);
     let keys = path_of(&p.camera, &prepared.base, duration)?;
@@ -444,7 +569,8 @@ fn preview(project: &Project, p: PreviewParams) -> Result<Value, FoamError> {
     let keys = path_of(&p.camera, &prepared.base, duration)?;
     let renderer = Renderer::new_headless().ok_or_else(no_gpu)?;
     let camera = interpolate(&keys, p.time_s, &prepared.base);
-    let mut pixels = renderer.render_offscreen(&prepared.scene, &camera, w, h);
+    let mut pixels =
+        renderer.render_offscreen_gpu(&prepared_gpu(&renderer, &prepared), &camera, w, h);
     if p.legend {
         add_legend(&mut pixels, w, h, &prepared.legend);
     }
@@ -475,6 +601,8 @@ pub fn register(r: &mut Registry) {
                 "view.no_gpu",
                 "view.write_failed",
                 "export.invalid",
+                "ride.none",
+                "ride.no_path",
             ],
             example: json!({"path": "C:/Temp/view.png", "resolution": "4k", "transparent": true}),
         },
@@ -483,7 +611,7 @@ pub fn register(r: &mut Registry) {
     r.add(
         "export.video",
         "Render a video (Motion JPEG AVI) frame by frame: camera path (turntable, swing, rise, \
-         approach, still or own key frames) and particle animation on one timeline. Answers at \
+         approach, still, ride or own key frames) and particle animation on one timeline. Answers at \
          once with export_id unless wait is true.",
         Options {
             undoable: false,
@@ -492,6 +620,8 @@ pub fn register(r: &mut Registry) {
                 "view.no_gpu",
                 "view.write_failed",
                 "export.invalid",
+                "ride.none",
+                "ride.no_path",
             ],
             example: json!({"path": "C:/Temp/turntable.avi", "resolution": "full_hd", "fps": 30,
                             "duration_s": 8.0, "camera": {"preset": "turntable"}}),

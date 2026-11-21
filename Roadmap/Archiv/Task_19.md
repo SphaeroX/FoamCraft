@@ -28,7 +28,7 @@ Der Nutzer exportiert Bilder bis 4K und Videos mit Kamerafahrt und Partikel-Anim
 
 **Gehört nicht dazu:**
 
-- Zeitabhängige Felder im Video (Task_37)
+- Zeitabhängige Felder im Video (Task_41)
 - GIF-Export
 
 ## Umsetzungsschritte
@@ -89,5 +89,5 @@ Vor der Archivierung vom Agenten auszufüllen. Schreibe so, dass ein Agent, der 
 - **Umgesetzt (und Abweichungen vom Plan):** `foamcraft_render::camera_path` (Schlüsselbilder, Hermite/Catmull-Rom, Presets), `foamcraft_render::jpeg` (eigener Baseline-Encoder 4:2:0), `foamcraft_render::video` (AVI-Schreiber, `read_frames`), `foamcraft_render::overlay` (Legende mit eingebauter 5 × 7-Schrift), `foamcraft_api::export` (`export.image`, `export.video`, `export.status`, `export.cancel`, `export.preview`), `foamcraft_api::scene::legend`, MCP-Werkzeuge `export_image`, `export_video`, `export_status`, `export_cancel`, Exportdialog in der App (Knopf "Export"), `tools/windows/video-check.ps1`. Abweichung: eigener JPEG-Encoder statt Bibliothek (siehe Notizen).
 - **Learnings & Stolpersteine:** Media Foundation braucht unterabgetastete Chroma bei MJPEG. Clippy verlangt `as_chunks` statt `chunks_exact` mit fester Größe. Partikel im Video laufen mit `setup.dt · 60 / fps` je Bild, damit das Tempo dem der App entspricht.
 - **Wichtige Entscheidungen und ihre Gründe:** MJPEG/AVI wegen Lizenz/Patenten und Abspielbarkeit ohne Erweiterungen; große Dateien (≈ 15 MB/s Full HD mit Partikeln) und 1-GiB-Grenze bewusst in Kauf genommen. Transparenz über Hintergrund-Alpha 0 (Geometrie ist deckend, kein Blending). Legende wird auf das fertige Bild gezeichnet (keine Schriftdateien).
-- **Auswirkungen auf Folge-Tasks:** Task_20 (Report) rendert Standardansichten mit `export.image` (Parameter `camera` = ein `CameraKey`) und kann `foamcraft_render::overlay::format_value` für Zahlen nutzen. Task_37 (zeitabhängig) erweitert die Zeitachse in `foamcraft_api::export::Timeline`. Ein komprimierter Codec kann später als Option hinzukommen, ohne die Befehle zu ändern.
+- **Auswirkungen auf Folge-Tasks:** Task_20 (Report) rendert Standardansichten mit `export.image` (Parameter `camera` = ein `CameraKey`) und kann `foamcraft_render::overlay::format_value` für Zahlen nutzen. Task_41 (zeitabhängig) erweitert die Zeitachse in `foamcraft_api::export::Timeline`. Ein komprimierter Codec kann später als Option hinzukommen, ohne die Befehle zu ändern.
 - **Hinweise zu Tests und Befehlen:** Export-Tests brauchen eine GPU (ohne GPU: SKIPPED). Prüfen einer Videodatei mit Windows: `powershell -ExecutionPolicy Bypass -File tools\windows\video-check.ps1 -Video <avi> -Frame <bmp>`.

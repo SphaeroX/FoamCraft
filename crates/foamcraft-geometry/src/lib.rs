@@ -21,4 +21,6 @@ pub use mesh::{Format, Mesh, MeshBuilder};
 pub use query::{Hit, nearest_triangle, raycast};
 pub use read::{format_of, read_mesh};
 pub use segment::{FaceInfo, MIN_FACE_AREA_SHARE, Segmentation, segment};
-pub use transform::{Placement, UNITS, fix_normals, ground_offset, unit_scale};
+pub use transform::{
+    Pivots, Placement, UNITS, fix_normals, ground_offset, pivots, rotation_to_deg, unit_scale,
+};

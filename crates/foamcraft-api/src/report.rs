@@ -32,6 +32,9 @@ pub struct ReportParams {
     /// Second run for a comparison report.
     #[serde(default)]
     pub compare_with: Option<String>,
+    /// Several runs to compare with this one (the run is the reference); replaces compare_with.
+    #[serde(default)]
+    pub compare_runs: Option<Vec<String>>,
     /// Default: the project name.
     #[serde(default)]
     pub title: Option<String>,
@@ -127,8 +130,30 @@ fn report(project: &Project, p: ReportParams) -> Result<Value, FoamError> {
     let result = load_result(&results, p.job_id.as_deref())?;
     let job = result["job_id"].as_str().unwrap_or_default().to_string();
     let summary = crate::runs::summary_json(project, &job)?;
-    let compare = match &p.compare_with {
-        Some(b) => Some(CompareInput {
+    let many = match &p.compare_runs {
+        Some(others) if !others.is_empty() => {
+            let mut jobs = vec![job.clone()];
+            jobs.extend(others.iter().filter(|o| **o != job).cloned());
+            Some(crate::runs::compare_many(
+                project,
+                crate::runs::CompareManyParams {
+                    jobs,
+                    reference: Some(job.clone()),
+                },
+            )?)
+        }
+        _ => None,
+    };
+    let compare = match (&p.compare_with, many) {
+        (_, Some(m)) => {
+            let first = m.jobs.get(1).cloned().unwrap_or_default();
+            Some(CompareInput {
+                run_name: m.names[1..].join(", "),
+                rows: serde_json::to_value(&m).unwrap_or_default(),
+                summary_b: crate::runs::summary_json(project, &first)?,
+            })
+        }
+        (Some(b), None) => Some(CompareInput {
             run_name: crate::runs::run_name(project, b),
             rows: serde_json::to_value(
                 crate::runs::compare(
@@ -143,7 +168,7 @@ fn report(project: &Project, p: ReportParams) -> Result<Value, FoamError> {
             .unwrap_or_default(),
             summary_b: crate::runs::summary_json(project, b)?,
         }),
-        None => None,
+        (None, None) => None,
     };
     let logo_png = match &p.logo_path {
         Some(path) => Some(

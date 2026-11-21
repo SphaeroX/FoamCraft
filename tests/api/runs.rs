@@ -198,3 +198,42 @@ fn a_variant_is_a_copy_of_the_project_without_runs() {
     assert_eq!(info["name"], "Runs Variante");
     assert_eq!(info["runs"], json!([]));
 }
+
+// --- Task_30: comparing several runs ---
+
+#[test]
+fn several_runs_are_compared_against_a_reference() {
+    let (reg, mut s, root) = setup("compare-many");
+    write_run(&root, "job-c", 0.33, 52.8);
+    let cmp = run(
+        &reg,
+        &mut s,
+        "results.compare_many",
+        json!({"jobs": ["job-a", "job-b", "job-c"], "reference": "job-a"}),
+    );
+    assert_eq!(cmp["jobs"], json!(["job-a", "job-b", "job-c"]));
+    assert_eq!(cmp["names"].as_array().unwrap().len(), 3);
+    let row = cmp["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == "drag_n" && r["part"].is_null())
+        .unwrap();
+    assert_eq!(row["values"], json!([48.0, 43.2, 52.8]));
+    let rel = row["relative"].as_array().unwrap();
+    assert!(rel[0].as_f64().unwrap().abs() < 1e-12);
+    assert!((rel[1].as_f64().unwrap() + 0.1).abs() < 1e-9);
+    assert!((rel[2].as_f64().unwrap() - 0.1).abs() < 1e-9);
+    // Without a reference the first run is the reference.
+    let cmp = run(
+        &reg,
+        &mut s,
+        "results.compare_many",
+        json!({"jobs": ["job-b", "job-a"]}),
+    );
+    assert_eq!(cmp["reference"], "job-b");
+    let err = reg
+        .execute(&mut s, "results.compare_many", json!({"jobs": ["job-a"]}))
+        .unwrap_err();
+    assert_eq!(err.code, "results.compare_needs_two");
+}

@@ -28,7 +28,7 @@ Der Nutzer rechnet eine Innenströmung und erhält Druckverlust und Durchfluss j
 **Gehört nicht dazu:**
 
 - 3D-Ergebnisse (Task_14)
-- Wärme (Task_38), poröse Teile (Task_40)
+- Wärme (Task_42), poröse Teile (Task_44)
 
 ## Umsetzungsschritte
 

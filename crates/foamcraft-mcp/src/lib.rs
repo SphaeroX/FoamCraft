@@ -88,6 +88,21 @@ const CURATED: &[(&str, &str, &str)] = &[
         "Rotate, move or scale a model (degrees, metres).",
     ),
     (
+        "geometry_pivot",
+        "geometry.pivot",
+        "Points a model can be moved and turned about: box centre, volume centre and origin (metres).",
+    ),
+    (
+        "geometry_move_by",
+        "geometry.move_by",
+        "Move a model by a distance along the world axes (metres), one undo step.",
+    ),
+    (
+        "geometry_rotate_about",
+        "geometry.rotate_about",
+        "Turn a model about the world axis x, y or z through a pivot (center, centroid, origin or a point), degrees.",
+    ),
+    (
         "surface_select_at",
         "surface.select_at",
         "Select the face of a model nearest to a point in metres (for naming faces or marking inlets and outlets).",
@@ -101,6 +116,41 @@ const CURATED: &[(&str, &str, &str)] = &[
         "scenario_set_wind_tunnel",
         "scenario.set_wind_tunnel",
         "Set up external flow around the models in a virtual wind tunnel: speed (m/s), direction (degrees), ground, medium and quality (draft, standard, fine). Returns reference values and the cell budget.",
+    ),
+    (
+        "scenario_list",
+        "scenario.list",
+        "List the named scenarios of the project (id, name, settings, mesh, runs) and the active one.",
+    ),
+    (
+        "scenario_add",
+        "scenario.add",
+        "Add a named scenario as a copy of the active one (or empty); activate it with scenario_activate before changing it.",
+    ),
+    (
+        "scenario_activate",
+        "scenario.activate",
+        "Make a scenario active: scenario_set_* and run_start work on the active scenario.",
+    ),
+    (
+        "run_start_all",
+        "run.start_all",
+        "Run all set-up scenarios (or the given ids) one after another; meshes are shared when they fit. Follow with run_status per job.",
+    ),
+    (
+        "results_compare_many",
+        "results.compare_many",
+        "Compare the key figures of two or more runs side by side against a reference run.",
+    ),
+    (
+        "scenario_set_jets",
+        "scenario.set_jets",
+        "Let the air come from up to four sources (circle or rectangle: centre, direction, size in metres, speed) in still surroundings, like fans or nozzles; an empty list goes back to the wind tunnel. Forces in newtons are meaningful; coefficients refer to the fastest jet.",
+    ),
+    (
+        "scenario_set_wind_direction",
+        "scenario.set_wind_direction",
+        "Turn the wind of the wind tunnel (degrees in the ground plane, 0 = towards +X, 90 = towards +Y); everything else stays.",
     ),
     (
         "scenario_set_internal_flow",
@@ -168,14 +218,64 @@ const CURATED: &[(&str, &str, &str)] = &[
         "Show a plane through the flow coloured by a volume field before rendering.",
     ),
     (
+        "view_apply_preset",
+        "view.apply_preset",
+        "Replace the view with a ready-made view of the result (smoke_lines, smoke_curtain, mid_slice, surface_pressure, vortices, wake, oil_film, tufts, rain, light_trails, ribbons; internal flow: internal_path, internal_slice, oil_film, tufts, light_trails, ribbons). view.presets lists the ones that fit.",
+    ),
+    (
+        "view_set_particles",
+        "view.set_particles",
+        "Show animated particles: a preset (wind_tunnel_smoke, internal_flow), style (comets, smoke, streamlines, trails: long glowing trails, ribbons and tubes: streamlines that twist with the swirl and carry running time marks), count, colour (speed, pressure, age, slip; swirl for ribbons and tubes). Trails take trail_length (flow s), width (px), glow, exposure and long_exposure (half-life s, null off). With inertia (material fine_dust, spray, rain, sand or snow, or diameter_m and density_kg_m3) they have mass and hit the model; inertia: null makes them massless again.",
+    ),
+    (
+        "particles_materials",
+        "particles.materials",
+        "Material presets of heavy particles with diameter, density, impact behaviour and the Stokes number in the shown run (below 0.05 they follow the flow like smoke, above 2 they fly almost straight).",
+    ),
+    (
+        "results_impact",
+        "results.impact",
+        "Compute where heavy particles hit the model (impact map, surface fields impact and impact_speed) and which share hits, with its uncertainty. Answers at once with impact_id; follow it with results_impact_status.",
+    ),
+    (
+        "results_impact_status",
+        "results.impact_status",
+        "Progress of an impact map; when done the map with share_percent and uncertainty_percent.",
+    ),
+    (
+        "view_set_surface_flow",
+        "view.set_surface_flow",
+        "Show the flow on the model surface: lines like an oil film (where they run together the flow separates) and wool tufts (flat where attached, fluttering or hanging where separated). Parts left out keep their settings; on: false hides a part. Then view_render.",
+    ),
+    (
+        "ride_suggest",
+        "ride.suggest",
+        "Up to five worthwhile rides along one particle of the shown result (towards the stagnation point, close along the surface, fastest spot, wake, strongest turn, longest way), each with a start point in the world.",
+    ),
+    (
+        "ride_start",
+        "ride.start",
+        "Ride along one particle: from a suggestion id or through a world point (m), calm or coaster, first_person, chase or overview. Answers with the readings along the path (speed, Cp, pressure, wall distance, acceleration) and the events.",
+    ),
+    (
+        "ride_telemetry",
+        "ride.telemetry",
+        "Readings and events of the stored ride: what the particle goes through on its way.",
+    ),
+    (
+        "ride_stop",
+        "ride.stop",
+        "End the ride and remove it from the view.",
+    ),
+    (
         "export_image",
         "export.image",
-        "Write the 3D view as a PNG file (resolution hd, full_hd, qhd, 4k or width/height; transparent background; colour legend). The path must lie inside the allowed roots.",
+        "Write the 3D view as a PNG file (resolution hd, full_hd, qhd, 4k or width/height; transparent background; colour legend). exposure_s (0.1 to 30) takes a long exposure of the particles: their whole paths as light, the same every time. The path must lie inside the allowed roots.",
     ),
     (
         "export_video",
         "export.video",
-        "Render a video (Motion JPEG AVI) of the 3D view with a camera path (turntable, swing, rise, approach, still or own key frames) and the particle animation. Answers at once with export_id; follow it with export_status.",
+        "Render a video (Motion JPEG AVI) of the 3D view with a camera path (turntable, swing, rise, approach, still, ride or own key frames) and the particle animation. Answers at once with export_id; follow it with export_status.",
     ),
     (
         "export_status",
@@ -268,7 +368,11 @@ impl Server {
                 json!({"type": "object", "properties": {
                     "width": {"type": "integer", "minimum": 16, "maximum": 4096},
                     "height": {"type": "integer", "minimum": 16, "maximum": 4096},
-                    "path": {"type": "string", "description": "PNG file to write as well."}
+                    "path": {"type": "string", "description": "PNG file to write as well."},
+                    "view": {"type": "string", "enum": foamcraft_api::view::VIEW_NAMES,
+                             "description": "Standard view: front looks from -X against the default flow; edges and corners combine sides, e.g. top_front_right. Default: default."},
+                    "ride_t": {"type": "number", "minimum": 0,
+                               "description": "Screen time (s) of the stored ride: a still from the ride's view (see ride_start) instead of the standard view."}
                 }, "additionalProperties": false}),
             ),
             (
@@ -439,7 +543,13 @@ impl Server {
         if let Some(dir) = path.parent() {
             let _ = std::fs::create_dir_all(dir);
         }
-        let params = json!({"path": path, "width": width, "height": height});
+        let mut params = json!({"path": path, "width": width, "height": height});
+        if let Some(view) = args.get("view").filter(|v| !v.is_null()) {
+            params["view"] = view.clone();
+        }
+        if let Some(t) = args.get("ride_t").filter(|v| !v.is_null()) {
+            params["ride_t"] = t.clone();
+        }
         if keep.is_some() {
             self.check_paths(&params)?;
         }

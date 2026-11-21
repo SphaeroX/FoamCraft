@@ -39,6 +39,20 @@ pub const GUIDE: &str = r#"# Setting up and checking a FoamCraft simulation
   each with a short explanation, and the reliability light with its reasons.
 - `view_render` answers with a PNG of the 3D view. `view_set_surface_field` (for example `p`)
   colours the model first; `view_add_slice` adds a plane through the flow.
+- `view_apply_preset` sets up a ready-made view in one step (smoke lines, mid slice, pressure
+  on the model, vortices, wake; for internal flow the path through the part); then `view_render`.
+- `view_set_surface_flow` draws lines like an oil film and wool tufts on the model; the surface
+  field `attached` (wind tunnel) shows attached flow (+1) and reverse flow (-1), and
+  `results_summary` gives `reverse_flow_area` in %.
+- Pictures to show: `view_apply_preset` with `light_trails` (glowing trails) or `ribbons`
+  (twisting ribbons coloured by swirl); `export_image` with `exposure_s` takes a long exposure.
+- Heavy particles: `particles_materials`, then `view_set_particles` with `inertia`
+  (`{"material": "rain"}`); `results_impact` computes where they hit and which share hits
+  (`results_impact_status` until done; then `view_set_surface_field` with `impact`).
+- `ride_suggest` lists rides along one particle; `ride_start` (a suggestion id or a world point
+  `from`) answers with the readings along the path: speed, Cp, pressure, wall distance and the
+  events (stagnation, suction, reverse flow). `view_render` with `ride_t` shows the rider's view,
+  `export_video` with camera preset `ride` the whole ride; `ride_stop` ends it.
 - `results_compare` compares two runs; `runs_list` lists them.
 
 ## 5. Checking plausibility

@@ -80,7 +80,8 @@
     "versions.app": "FoamCraft",
     "versions.solver": "Solver",
     "versions.created": "Created",
-    "trademark": "This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner of the OPENFOAM® and OpenCFD® trade marks. FoamCraft is an independent program that uses OpenFOAM as its solver."
+    "trademark": "This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner of the OPENFOAM® and OpenCFD® trade marks. FoamCraft is an independent program that uses OpenFOAM as its solver.",
+    "comparison.reference": "reference"
   },
   "de": {
     "report": "Simulationsbericht",
@@ -163,6 +164,7 @@
     "versions.app": "FoamCraft",
     "versions.solver": "Löser",
     "versions.created": "Erstellt",
-    "trademark": "Dieses Angebot ist weder von OpenCFD Limited genehmigt noch unterstützt. OpenCFD Limited ist Hersteller und Vertreiber der Software OpenFOAM über www.openfoam.com und Inhaber der Marken OPENFOAM® und OpenCFD®. FoamCraft ist ein unabhängiges Programm, das OpenFOAM als Löser verwendet."
+    "trademark": "Dieses Angebot ist weder von OpenCFD Limited genehmigt noch unterstützt. OpenCFD Limited ist Hersteller und Vertreiber der Software OpenFOAM über www.openfoam.com und Inhaber der Marken OPENFOAM® und OpenCFD®. FoamCraft ist ein unabhängiges Programm, das OpenFOAM als Löser verwendet.",
+    "comparison.reference": "Bezug"
   }
 }

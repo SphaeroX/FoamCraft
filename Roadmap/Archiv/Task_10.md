@@ -31,7 +31,7 @@ Ein vollständiger Windkanal-Lauf aus der Geometrie des Nutzers liefert Widersta
 
 - Lauf-Monitor in der App (Task_11)
 - 3D-Ergebnisse (Task_14)
-- Zeitabhängige Rechnung (Task_37)
+- Zeitabhängige Rechnung (Task_41)
 
 ## Umsetzungsschritte
 

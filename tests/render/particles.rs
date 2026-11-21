@@ -240,3 +240,96 @@ fn performance_of_200000_particles() {
         r.adapter.get_info().name
     );
 }
+
+// --- Task_27: cutting the smoke open ---
+
+#[test]
+fn cut_particles_lie_on_the_visible_side() {
+    let l = vortex();
+    let mut p = Particles::new(std::slice::from_ref(&l), seeds(3), 2000, 3, 3.0);
+    for _ in 0..20 {
+        p.step(0.02);
+    }
+    let origin = [0.5, 0.5, 0.0];
+    let normal = [1.0, 0.0, 0.0];
+    let shown = foamcraft_sim::particles::visible_positions(&p.positions, origin, normal);
+    assert!(!shown.is_empty() && shown.len() < p.positions.len());
+    assert!(shown.iter().all(|q| q[0] <= 0.5));
+}
+
+#[test]
+fn cut_smoke_matches_golden_image_and_no_cut_is_unchanged() {
+    let Some(r) = renderer() else { return };
+    let l = vortex();
+    let mut s = settings(4000, 1);
+    s.color = ParticleColor::Constant;
+    s.opacity = 0.5;
+    s.constant = [0.9, 0.9, 0.9];
+    let draw = |clip: Option<([f32; 3], [f32; 3])>| {
+        let mut gpu = r.upload(&Scene::empty());
+        let mut p = r.create_particles(&[gpu_level(&l)], &seeds(1), &s);
+        r.set_particle_clip(&mut p, clip);
+        r.step_particles(&mut p, 0.02, 40);
+        gpu.particles = Some(p);
+        let mut camera = OrbitCamera::default();
+        camera.orbit(0.0, 1.5);
+        camera.fit(foamcraft_render::glam::Vec3::new(0.5, 0.5, 0.2), 0.6, 1.0);
+        r.render_offscreen_gpu(&gpu, &camera, SIZE, SIZE)
+    };
+    // No plane gives exactly the picture without the feature.
+    assert_eq!(
+        draw(None),
+        render_particles(&r, 1, 40, ParticleColor::Constant, 0.5)
+    );
+    let cut = draw(Some(([0.5, 0.5, 0.0], [1.0, 0.0, 0.0])));
+    assert_ne!(cut, draw(None));
+    golden("particles_smoke_cut.png", &cut);
+}
+
+// --- Task_28: smoke lines from a rake of nozzles ---
+
+#[test]
+fn rake_points_lie_close_to_their_nozzles() {
+    let pts =
+        foamcraft_sim::particles::rake_points([0.0, 0.5, 0.0], [0.0, 0.0, 1.0], 0.01, 11, 2200, 3);
+    assert_eq!(pts.len(), 2200);
+    for p in &pts {
+        // On the line x = 0, y = 0.5 within the scatter radius, z within 0..1.
+        let r = (p[0] * p[0] + (p[1] - 0.5) * (p[1] - 0.5)).sqrt();
+        assert!(r <= 0.0101, "{p:?}");
+        assert!(p[2] >= -0.011 && p[2] <= 1.011, "{p:?}");
+        // Close to one of the eleven nozzles at z = k / 10.
+        let k = (p[2] * 10.0).round();
+        assert!((p[2] - k / 10.0).abs() <= 0.0101, "{p:?}");
+    }
+}
+
+#[test]
+fn smoke_lines_match_golden_image() {
+    let Some(r) = renderer() else { return };
+    let l = vortex();
+    let mut s = settings(6000, 2);
+    s.color = ParticleColor::Speed;
+    s.opacity = 0.5;
+    let seeds =
+        foamcraft_sim::particles::rake_points([0.15, 0.5, 0.2], [0.0, 0.0, 0.0], 0.004, 9, 4096, 2)
+            .into_iter()
+            .enumerate()
+            .map(|(i, mut p)| {
+                // Nozzles along y across the vortex.
+                p[1] = 0.1 + 0.8 * ((i % 9) as f32) / 8.0 + (p[1] - 0.5);
+                p
+            })
+            .collect::<Vec<_>>();
+    let mut gpu = r.upload(&Scene::empty());
+    let mut p = r.create_particles(&[gpu_level(&l)], &seeds, &s);
+    r.step_particles(&mut p, 0.02, 60);
+    gpu.particles = Some(p);
+    let mut camera = OrbitCamera::default();
+    camera.orbit(0.0, 1.5);
+    camera.fit(foamcraft_render::glam::Vec3::new(0.5, 0.5, 0.2), 0.6, 1.0);
+    golden(
+        "smoke_lines.png",
+        &r.render_offscreen_gpu(&gpu, &camera, SIZE, SIZE),
+    );
+}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage, type Api, type GeometryInfo } from "../api";
 import { useTranslation } from "../i18n/i18n";
+import { ExpertOnly } from "../mode";
 import {
   formatNumber,
   fromDisplayLength,
@@ -106,17 +107,20 @@ function ModelCard({
           </span>
         )}
       </label>
-      <fieldset>
-        <legend>{t("geometry.rotation")}</legend>
-        {(["yaw", "pitch", "roll"] as const).map((axis, k) => (
-          <NumberField
-            key={axis}
-            label={t(`geometry.${axis}`)}
-            value={info.rotation_deg[k]}
-            onCommit={(v) => rotation(k, v)}
-          />
-        ))}
-      </fieldset>
+      {/* Simple mode turns the model with the rings in the view. */}
+      <ExpertOnly>
+        <fieldset>
+          <legend>{t("geometry.rotation")}</legend>
+          {(["yaw", "pitch", "roll"] as const).map((axis, k) => (
+            <NumberField
+              key={axis}
+              label={t(`geometry.${axis}`)}
+              value={info.rotation_deg[k]}
+              onCommit={(v) => rotation(k, v)}
+            />
+          ))}
+        </fieldset>
+      </ExpertOnly>
       <fieldset>
         <legend>{t("geometry.position")}</legend>
         {(["X", "Y", "Z"] as const).map((axis, k) => (
@@ -133,9 +137,11 @@ function ModelCard({
           {t("geometry.ground")}
         </button>
         {!info.fix_normals && (
-          <button type="button" onClick={() => run("geometry.fix_normals", { id })}>
-            {t("geometry.fixNormals")}
-          </button>
+          <ExpertOnly>
+            <button type="button" onClick={() => run("geometry.fix_normals", { id })}>
+              {t("geometry.fixNormals")}
+            </button>
+          </ExpertOnly>
         )}
         <button type="button" onClick={() => run("geometry.remove", { id })}>
           {t("geometry.remove")}

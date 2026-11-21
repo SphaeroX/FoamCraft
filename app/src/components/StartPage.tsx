@@ -88,56 +88,66 @@ export function StartPage({ api, pickFolder, onOpened }: Props) {
 
   return (
     <main className="start-page panel">
-      <h1>{t("start.title")}</h1>
-      <p className="muted">{t("start.subtitle")}</p>
-      <section className="start-new">
-        <label>
-          <span>{t("start.name.label")}</span>
-          <input
-            type="text"
-            value={name}
-            placeholder={t("start.name.placeholder")}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>
-        <button type="button" disabled={busy} onClick={() => create(false)}>
-          {t("start.create")}
-        </button>
-      </section>
-      {location && (
-        <p className="small muted start-location">
-          {t("start.location", { path: location.path ?? location.folder })}{" "}
-          <button type="button" className="link" disabled={busy} onClick={() => create(true)}>
-            {t("start.otherFolder")}
+      <header className="start-head">
+        <h1>{t("start.title")}</h1>
+        <p className="muted">{t("start.subtitle")}</p>
+      </header>
+      <div className="start-cards">
+        <div className="start-card start-card-samples">
+          <SamplesSection api={api} pickFolder={pickFolder} onOpened={onOpened} />
+        </div>
+        <div className="start-card">
+          <section className="start-new">
+            <label>
+              <span>{t("start.name.label")}</span>
+              <input
+                type="text"
+                value={name}
+                placeholder={t("start.name.placeholder")}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <button type="button" className="primary" disabled={busy} onClick={() => create(false)}>
+              {t("start.create")}
+            </button>
+          </section>
+          {location && (
+            <p className="small muted start-location">
+              {t("start.location", { path: location.path ?? location.folder })}{" "}
+              <button type="button" className="link" disabled={busy} onClick={() => create(true)}>
+                {t("start.otherFolder")}
+              </button>
+            </p>
+          )}
+        </div>
+        <div className="start-card">
+          <section>
+            <h2>{t("start.recent")}</h2>
+            {recent.length === 0 ? (
+              <p className="muted">{t("start.recentEmpty")}</p>
+            ) : (
+              <ul className="recent-list">
+                {recent.map((r) => (
+                  <li key={r.path}>
+                    <button type="button" disabled={busy} onClick={() => open(r.path)}>
+                      <strong>{r.name}</strong>
+                      <span className="muted small">{r.path}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <button type="button" className="quiet" disabled={busy} onClick={() => open()}>
+            {t("start.open")}
           </button>
-        </p>
-      )}
-      <button type="button" disabled={busy} onClick={() => open()}>
-        {t("start.open")}
-      </button>
+        </div>
+      </div>
       {error && (
         <p role="alert" className="error">
           {error}
         </p>
       )}
-      <section>
-        <h2>{t("start.recent")}</h2>
-        {recent.length === 0 ? (
-          <p className="muted">{t("start.recentEmpty")}</p>
-        ) : (
-          <ul className="recent-list">
-            {recent.map((r) => (
-              <li key={r.path}>
-                <button type="button" disabled={busy} onClick={() => open(r.path)}>
-                  <strong>{r.name}</strong>
-                  <span className="muted small">{r.path}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <SamplesSection api={api} pickFolder={pickFolder} onOpened={onOpened} />
     </main>
   );
 }

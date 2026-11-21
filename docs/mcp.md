@@ -41,17 +41,19 @@ foamcraft-cli`).
 
 ## Tools
 
-| Area     | Tools                                                                                                                                                                   |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Project  | `project_new`, `project_open`, `project_info`                                                                                                                           |
-| Geometry | `geometry_import`, `geometry_info`, `geometry_list`, `geometry_set_transform`, `surface_select_at`, `geometry_cap_opening`                                              |
-| Scenario | `scenario_set_wind_tunnel`, `scenario_set_internal_flow`, `scenario_set_boundary_role`, `scenario_info`                                                                 |
-| Run      | `run_start` (answers at once with `job_id`; meshes first when needed), `run_wait` (time limit up to 3600 s), `run_status`, `run_cancel`, `run_log` (meshing and solver) |
-| Results  | `results_summary`, `results_probe`, `results_compare`, `runs_list`                                                                                                      |
-| View     | `view_set_surface_field`, `view_add_slice`, `view_render` (PNG image in the answer)                                                                                     |
-| Export   | `export_image`, `export_video` (answers at once with `export_id`), `export_status`, `export_cancel`                                                                     |
-| Report   | `export_report` (PDF and/or HTML, `language` en or de, `compare_with` for two runs)                                                                                     |
-| Generic  | `commands_list`, `command_describe`, `command_run` (every command of the command API)                                                                                   |
+| Area      | Tools                                                                                                                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project   | `project_new`, `project_open`, `project_info`                                                                                                                                                                     |
+| Geometry  | `geometry_import`, `geometry_info`, `geometry_list`, `geometry_set_transform`, `geometry_pivot`, `geometry_move_by`, `geometry_rotate_about`, `surface_select_at`, `geometry_cap_opening`                         |
+| Scenario  | `scenario_list`, `scenario_add`, `scenario_activate`, `scenario_set_wind_tunnel`, `scenario_set_wind_direction`, `scenario_set_jets`, `scenario_set_internal_flow`, `scenario_set_boundary_role`, `scenario_info` |
+| Run       | `run_start` (answers at once with `job_id`; meshes first when needed), `run_wait` (time limit up to 3600 s), `run_status`, `run_cancel`, `run_log` (meshing and solver)                                           |
+| Results   | `results_summary`, `results_probe`, `results_compare`, `results_compare_many`, `runs_list`                                                                                                                        |
+| View      | `view_set_surface_field`, `view_add_slice`, `view_apply_preset`, `view_set_surface_flow`, `view_render` (PNG image in the answer, optional standard `view` or `ride_t`)                                           |
+| Particles | `view_set_particles` (styles comets, smoke, streamlines, trails, ribbons, tubes; heavy particles with `inertia`), `particles_materials`, `results_impact`, `results_impact_status`                                |
+| Ride      | `ride_suggest`, `ride_start` (suggestion id or world point `from`; answers with the readings and events), `ride_telemetry`, `ride_stop`                                                                           |
+| Export    | `export_image` (`exposure_s`: long exposure of the particles), `export_video` (answers at once with `export_id`), `export_status`, `export_cancel`                                                                |
+| Report    | `export_report` (PDF and/or HTML, `language` en or de, `compare_with` for two runs)                                                                                                                               |
+| Generic   | `commands_list`, `command_describe`, `command_run` (every command of the command API)                                                                                                                             |
 
 Answers are compact JSON in SI units. `results_summary` carries the English explanation of every
 figure as `text`. Errors are tool errors with `{code, message, fix, detail}`; the codes are those

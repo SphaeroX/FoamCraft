@@ -30,6 +30,9 @@ export function ExportDialog({ api, pickSavePath, onClose, pollMs = 500 }: Props
   const [resolution, setResolution] = useState<string>("full_hd");
   const [transparent, setTransparent] = useState(false);
   const [legend, setLegend] = useState(true);
+  // Long exposure of the image: seconds of animation, or off.
+  const [exposure, setExposure] = useState(false);
+  const [exposureS, setExposureS] = useState(2);
   const [camera, setCamera] = useState<string>("turntable");
   const [fps, setFps] = useState(30);
   const [duration, setDuration] = useState(8);
@@ -85,7 +88,13 @@ export function ExportDialog({ api, pickSavePath, onClose, pollMs = 500 }: Props
     if (!path) return;
     setMessage(null);
     api
-      .call<{ path: string }>("export.image", { path, resolution, transparent, legend })
+      .call<{ path: string }>("export.image", {
+        path,
+        resolution,
+        transparent,
+        legend,
+        ...(exposure ? { exposure_s: exposureS } : {}),
+      })
       .then((r) => setMessage(t("export.saved", { path: r.path })))
       .catch((e: unknown) => setError(errorMessage(e, language)));
   };
@@ -217,6 +226,32 @@ export function ExportDialog({ api, pickSavePath, onClose, pollMs = 500 }: Props
           />
           {t("export.transparent")}
         </label>
+        <div className="row">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={exposure}
+              onChange={(e) => setExposure(e.target.checked)}
+            />
+            {t("export.longExposure")}
+          </label>
+          {exposure && (
+            <label className="unit-field">
+              <span>{t("export.exposureTime")}</span>
+              <input
+                type="number"
+                aria-label={t("export.exposureTime")}
+                min={0.1}
+                max={30}
+                step={0.5}
+                value={exposureS}
+                onChange={(e) =>
+                  setExposureS(Math.min(30, Math.max(0.1, Number(e.target.value) || 2)))
+                }
+              />
+            </label>
+          )}
+        </div>
         {status && running && (
           <div className="export-progress">
             <progress max={status.frames} value={status.frame} />

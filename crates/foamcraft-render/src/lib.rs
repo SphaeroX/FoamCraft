@@ -3,12 +3,15 @@
 
 pub mod camera;
 pub mod camera_path;
+pub mod flow;
+pub mod handles;
 mod image;
 pub mod jpeg;
 pub mod overlay;
 pub mod particles;
 mod renderer;
 pub mod scene;
+pub mod trails;
 pub mod video;
 mod viewport;
 

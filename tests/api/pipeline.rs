@@ -506,3 +506,119 @@ fn runtime_cancelling_the_meshing_leaves_no_container_or_volume() {
         "mesh.none"
     );
 }
+
+// --- Task_30: several scenarios, shared meshes, the queue ---
+
+fn tunnel(speed: f64, direction: f64) -> Value {
+    json!({"speed_m_s": speed, "direction_deg": direction, "ground": "none",
+           "medium": {"kind": "air", "temperature_c": 20.0}, "quality": "draft"})
+}
+
+#[test]
+fn scenarios_are_listed_added_renamed_activated_and_removed() {
+    let mut f = fixture("scenarios", true);
+    let list = f.run("scenario.list", json!({}));
+    assert_eq!(list["active"], "scenario-1");
+    assert_eq!(list["scenarios"].as_array().unwrap().len(), 1);
+    let added = f.run("scenario.add", json!({"name": "Fast", "copy": true}));
+    assert_eq!(added["id"], "scenario-2");
+    f.run("scenario.activate", json!({"id": "scenario-2"}));
+    f.run("scenario.set_wind_tunnel", tunnel(40.0, 0.0));
+    f.run(
+        "scenario.rename",
+        json!({"id": "scenario-2", "name": "Very fast"}),
+    );
+    let list = f.run("scenario.list", json!({}));
+    assert_eq!(list["active"], "scenario-2");
+    let s2 = &list["scenarios"][1];
+    assert_eq!(s2["name"], "Very fast");
+    assert_eq!(s2["scenario"]["speed_m_s"], 40.0);
+    assert_eq!(list["scenarios"][0]["scenario"]["speed_m_s"], 20.0);
+    // Undo of the rename, then of the change, then of the activation.
+    f.run("history.undo", json!({}));
+    assert_eq!(
+        f.run("scenario.list", json!({}))["scenarios"][1]["name"],
+        "Fast"
+    );
+    let err = f
+        .reg
+        .execute(&mut f.s, "scenario.remove", json!({"id": "scenario-2"}))
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.remove_active");
+    f.run("scenario.activate", json!({"id": "scenario-1"}));
+    f.run("scenario.remove", json!({"id": "scenario-2"}));
+    assert_eq!(
+        f.run("scenario.list", json!({}))["scenarios"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    let err = f
+        .reg
+        .execute(&mut f.s, "scenario.activate", json!({"id": "scenario-7"}))
+        .unwrap_err();
+    assert_eq!(err.code, "scenario.not_found");
+}
+
+#[test]
+fn the_queue_runs_all_scenarios_in_order_and_shares_fitting_meshes() {
+    let mut f = fixture("queue", true);
+    // Scenario 2: a little faster, same direction and quality: same mesh.
+    f.run("scenario.add", json!({"name": "Faster", "copy": true}));
+    f.run("scenario.activate", json!({"id": "scenario-2"}));
+    f.run("scenario.set_wind_tunnel", tunnel(21.0, 0.0));
+    // Scenario 3: another direction: its own mesh.
+    f.run("scenario.add", json!({"name": "Turned", "copy": true}));
+    f.run("scenario.activate", json!({"id": "scenario-3"}));
+    f.run("scenario.set_wind_tunnel", tunnel(20.0, 30.0));
+    f.run("scenario.activate", json!({"id": "scenario-1"}));
+    let out = f.run("run.start_all", json!({"wait": true, "cores": 1}));
+    let runs = out["runs"].as_array().unwrap();
+    assert_eq!(runs.len(), 3);
+    assert_eq!(
+        runs.iter()
+            .map(|r| r["scenario"].clone())
+            .collect::<Vec<_>>(),
+        [
+            json!("scenario-1"),
+            json!("scenario-2"),
+            json!("scenario-3")
+        ]
+    );
+    assert!(runs.iter().all(|r| r["error"].is_null()), "{out}");
+    let list = f.run("scenario.list", json!({}));
+    let mesh = |i: usize| list["scenarios"][i]["mesh"]["job_id"].clone();
+    assert!(mesh(0).is_string());
+    assert_eq!(mesh(0), mesh(1), "{list}");
+    assert_ne!(mesh(0), mesh(2), "{list}");
+    // Each run knows its scenario; the active scenario did not change.
+    assert_eq!(list["active"], "scenario-1");
+    assert_eq!(list["scenarios"][1]["runs"].as_array().unwrap().len(), 1);
+    assert_eq!(f.events_named("run.queue").len(), 3);
+    assert_eq!(f.events_named("run.queue_finished").len(), 1);
+}
+
+#[test]
+fn the_queue_can_be_cancelled() {
+    let mut f = fixture("queue-cancel", false);
+    f.run("scenario.add", json!({"name": "Second", "copy": true}));
+    let out = f.run("run.start_all", json!({"cores": 1}));
+    let first = out["runs"][0]["job_id"].as_str().unwrap().to_string();
+    f.wait_for_event("mesh.stage");
+    f.run("run.cancel_queue", json!({}));
+    let st = f.wait_idle(&first);
+    assert_eq!(st["state"]["state"], "cancelled", "{st}");
+    let start = Instant::now();
+    while f.events_named("run.queue_finished").is_empty() {
+        assert!(
+            start.elapsed() < Duration::from_secs(30),
+            "queue did not end"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    // The second scenario was not started.
+    assert_eq!(f.events_named("run.queue").len(), 1);
+    let fin = &f.events_named("run.queue_finished")[0];
+    assert_eq!(fin["cancelled"], true);
+}

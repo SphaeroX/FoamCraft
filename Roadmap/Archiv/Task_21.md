@@ -29,8 +29,8 @@ Beim ersten Start führt FoamCraft den Nutzer durch die Einrichtung: Docker, Spe
 
 **Gehört nicht dazu:**
 
-- Installer (Task_32)
-- Verwaltete WSL-Umgebung (Task_36)
+- Installer (Task_36)
+- Verwaltete WSL-Umgebung (Task_40)
 
 ## Umsetzungsschritte
 
@@ -61,7 +61,7 @@ Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder ei
 
 ## Offene Fragen / Annahmen
 
-- Annahme: Bis Task_32 wird das Image lokal gebaut; danach lädt der Assistent es aus der Registry.
+- Annahme: Bis Task_36 wird das Image lokal gebaut; danach lädt der Assistent es aus der Registry.
 
 ## Notizen zu diesem Task
 
@@ -91,5 +91,5 @@ Vor der Archivierung vom Agenten auszufüllen. Schreibe so, dass ein Agent, der 
 - **Umgesetzt (und Abweichungen vom Plan):** `foamcraft_api::system` (Prüfschritte mit Texten/Hilfen, `Probe`, Hardware-Profil, Diagnose, Setup-Zustand, Image bereitstellen), `foamcraft_api::samples` mit `samples/` (eigene Gmsh-Skripte, CC0), Oberfläche `SetupAssistant`, `GuidedTour`, `SamplesSection`, Knöpfe "Tour" und "System", helles Erscheinungsbild und Fokusrahmen. `foamcraft_core::command::opened` ist jetzt öffentlich.
 - **Learnings & Stolpersteine:** `sysinfo` 0.40 liefert `Result` bei `System::new` und `Disks::new_with_refreshed_list`; `Disks` ist per Deref eine Liste. Der bestehende Katalogtest verlangt zu jedem Eintrag einen Vorschlag – auch bei "alles gut" ("Nichts zu tun."). Pfade für die Windows-CLI aus Git-Bash mit `cygpath -m` umwandeln. Beim Neustart von `npm run app:dev` erst warten, bis der alte Vite-Server beendet ist (Port 1420).
 - **Wichtige Entscheidungen und ihre Gründe:** Der Assistent ändert nichts am System (Docker/WSL installiert der Nutzer selbst); Hilfetexte mit Verweisen. Warnungen (Hyper-V, wenig Speicher) blockieren nicht. Diagnosebericht ohne Benutzerordner (Datenschutz). Beispiele als eingebettete Projektvorlagen, damit sie ohne Runtime-Container angelegt werden können.
-- **Auswirkungen auf Folge-Tasks:** Task_32: `system.provide_image` auf das veröffentlichte Image umstellen, `samples/` und `assets/fonts/OFL.txt` ausliefern. Task_36 (WSL2-Runner) erweitert die Prüfschritte um die verwaltete WSL-Umgebung.
+- **Auswirkungen auf Folge-Tasks:** Task_36: `system.provide_image` auf das veröffentlichte Image umstellen, `samples/` und `assets/fonts/OFL.txt` ausliefern. Task_40 (WSL2-Runner) erweitert die Prüfschritte um die verwaltete WSL-Umgebung.
 - **Hinweise zu Tests und Befehlen:** `cargo test -p foamcraft-api --test system --test samples`; echte Läufe der Beispiele: `cargo test -p foamcraft-api --test samples -- --ignored runtime_ --test-threads=1`. Gestoppten Docker simulieren: App mit `DOCKER_HOST=npipe:////./pipe/foamcraft_no_docker` starten.

@@ -41,7 +41,8 @@ pub struct View {
 #[derive(Debug, Clone)]
 pub struct CompareInput {
     pub run_name: String,
-    /// Rows of `results.compare`.
+    /// Rows of `results.compare`, or the whole `results.compare_many` answer (an object with
+    /// `names`) for a comparison of several runs.
     pub rows: Value,
     /// `results.summary` of the second run.
     pub summary_b: Value,
@@ -474,6 +475,9 @@ pub fn build(input: &ReportInput) -> ReportModel {
 
     // Comparison.
     let comparison = input.compare.as_ref().map(|c| {
+        if c.rows.get("names").is_some() {
+            return many_model(lang, &tr, &c.rows);
+        }
         let rows = c
             .rows
             .as_array()
@@ -586,5 +590,65 @@ pub fn build(input: &ReportInput) -> ReportModel {
         versions,
         trademark,
         logo_png: input.logo_png.clone(),
+    }
+}
+
+/// Comparison table of several runs: one column per run, each value with its change against
+/// the first (reference) run.
+fn many_model(lang: &str, tr: &dyn Fn(&str) -> String, many: &Value) -> ComparisonModel {
+    let num = |v: f64| number(v, lang);
+    let names: Vec<String> = many["names"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|n| n.as_str().unwrap_or_default().to_string())
+        .collect();
+    let rows = many["rows"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|row| {
+            let id = row["id"].as_str().unwrap_or_default();
+            let mut label = figure_label(lang, id);
+            if let Some(p) = row["part"].as_str() {
+                label = format!("{label} ({p})");
+            }
+            let unit = row["unit"].as_str().filter(|u| *u != "-").unwrap_or("");
+            let mut cells = vec![if unit.is_empty() {
+                label
+            } else {
+                format!("{label} [{unit}]")
+            }];
+            let values = row["values"].as_array().cloned().unwrap_or_default();
+            let relative = row["relative"].as_array().cloned().unwrap_or_default();
+            for (i, v) in values.iter().enumerate() {
+                let cell = match (v.as_f64(), relative.get(i).and_then(Value::as_f64)) {
+                    (Some(x), Some(r)) if r.abs() > 1e-12 => {
+                        let sign = if r < 0.0 { "−" } else { "+" };
+                        format!("{} ({sign}{} %)", num(x), num(r.abs() * 100.0))
+                    }
+                    (Some(x), _) => num(x),
+                    (None, _) => "–".to_string(),
+                };
+                cells.push(cell);
+            }
+            cells
+        })
+        .collect();
+    let mut header = vec![String::new()];
+    header.extend(names.iter().enumerate().map(|(i, n)| {
+        if i == 0 {
+            format!("{n} ({})", tr("comparison.reference"))
+        } else {
+            n.clone()
+        }
+    }));
+    ComparisonModel {
+        name_a: names.first().cloned().unwrap_or_default(),
+        name_b: names.get(1..).map(|r| r.join(", ")).unwrap_or_default(),
+        header,
+        rows,
     }
 }

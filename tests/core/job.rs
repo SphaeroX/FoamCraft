@@ -346,3 +346,17 @@ fn the_solver_stage_initialises_the_flow_with_potential_flow() {
     let parallel = stage_script(Stage::Solve, 4);
     assert!(parallel.contains("-np 4 potentialFoam -parallel"));
 }
+
+#[test]
+fn a_case_with_sources_of_air_starts_from_rest_without_potential_flow() {
+    // Sources are velocity constraints in system/fvOptions; potentialFoam fails on such a case
+    // (still air, open boundaries only), so the solve stage skips it there.
+    for cores in [1, 4] {
+        let script = stage_script(Stage::Solve, cores);
+        assert!(
+            script.contains("if [ ! -f system/fvOptions ]; then"),
+            "{script}"
+        );
+        assert!(script.contains("simpleFoam"));
+    }
+}

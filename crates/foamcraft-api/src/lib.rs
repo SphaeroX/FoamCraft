@@ -5,16 +5,21 @@
 pub mod bridge;
 mod cad;
 pub mod export;
+pub mod heavy;
 pub mod mesh;
 mod mesh_internal;
 pub mod particles;
+pub mod presets;
 mod report;
 pub mod results;
+pub mod ride;
 mod run;
 pub mod runs;
 mod samples;
+pub mod scenarios;
 pub mod scene;
 pub mod solve;
+pub mod surface_flow;
 pub mod system;
 pub mod view;
 
@@ -46,6 +51,11 @@ pub fn registry_with(runner: SharedRunner) -> Registry {
     results::register(&mut registry);
     view::register(&mut registry);
     particles::register(&mut registry);
+    presets::register(&mut registry);
+    ride::register(&mut registry);
+    surface_flow::register(&mut registry);
+    heavy::register(&mut registry);
+    scenarios::register(&mut registry);
     export::register(&mut registry);
     report::register(&mut registry);
     samples::register(&mut registry);

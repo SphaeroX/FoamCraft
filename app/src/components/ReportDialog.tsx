@@ -37,6 +37,8 @@ export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose
   const [runs, setRuns] = useState<Run[]>([]);
   const [job, setJob] = useState("");
   const [other, setOther] = useState("");
+  // Several runs to compare with; when some are ticked they replace the single comparison.
+  const [several, setSeveral] = useState<string[]>([]);
   const [lang, setLang] = useState<string>(language);
   const [pdf, setPdf] = useState(true);
   const [html, setHtml] = useState(true);
@@ -70,7 +72,9 @@ export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose
       title,
       author,
     };
-    if (other) params.compare_with = other;
+    const many = several.filter((r) => r !== job);
+    if (many.length > 0) params.compare_runs = many;
+    else if (other) params.compare_with = other;
     if (logo) params.logo_path = logo;
     if (sections.length !== SECTIONS.length) params.sections = sections;
     setBusy(true);
@@ -127,6 +131,28 @@ export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose
                 ))}
             </select>
           </label>
+          {runs.length > 2 && (
+            <fieldset className="check-list">
+              <legend>{t("report.compareRuns")}</legend>
+              {runs
+                .filter((r) => r.job_id !== job)
+                .map((r) => (
+                  <label key={r.job_id} className="check">
+                    <input
+                      type="checkbox"
+                      aria-label={r.name}
+                      checked={several.includes(r.job_id)}
+                      onChange={(e) =>
+                        setSeveral((s) =>
+                          e.target.checked ? [...s, r.job_id] : s.filter((x) => x !== r.job_id),
+                        )
+                      }
+                    />
+                    {r.name}
+                  </label>
+                ))}
+            </fieldset>
+          )}
           <label className="unit-field">
             <span>{t("report.title_field")}</span>
             <input

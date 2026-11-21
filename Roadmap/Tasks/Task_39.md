@@ -1,4 +1,4 @@
-# Task_39: Rotierende Teile und bewegter Boden
+# Task_39: Lösungsadaptive Netzverfeinerung
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,56 +7,54 @@
 
 ## Ziel
 
-Der Nutzer markiert Teile als rotierend (Lüfter, Propeller, Räder) und schaltet im Windkanal einen bewegten Boden ein. Ergebnisse sind Schub, Drehmoment und Leistung.
+FoamCraft verfeinert das Netz dort, wo die Strömung es braucht, bei gleichem Zellbudget. Der Nachweis: Die Vergleichsfälle liegen näher am Referenzwert als mit dem statischen Netz.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_10 ist archiviert (Außenströmung); die Teile-Auswahl aus Task_06 und das Szenario aus Task_08 sind vorhanden.
-- **Relevantes Vorwissen:** Der bewegte Boden ist in Task_08 als Option vorgesehen. Die Vernetzung aus Task_09 muss Zellzonen für rotierende Bereiche erzeugen können.
+- **Voraussetzung:** Task_37 ist archiviert (Messung); die Vernetzung aus Task_09 und Task_13 sowie die Volumenraster aus Task_14 sind vorhanden.
+- **Relevantes Vorwissen:** Erkenntnisse aus Task_09 (Budget-Regelung) und Task_14 (Raster). Die Validierungsfälle aus Task_10 und Task_13 dienen als Maßstab.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Teil als rotierend markieren: Achse (Vorschlag aus der Geometrie, anpassbar) und Drehzahl
-- Zwei Modelle: rotierende Wand (Räder, glatte Rotationskörper) und rotierendes Bezugssystem in einer Zone (Lüfter, Propeller); die Zone entsteht automatisch um das Teil
-- Bewegter Boden im Windkanal und passende Drehzahl der Räder aus Fahrgeschwindigkeit und Radius
-- Ergebnisse: Schub, Drehmoment, Leistung, Wirkungsgrad; beim Lüfter Volumenstrom und Druckaufbau
-- Klartext-Hinweis zu den Grenzen des Modells (der Rotor steht im Bild still)
+- Ablauf: grober Vorlauf, Indikator aus der Lösung (Gradienten von Druck und Geschwindigkeit, Wirbelstärke, Gesamtdruckverlust), daraus Verfeinerungsbereiche für eine Neuvernetzung innerhalb des Budgets, Rechnung mit Übertragung der Felder als Startlösung
+- Ein bis zwei Zyklen
+- Einbindung in die Qualitätsstufe "Fein", falls der Nachweis gelingt
+- Vergleich statisch gegen adaptiv an den Validierungsfällen
 
 **Gehört nicht dazu:**
 
-- Echte Drehung mit gleitenden Netzen
+- Dynamische Verfeinerung während einer zeitabhängigen Rechnung
 
 ## Umsetzungsschritte
 
-1. Testkörper erzeugen (Zylinder, einfacher Propeller).
-2. Tests zuerst für den Achsvorschlag, die Umfangsgeschwindigkeit und die Drehzahl aus der Fahrgeschwindigkeit.
-3. Rotierende Wand und bewegten Boden umsetzen.
-4. Zonen-Erzeugung in der Vernetzung und das rotierende Bezugssystem umsetzen.
-5. Auswertung (Schub, Drehmoment, Leistung) umsetzen.
-6. Oberfläche, Kennzahlen und Report erweitern.
+1. Tests zuerst für den Indikator auf analytischen Feldern.
+2. Indikator und Auswahl der Bereiche mit Budgeteinhaltung umsetzen.
+3. Neuvernetzung und Feldübertragung in die Job-Pipeline einhängen.
+4. Vergleich an den Validierungsfällen fahren und dokumentieren.
+5. Je nach Ergebnis in die Qualitätsstufe einbinden oder als Option belassen.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Achsvorschlag für Zylinder und Propeller; Umfangsgeschwindigkeit; Drehzahl aus Fahrgeschwindigkeit.
-- Snapshot der Zonen-Erzeugung.
-- `runtime_`: Ein rotierender Zylinder im Querstrom erzeugt Auftrieb mit dem richtigen Vorzeichen; der Propeller liefert Schub in Achsrichtung.
-- Leistung gleich Drehmoment mal Winkelgeschwindigkeit.
+- Der Indikator markiert bei analytischen Feldern die Bereiche mit hohen Gradienten.
+- Die Auswahl der Bereiche hält das Zellbudget ein.
+- `runtime_`: Ein adaptiver Lauf rechnet durch.
+- `validation_`: Vergleich statisch gegen adaptiv, Ergebnis in `docs/performance.md`.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] Ein Teil lässt sich in der App als rotierend markieren und rechnen
-- [ ] Der bewegte Boden ist im Windkanal wählbar
-- [ ] Schub, Drehmoment und Leistung stehen in den Kennzahlen
+- [ ] Ein adaptiver Lauf ist per Befehl und in der App wählbar
+- [ ] Der Vergleich an den Validierungsfällen ist dokumentiert
+- [ ] Standardmäßig aktiv ist die Funktion nur, wenn der Genauigkeitsgewinn nachgewiesen ist
 
 ## Offene Fragen / Annahmen
 
-- Echte Drehung mit gleitenden Netzen ist ein Wunsch für später.
+- Annahme: Neuvernetzung statt Verfeinerung im laufenden Löser, weil sie für stationäre Fälle robuster ist. Zeigt sich kein Gewinn, wird das dokumentiert und die Funktion bleibt abgeschaltet.
 
 ## Notizen zu diesem Task
 
