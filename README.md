@@ -4,8 +4,17 @@ FoamCraft is a free, open-source desktop app that makes CFD simulation with Open
 load a 3D model, click where the flow goes in and out or place the model in a virtual wind tunnel,
 run the simulation, then explore, animate and export the results.
 
-**Status:** planning. There is no application code yet. The work plan lives in
-[Roadmap/](Roadmap/README.md), the project documentation in [docs/](docs/project-brief.md).
+**Status:** early development. The app starts with a 3D view; simulation features follow the
+work plan in [Roadmap/](Roadmap/README.md). Project documentation: [docs/](docs/project-brief.md).
+
+## Development
+
+```bash
+npm ci                 # JS tooling and frontend dependencies
+npm run app:dev        # start the desktop app in development mode
+cargo test --workspace # Rust tests
+npm test               # frontend tests
+```
 
 ## Planned features
 

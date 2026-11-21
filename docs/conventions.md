@@ -13,6 +13,18 @@
 - Translation keys: `<area>.<element>.<purpose>`, for example `tunnel.speed.label`.
 - Tests: see [testing.md](testing.md).
 
+## Commands
+
+- A command is registered with `Registry::add` (core commands in
+  `crates/foamcraft-core/src/command/`, commands that need the runtime in `crates/foamcraft-api/`).
+- Parameter structs derive `Deserialize` and `JsonSchema` and use `#[serde(deny_unknown_fields)]`;
+  document every field, because the doc comments become the schema descriptions.
+- Mark a command `undoable` when it changes the project manifest; give a valid `example` that
+  changes the state (a test runs undo and redo for every undoable command with it).
+- List the error codes a command can return; every code needs an English and German entry in
+  `crates/foamcraft-core/data/errors.json`.
+- The interface never builds results itself: it calls commands through `app/src/api.ts`.
+
 ## Structure and organisation
 
 - Logic that the CLI or MCP server also needs belongs in the core library, never in `app/`.
@@ -24,8 +36,10 @@
 
 - No network access except pulling the runtime image and a user-triggered update check.
   No telemetry.
-- Write only inside the project folder, the app data folder and locations the user chose. The MCP
-  server accepts paths only inside the roots it was started with.
+- Write only inside the project folder, the app data folder, the default projects folder
+  (`~/FoamCraft`, shown to the user before anything is created there) and locations the user
+  chose. The MCP server accepts paths only inside the roots it was started with; a command that
+  would fall back to the default projects folder gets a folder in the first root instead.
 - Never commit simulation cases, meshes or results. Only small self-made test data is versioned.
 - Before adding a dependency, check its license against [licensing.md](licensing.md). Ask the
   maintainer if the license is not on the allowed list.

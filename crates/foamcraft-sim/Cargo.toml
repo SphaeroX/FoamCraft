@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-sim"
+description = "Simulation setup of FoamCraft: scenarios, media, wind tunnel rules, case generation."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[test]]
+name = "mesh_progress"
+path = "../../tests/sim/mesh_progress.rs"
+
+[[test]]
+name = "frontal_area"
+path = "../../tests/sim/frontal_area.rs"
+
+[[test]]
+name = "wind_tunnel"
+path = "../../tests/sim/wind_tunnel.rs"
+
+[dependencies]
+foamcraft-core = { version = "0.1.0", path = "../foamcraft-core" }
+foamcraft-geometry = { version = "0.1.0", path = "../foamcraft-geometry" }
+glam = "0.34.3"
+schemars = "1.2.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sysinfo = { version = "0.40.4", default-features = false, features = ["system"] }
+
+[dev-dependencies]
+glam = "0.34.3"
+serde_json = "1.0.154"
+
+[[test]]
+name = "scenario_commands"
+path = "../../tests/sim/commands.rs"
+
+[[test]]
+name = "mesh_plan"
+path = "../../tests/sim/mesh_plan.rs"
+
+[[test]]
+name = "case_snapshot"
+path = "../../tests/sim/case_snapshot.rs"
+
+[[test]]
+name = "mesh_report"
+path = "../../tests/sim/mesh_report.rs"
+
+[[test]]
+name = "ladder"
+path = "../../tests/sim/ladder.rs"
+
+[[test]]
+name = "convergence"
+path = "../../tests/sim/convergence.rs"
+
+[[test]]
+name = "solve"
+path = "../../tests/sim/solve.rs"
+
+[[test]]
+name = "internal"
+path = "../../tests/sim/internal.rs"
+
+[[test]]
+name = "internal_case"
+path = "../../tests/sim/internal_case.rs"
+
+[[test]]
+name = "foam_io"
+path = "../../tests/sim/foam_io.rs"
+
+[[test]]
+name = "results"
+path = "../../tests/sim/results.rs"
+
+[[test]]
+name = "visual"
+path = "../../tests/sim/visual.rs"
+
+[[test]]
+name = "particles"
+path = "../../tests/sim/particles.rs"
+
+[[test]]
+name = "summary"
+path = "../../tests/sim/summary.rs"

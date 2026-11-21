@@ -1,0 +1,82 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft reference case: a 1 m cube in a wind tunnel (pipeline test only).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    cube { type searchableBox; min (-0.5 -0.5 -0.5); max (0.5 0.5 0.5); }
+    wake { type searchableBox; min (-1 -1.5 -1.5); max (4 1.5 1.5); }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells        1000000;
+    maxGlobalCells       2000000;
+    minRefinementCells   10;
+    maxLoadUnbalance     0.10;
+    nCellsBetweenLevels  2;
+    features             ();
+    refinementSurfaces
+    {
+        cube { level (4 4); patchInfo { type wall; } }
+    }
+    resolveFeatureAngle  30;
+    refinementRegions
+    {
+        wake { mode inside; levels ((1E15 2)); }
+    }
+    locationInMesh       (-3.73 0.11 0.13);
+    allowFreeStandingZoneFaces true;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       2.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+    implicitFeatureSnap true;
+    explicitFeatureSnap false;
+    multiRegionFeatureSnap false;
+}
+
+addLayersControls
+{
+    relativeSizes   true;
+    layers          {}
+    expansionRatio  1.0;
+    finalLayerThickness 0.3;
+    minThickness    0.1;
+    nGrow           0;
+    featureAngle    60;
+    nRelaxIter      3;
+    nSmoothSurfaceNormals 1;
+    nSmoothNormals  3;
+    nSmoothThickness 10;
+    maxFaceThicknessRatio 0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedialAxisAngle 90;
+    nBufferCellsNoExtrude 0;
+    nLayerIter      50;
+}
+
+meshQualityControls
+{
+    #includeEtc "caseDicts/meshQualityDict"
+    nSmoothScale    4;
+    errorReduction  0.75;
+}
+
+mergeTolerance 1e-6;

@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-api"
+description = "The FoamCraft command API: every command for the app, the CLI and MCP."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[test]]
+name = "run_commands"
+path = "../../tests/api/run_commands.rs"
+
+[[test]]
+name = "cad_runtime"
+path = "../../tests/api/cad_runtime.rs"
+
+[dependencies]
+glam = "0.34.3"
+foamcraft-core.workspace = true
+foamcraft-runtime.workspace = true
+foamcraft-geometry.workspace = true
+foamcraft-sim.workspace = true
+foamcraft-render.workspace = true
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "1"
+sysinfo = { version = "0.40.4", default-features = false, features = ["system", "disk"] }
+png = "0.18.1"
+foamcraft-report.workspace = true
+base64 = "0.22"
+
+[dev-dependencies]
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }
+
+[[test]]
+name = "mesh"
+path = "../../tests/api/mesh.rs"
+
+[[test]]
+name = "mesh_runtime"
+path = "../../tests/api/mesh_runtime.rs"
+
+[[test]]
+name = "solve"
+path = "../../tests/api/solve.rs"
+
+[[test]]
+name = "solve_runtime"
+path = "../../tests/api/solve_runtime.rs"
+
+[[test]]
+name = "error_catalog"
+path = "../../tests/api/error_catalog.rs"
+
+[[test]]
+name = "internal_runtime"
+path = "../../tests/api/internal_runtime.rs"
+
+[[test]]
+name = "results_runtime"
+path = "../../tests/api/results_runtime.rs"
+
+[[test]]
+name = "view"
+path = "../../tests/api/view.rs"
+
+[[test]]
+name = "runs"
+path = "../../tests/api/runs.rs"
+
+[[test]]
+name = "bridge"
+path = "../../tests/api/bridge.rs"
+
+[[test]]
+name = "export"
+path = "../../tests/api/export.rs"
+
+[[test]]
+name = "report"
+path = "../../tests/api/report.rs"
+
+[[test]]
+name = "samples"
+path = "../../tests/api/samples.rs"
+
+[[test]]
+name = "system"
+path = "../../tests/api/system.rs"
+
+[[test]]
+name = "pipeline"
+path = "../../tests/api/pipeline.rs"

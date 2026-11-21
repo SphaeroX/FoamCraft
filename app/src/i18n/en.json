@@ -1,0 +1,484 @@
+{
+  "app": {
+    "title": "FoamCraft"
+  },
+  "toolbar": {
+    "about": "About",
+    "language": "Language",
+    "fit": "Fit view"
+  },
+  "language": {
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "viewport": {
+    "hint": "Drag to rotate, right-drag to pan, wheel to zoom"
+  },
+  "about": {
+    "title": "About FoamCraft",
+    "version": "Version {version}",
+    "tagline": "Free, independent flow simulation for everyone.",
+    "license": "Licensed under the GNU General Public License, version 3 or later.",
+    "uses": "FoamCraft uses OpenFOAM as its solver.",
+    "trademark": "This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner of the OPENFOAM® and OpenCFD® trade marks.",
+    "close": "Close"
+  },
+  "start": {
+    "title": "Welcome to FoamCraft",
+    "subtitle": "Create a project or open one to start a flow simulation.",
+    "name": {
+      "label": "Project name",
+      "placeholder": "For example: Bike helmet"
+    },
+    "create": "Create project",
+    "open": "Open project",
+    "recent": "Recently opened",
+    "recentEmpty": "No projects opened yet.",
+    "nameMissing": "Enter a project name first.",
+    "chooseFolder": "Choose a folder",
+    "location": "Will be created in {path}",
+    "otherFolder": "Other folder …"
+  },
+  "project": {
+    "close": "Close project"
+  },
+  "geometry": {
+    "title": "Geometry",
+    "import": "Import model",
+    "importTitle": "Choose a model file",
+    "empty": "No model yet. Import an STL, OBJ, 3MF, STEP or IGES file.",
+    "triangles": "triangles",
+    "size": "Size",
+    "unit": "Unit",
+    "suggested": "Suggested from the model size: {unit}",
+    "rotation": "Rotation",
+    "yaw": "Yaw (°)",
+    "pitch": "Pitch (°)",
+    "roll": "Roll (°)",
+    "position": "Position",
+    "ground": "Place on ground",
+    "fixNormals": "Fix normals",
+    "remove": "Remove",
+    "models": "3D models"
+  },
+  "units": {
+    "um": "Micrometres",
+    "mm": "Millimetres",
+    "cm": "Centimetres",
+    "m": "Metres",
+    "in": "Inches",
+    "ft": "Feet"
+  },
+  "surfaces": {
+    "title": "Faces and groups",
+    "hint": "Click a face in the 3D view. Shift adds, Ctrl toggles.",
+    "selected": "{n} faces selected",
+    "adjacent": "Add neighbours",
+    "clear": "Clear selection",
+    "faceName": "Face name",
+    "groupName": "Group name",
+    "createGroup": "Create group",
+    "groups": "Groups",
+    "noGroups": "No groups yet.",
+    "selectGroup": "Select {name}",
+    "addToGroup": "Add selection",
+    "deleteGroup": "Delete",
+    "parts": "Parts",
+    "part": "Part {n}",
+    "oneFace": "1 face",
+    "faces": "{n} faces",
+    "selectedOne": "1 face selected"
+  },
+  "scenario": {
+    "title": "Wind tunnel",
+    "speed": "Speed ({unit})",
+    "direction": "Flow direction (°)",
+    "ground": "Ground",
+    "groundNone": "No ground (free flight)",
+    "groundFixed": "Fixed floor",
+    "groundMoving": "Moving floor (from a later version)",
+    "medium": "Medium",
+    "air": "Air",
+    "water": "Water",
+    "custom": "Custom",
+    "temperature": "Temperature (°C)",
+    "density": "Density (kg/m³)",
+    "viscosity": "Kinematic viscosity (m²/s)",
+    "quality": "Quality",
+    "draft": "Draft",
+    "standard": "Standard",
+    "fine": "Fine",
+    "apply": "Apply",
+    "speedInvalid": "The speed must be greater than zero.",
+    "reynolds": "Reynolds number",
+    "area": "Frontal area",
+    "length": "Reference length",
+    "mach": "Mach number",
+    "budget": "Cell budget",
+    "cells": "{n} cells",
+    "memoryLimited": "limited by memory",
+    "time": "Estimated time",
+    "minutes": "about {n} min"
+  },
+  "steps": {
+    "geometry": "Geometry",
+    "scenario": "Scenario",
+    "run": "Run",
+    "results": "Results"
+  },
+  "mesh": {
+    "title": "Mesh",
+    "generate": "Generate mesh",
+    "running": "Meshing… this can take a few minutes",
+    "cells": "Cells",
+    "quality": "Quality",
+    "layers": "Boundary layers",
+    "layersOf": "{achieved} of {target}",
+    "noLayers": "none",
+    "verdict": {
+      "good": "Good",
+      "acceptable": "Acceptable",
+      "poor": "Poor"
+    }
+  },
+  "run": {
+    "title": "Run",
+    "start": "Start run",
+    "cancel": "Cancel",
+    "meshFirst": "The mesh is built when the run starts",
+    "about": "about {n} min",
+    "remaining": "about {n} min left",
+    "iteration": "Iteration {n} of at most {max}",
+    "stages": "Stages",
+    "residuals": "Residuals",
+    "coefficients": "Coefficients",
+    "result": "Result",
+    "drag": "Drag",
+    "lift": "Lift",
+    "iterations": "Iterations",
+    "duration": "Duration",
+    "log": "Log",
+    "state": {
+      "running": "Running",
+      "finished": "Finished",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "stage": {
+      "background": "Background mesh",
+      "mesh": "Body-fitted mesh",
+      "check": "Mesh check",
+      "decompose": "Prepare parallel run",
+      "solve": "Solve",
+      "reconstruct": "Collect results"
+    },
+    "meshing": "Meshing",
+    "meshOnly": "Mesh only",
+    "percent": "{n} %",
+    "attempt": "Attempt {n}: simpler settings, because the mesh before was not good enough.",
+    "meshPhase": {
+      "refine": "Refining the mesh around the model",
+      "snap": "Fitting the mesh to the surface",
+      "layers": "Adding boundary layers"
+    },
+    "preparing": "Preparing the run …"
+  },
+  "openings": {
+    "title": "Openings",
+    "kind": {
+      "open_shell": "Open surfaces",
+      "thick_walled": "Closed body with passages",
+      "closed_volume": "Closed fluid volume"
+    },
+    "count": "{n} openings, {closed} closed",
+    "opening": "Opening {n}",
+    "notFlat": "not flat",
+    "close": "Close",
+    "closeN": "Close opening {n}",
+    "byClick": "Close by clicking in the view",
+    "clickNow": "Click an opening in the view …",
+    "caps": "Caps",
+    "roleOf": "Role of {key}",
+    "roleNone": "Role …",
+    "inlet": "Inlet",
+    "outlet": "Outlet",
+    "wall": "Wall",
+    "remove": "Remove",
+    "check": "Check seal",
+    "sealed": "The fluid region is sealed."
+  },
+  "internal": {
+    "kind": "Kind of flow",
+    "windTunnel": "Wind tunnel (around the model)",
+    "internalFlow": "Internal flow (through the model)",
+    "inlets": "Inlets",
+    "outlets": "Outlets",
+    "givenAt": "Given at {key}",
+    "valueAt": "Value at {key}",
+    "pressureAt": "Pressure at {key} (Pa)",
+    "velocity": "Velocity (m/s)",
+    "volumeFlow": "Volume flow (m³/s)",
+    "massFlow": "Mass flow (kg/s)",
+    "totalPressure": "Total pressure (Pa)",
+    "dh": "D_h {mm} mm",
+    "markFirst": "Mark openings as inlet and outlet in the geometry step first.",
+    "pressureLoss": "Pressure loss",
+    "flow": "Flow",
+    "share": "Share",
+    "massBalance": "Mass balance error"
+  },
+  "results": {
+    "title": "Results",
+    "none": "Run the simulation first; its results appear here.",
+    "surfaceField": "Surface field",
+    "scale": "Colour scale",
+    "manual": "Set range by hand",
+    "from": "From",
+    "to": "To",
+    "applyRange": "Apply range",
+    "hover": "Point at the model to see the value.",
+    "gridNote": "Flow values in the volume are sampled on three grids; very fine details appear less sharp.",
+    "field": {
+      "p": "Pressure",
+      "Cp": "Pressure coefficient",
+      "wall_shear_stress": "Wall shear stress",
+      "y_plus": "y+",
+      "p_total": "Total pressure",
+      "Ux": "Velocity x",
+      "Uy": "Velocity y",
+      "Uz": "Velocity z",
+      "k": "Turbulent kinetic energy",
+      "U_mag": "Speed",
+      "Q": "Q criterion (vortices)"
+    }
+  },
+  "flowView": {
+    "slices": "Slices",
+    "normal": "Slice normal",
+    "sliceField": "Slice field",
+    "addSlice": "Add slice",
+    "isosurfaces": "Isosurfaces",
+    "isoField": "Isosurface field",
+    "isoValue": "Isosurface value",
+    "addIso": "Add isosurface",
+    "clip": "Cut the model open at the first slice",
+    "axis": {
+      "x": "Across x",
+      "y": "Across y",
+      "z": "Across z"
+    },
+    "flip": "Other side"
+  },
+  "particles": {
+    "title": "Particles",
+    "windSmoke": "Wind tunnel smoke",
+    "internal": "Internal flow",
+    "off": "Off",
+    "style": "Style",
+    "comets": "Particles with tails",
+    "smoke": "Smoke",
+    "streamlines": "Streamlines",
+    "colorBy": "Colour by",
+    "age": "Time since start",
+    "density": "Density",
+    "tempo": "Tempo",
+    "pause": "Pause",
+    "play": "Play",
+    "seed": "Start value",
+    "areaPosition": "Start area position"
+  },
+  "figures": {
+    "title": "Key figures",
+    "run": "Run",
+    "reliability": "Reliability",
+    "level": {
+      "green": "Reliable",
+      "yellow": "Use with care",
+      "red": "Not reliable"
+    },
+    "table": "Key figures",
+    "hint": "Point at a name for its explanation.",
+    "exportCsv": "Export CSV",
+    "exportJson": "Export JSON",
+    "exported": "Written to {path}",
+    "compare": "Compare runs",
+    "compareWith": "Compare with",
+    "noCompare": "No comparison",
+    "comparison": "Comparison",
+    "mode": {
+      "split": "Side by side",
+      "difference": "Difference on the model"
+    },
+    "endCompare": "End comparison",
+    "manage": "Manage runs",
+    "size": "Disk space of this run: {size}",
+    "runName": "Run name",
+    "rename": "Rename",
+    "variantName": "Variant name",
+    "duplicate": "Duplicate as variant",
+    "duplicated": "Variant created in {path}",
+    "delete": "Delete run",
+    "confirmDelete": "Delete the run \"{name}\" with all its files?",
+    "deleted": "Run deleted, {size} freed.",
+    "label": {
+      "cd": "Drag coefficient Cd",
+      "cl": "Lift coefficient Cl",
+      "cs": "Side force coefficient Cs",
+      "cm_pitch": "Pitching moment coeff.",
+      "cm_roll": "Rolling moment coeff.",
+      "cm_yaw": "Yawing moment coeff.",
+      "drag_n": "Drag force",
+      "lift_n": "Lift force",
+      "side_n": "Side force",
+      "drag_pressure_n": "Drag from pressure",
+      "drag_viscous_n": "Drag from friction",
+      "drag_area_m2": "Drag area Cd·A",
+      "power_w": "Power needed",
+      "reference_area_m2": "Frontal area",
+      "y_plus_average": "Average y+",
+      "pressure_loss_pa": "Pressure loss",
+      "static_pressure_loss_pa": "Static pressure difference",
+      "loss_coefficient": "Loss coefficient ζ",
+      "flow_m3_s": "Volume flow",
+      "mass_flow_kg_s": "Mass flow",
+      "share": "Share of outflow",
+      "total_pressure_pa": "Total pressure",
+      "mass_balance_error": "Mass balance error"
+    },
+    "differenceScale": "Colours on the model: {field} of the second run minus the first, {range} {unit}; the middle colour means no change."
+  },
+  "mcp": {
+    "title": "AI agents (MCP)",
+    "button": "Agents",
+    "intro": "An AI agent such as Claude Code can set up, run and evaluate simulations through the MCP server of FoamCraft. Paste this configuration into the MCP settings of the agent.",
+    "root": "Folder for the agent",
+    "app": "Run in this app (you see every step); otherwise without a window",
+    "config": "Configuration",
+    "hint": "The agent may only use files inside the folder. Details: docs/mcp.md.",
+    "copy": "Copy",
+    "copied": "Copied."
+  },
+  "export": {
+    "button": "Export",
+    "title": "Export image or video",
+    "preview": "Preview",
+    "time": "Time",
+    "resolution": "Resolution",
+    "res": {
+      "hd": "HD (1280 × 720)",
+      "full_hd": "Full HD (1920 × 1080)",
+      "qhd": "QHD (2560 × 1440)",
+      "4k": "4K (3840 × 2160)"
+    },
+    "camera": "Camera path",
+    "cam": {
+      "turntable": "Turntable",
+      "swing": "Swing left and right",
+      "rise": "Rise to the top view",
+      "approach": "Move closer",
+      "still": "Still"
+    },
+    "fps": "Frame rate",
+    "duration": "Duration (s)",
+    "legend": "Colour legend",
+    "transparent": "Transparent background",
+    "cancel": "Cancel export",
+    "saved": "Saved: {path}",
+    "cancelled": "Export cancelled; the incomplete file was removed.",
+    "failed": "The export failed.",
+    "note": "Videos are Motion JPEG in an AVI file: every player on Windows opens them; the files are large.",
+    "saveImage": "Save image",
+    "saveVideo": "Save video"
+  },
+  "report": {
+    "button": "Report",
+    "title": "Report of a run",
+    "run": "Run",
+    "compare": "Compare with",
+    "noCompare": "No comparison",
+    "title_field": "Title",
+    "author": "Author",
+    "language": "Language of the report",
+    "formats": "Formats",
+    "sections": "Sections",
+    "section": {
+      "summary": "Summary",
+      "setup": "Setup",
+      "mesh": "Mesh",
+      "convergence": "Convergence",
+      "figures": "Key figures",
+      "views": "Views",
+      "reliability": "Reliability",
+      "comparison": "Comparison",
+      "limits": "Limits of the results",
+      "versions": "Versions"
+    },
+    "logo": "Choose logo",
+    "save": "Save report",
+    "saved": "Written: {files}"
+  },
+  "setup": {
+    "button": "System",
+    "title": "Set up FoamCraft",
+    "intro": "FoamCraft runs OpenFOAM in a local container. This check shows what is ready and what you still need to do; you can open it again at any time under System.",
+    "list": "System check",
+    "step": {
+      "docker": "Docker",
+      "service": "Docker service",
+      "backend": "Backend",
+      "memory": "Memory",
+      "image": "OpenFOAM runtime",
+      "disk": "Disk space",
+      "gpu": "Graphics card"
+    },
+    "action": "Action needed",
+    "provide": "Provide runtime",
+    "providing": "Building the runtime, this takes several minutes …",
+    "imageFailed": "The runtime could not be provided; the diagnostic report has the details.",
+    "ready": "Ready for simulations.",
+    "notReady": "Not ready yet: follow the steps marked “Action needed”, then check again.",
+    "profile": "Hardware profile",
+    "profileText": "Runs use {cores} cores by default; the memory allows meshes up to about {cells} million cells, so quality “{quality}” is the highest that fits.",
+    "quality": {
+      "draft": "draft",
+      "standard": "standard",
+      "fine": "fine"
+    },
+    "recheck": "Check again",
+    "copy": "Copy diagnostic report",
+    "copied": "Copied.",
+    "finish": "Finish",
+    "tour": "Tour"
+  },
+  "tour": {
+    "count": "Step {n} of {of}",
+    "geometry": {
+      "title": "1 · Geometry",
+      "text": "Import your model (STL, OBJ, 3MF, STEP, IGES), check the unit and the diagnosis, and select faces to name them or to close openings."
+    },
+    "scenario": {
+      "title": "2 · Scenario",
+      "text": "Choose a wind tunnel for flow around the model, or internal flow through it with inlets and outlets; set speed, medium and quality."
+    },
+    "run": {
+      "title": "3 · Run",
+      "text": "Start the run: FoamCraft meshes and solves, shows the progress and stops when the values have settled."
+    },
+    "results": {
+      "title": "4 · Results",
+      "text": "Colour the model, add slices and particles, read the key figures with the reliability light, compare runs and export images, videos and reports."
+    },
+    "next": "Next",
+    "back": "Back",
+    "done": "Done",
+    "skip": "Skip"
+  },
+  "samples": {
+    "title": "Sample projects",
+    "hint": "One click creates a copy in your projects folder and opens it."
+  },
+  "console": {
+    "title": "Console",
+    "empty": "No output yet."
+  }
+}

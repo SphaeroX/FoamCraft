@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-cli"
+description = "Command line interface of FoamCraft."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "foamcraft"
+path = "src/main.rs"
+
+[[test]]
+name = "cli_version"
+path = "../../tests/cli/version.rs"
+
+[dependencies]
+clap = { version = "4.6.9", features = ["derive"] }
+ctrlc = "3.5.3"
+foamcraft-core.workspace = true
+foamcraft-runtime.workspace = true
+foamcraft-api.workspace = true
+foamcraft-mcp.workspace = true
+rmcp = { version = "3.11.0", default-features = false, features = ["server", "transport-io"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+serde_json = "1.0.154"
+serde = { version = "1.0.229", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0.154"
+
+[[test]]
+name = "cli_runtime"
+path = "../../tests/cli/runtime.rs"
+
+[[test]]
+name = "cli_commands"
+path = "../../tests/cli/commands.rs"
+
+[[test]]
+name = "cli_mcp"
+path = "../../tests/cli/mcp.rs"

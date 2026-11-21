@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[workspace]
+resolver = "3"
+members = ["crates/*", "app/src-tauri"]
+
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/SphaeroX/FoamCraft"
+publish = false
+
+[workspace.dependencies]
+foamcraft-core = { path = "crates/foamcraft-core" }
+foamcraft-render = { path = "crates/foamcraft-render" }
+foamcraft-runtime = { path = "crates/foamcraft-runtime" }
+foamcraft-api = { path = "crates/foamcraft-api" }
+foamcraft-geometry = { path = "crates/foamcraft-geometry" }
+foamcraft-sim = { path = "crates/foamcraft-sim" }
+foamcraft-mcp = { path = "crates/foamcraft-mcp" }
+foamcraft-report = { path = "crates/foamcraft-report" }
+
+# Geometry processing runs on meshes with millions of triangles; keep test builds fast.
+[profile.dev.package.foamcraft-geometry]
+opt-level = 3
+
+[profile.dev.package.foamcraft-sim]
+opt-level = 3

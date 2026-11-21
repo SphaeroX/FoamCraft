@@ -1,0 +1,87 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft internal flow case (generated; do not edit).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+castellatedMesh true;
+
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    model.stl { type triSurfaceMesh; name model; }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells        {{MAX_LOCAL}};
+    maxGlobalCells       {{MAX_GLOBAL}};
+    minRefinementCells   10;
+    maxLoadUnbalance     0.10;
+    nCellsBetweenLevels  3;
+    features             ();
+    refinementSurfaces
+    {
+        model
+        {
+            level ({{SURFACE_LEVEL}} {{SURFACE_LEVEL}});
+            patchInfo { type wall; inGroups (walls); }
+            regions
+            {
+{{REGIONS}}            }
+        }
+    }
+    resolveFeatureAngle  30;
+    refinementRegions {}
+    locationInMesh       ({{LOCATION}});
+    allowFreeStandingZoneFaces true;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       2.0;
+    nSolveIter      50;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+    implicitFeatureSnap true;
+    explicitFeatureSnap false;
+    multiRegionFeatureSnap false;
+}
+
+addLayersControls
+{
+    relativeSizes   true;
+    layers {}
+    expansionRatio  1.2;
+    finalLayerThickness 0.3;
+    minThickness    0.1;
+    nGrow           0;
+    featureAngle    130;
+    nRelaxIter      5;
+    nSmoothSurfaceNormals 1;
+    nSmoothNormals  3;
+    nSmoothThickness 10;
+    maxFaceThicknessRatio 0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedialAxisAngle 90;
+    nBufferCellsNoExtrude 0;
+    nLayerIter      50;
+}
+
+meshQualityControls
+{
+    #includeEtc "caseDicts/meshQualityDict"
+    nSmoothScale    4;
+    errorReduction  0.75;
+}
+
+mergeTolerance 1e-6;

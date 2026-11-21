@@ -13,7 +13,8 @@ license. Every source file carries the SPDX line (see [code-style.md](code-style
 ## Dependencies
 
 **Allowed:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib, BSL-1.0, Unicode-3.0,
-MPL-2.0, LGPL-2.1-or-later, LGPL-3.0, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later.
+MPL-2.0, LGPL-2.1-or-later, LGPL-3.0, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later, 0BSD,
+BlueOak-1.0.0 (the last two approved by the maintainer on 2026-11-21).
 
 **Not allowed:**
 
@@ -25,8 +26,9 @@ MPL-2.0, LGPL-2.1-or-later, LGPL-3.0, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or
 Anything not listed: ask the maintainer before adding it.
 
 A dependency license check runs over the Rust and the npm dependency trees and must pass before
-work is handed back. It is set up in the first implementation step; its commands are then listed
-in [testing.md](testing.md).
+work is handed back: `cargo xtask license-check`. The allowed list is mirrored in
+`license-policy.json`; per-package exceptions go there with a reason and need the maintainer's
+approval.
 
 ## OpenFOAM
 
@@ -55,9 +57,40 @@ in [testing.md](testing.md).
 ## Assets, fonts and sample data
 
 - Icons and fonts: MIT, Apache-2.0, OFL-1.1 or CC0.
-- Sample geometry and test data: self-made and released as CC0. Model reference bodies from their
+- Report font: Libertinus Serif (Regular, Bold, Italic) under the SIL OFL 1.1, unmodified from the
+  typst-assets 0.15.1 package, in `assets/fonts/` with its licence text (`OFL.txt`). It is embedded
+  in every PDF report. Releases ship `OFL.txt` with the other notices.
+- Sample geometry and test data: self-made and released as CC0 (sample projects in `samples/`,
+  made from own Gmsh scripts). Model reference bodies from their
   published dimensions instead of downloading third-party files. Check the license of any
   third-party model before it enters the repository.
+
+## Gmsh and Open CASCADE in the runtime image
+
+The runtime image installs the Ubuntu package `gmsh` (Gmsh, GPL-2.0-or-later, with Open CASCADE
+Technology, LGPL-2.1 with exception) to convert STEP and IGES files. FoamCraft runs it as a separate
+program and does not link against it. The corresponding sources are the Ubuntu source packages of
+the base image's release.
+
+## Video encoder and container (decided in Task_19)
+
+Videos are **Motion JPEG in an AVI container**, both written by FoamCraft itself
+(`crates/foamcraft-render/src/jpeg.rs`, `video.rs`): a baseline JPEG encoder after ITU-T T.81 with
+the example tables of its Annex K and 4:2:0 chroma, and a plain RIFF/AVI writer with an `idx1`
+index. Reasons:
+
+- **Licence and patents:** baseline JPEG and AVI carry no patent licences; no codec library is
+  bundled. H.264/H.265 need patent licences (OpenH264 covers only Cisco's own binaries); VP9 and
+  AV1 are royalty-free but need C libraries (libvpx) or a large encoder (rav1e) and play in the
+  Windows player only with Store extensions.
+- **Playback:** the built-in player of Windows (and Media Foundation) plays MJPEG AVI without
+  extensions. The Media Foundation decoder needs subsampled chroma; 4:4:4 frames show wrong
+  colours there. That is why the encoder of the `image` crate (4:4:4 only) is not used for video
+  (it stays a test-only dependency to decode frames), and `jpeg-encoder` (IJG licence, not on the
+  allowed list) was not added.
+- **Cost:** files are large (about 15 MB per second at Full HD with particles); a plain AVI stays
+  below 1 GiB, so long 4K videos stop with an error. A compressed codec can be added later as an
+  option without changing the commands.
 
 ## GPU runtime variant
 

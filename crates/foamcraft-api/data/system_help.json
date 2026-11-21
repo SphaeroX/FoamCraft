@@ -1,0 +1,42 @@
+{
+  "runtime.docker_missing": {
+    "en": [
+      "Download Docker Desktop for your system from docs.docker.com/get-docker (on Linux: Docker Engine from docs.docker.com/engine/install).",
+      "Run the installer and keep the option \"Use WSL 2 instead of Hyper-V\" switched on (Windows).",
+      "Restart the computer when the installer asks for it.",
+      "Start Docker Desktop once and accept its terms, then press \"Check again\"."
+    ],
+    "de": [
+      "Docker Desktop für dein System von docs.docker.com/get-docker herunterladen (unter Linux: Docker Engine von docs.docker.com/engine/install).",
+      "Das Installationsprogramm ausführen und die Option „Use WSL 2 instead of Hyper-V“ eingeschaltet lassen (Windows).",
+      "Den Rechner neu starten, wenn das Installationsprogramm danach fragt.",
+      "Docker Desktop einmal starten und den Bedingungen zustimmen, dann „Erneut prüfen“ wählen."
+    ]
+  },
+  "runtime.daemon_not_running": {
+    "en": [
+      "Start Docker Desktop from the Start menu and wait until its status shows \"Engine running\".",
+      "If it does not start on Windows: open PowerShell and run wsl --status. Without a WSL distribution or with WSL switched off, run wsl --install, restart the computer and start Docker Desktop again (see learn.microsoft.com/windows/wsl/install).",
+      "If Docker Desktop shows an error, use \"Troubleshoot > Restart\" in Docker Desktop.",
+      "Press \"Check again\"; FoamCraft notices as soon as the service runs."
+    ],
+    "de": [
+      "Docker Desktop über das Startmenü starten und warten, bis der Status „Engine running“ zeigt.",
+      "Startet es unter Windows nicht: PowerShell öffnen und wsl --status ausführen. Gibt es keine WSL-Distribution oder ist WSL ausgeschaltet, wsl --install ausführen, den Rechner neu starten und Docker Desktop erneut starten (siehe learn.microsoft.com/windows/wsl/install).",
+      "Zeigt Docker Desktop einen Fehler, dort „Troubleshoot > Restart“ wählen.",
+      "„Erneut prüfen“ wählen; FoamCraft merkt, sobald der Dienst läuft."
+    ]
+  },
+  "runtime.image_missing": {
+    "en": [
+      "Press \"Provide runtime\". FoamCraft builds the OpenFOAM runtime locally; this takes several minutes and needs about 3 GB of disk space.",
+      "Keep the app open until the progress reaches the end.",
+      "Press \"Check again\" when it has finished."
+    ],
+    "de": [
+      "„Laufzeit bereitstellen“ wählen. FoamCraft baut die OpenFOAM-Laufzeit lokal; das dauert einige Minuten und braucht etwa 3 GB Speicherplatz.",
+      "Die App offen lassen, bis der Fortschritt am Ende ist.",
+      "Danach „Erneut prüfen“ wählen."
+    ]
+  }
+}

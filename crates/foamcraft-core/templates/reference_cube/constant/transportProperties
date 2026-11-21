@@ -1,0 +1,14 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft reference case: a 1 m cube in a wind tunnel (pipeline test only).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      transportProperties;
+}
+
+// Air at about 20 degC.
+transportModel  Newtonian;
+nu              1.5e-05;

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-app"
+description = "FoamCraft desktop app (Tauri shell)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "foamcraft-app"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+foamcraft-core.workspace = true
+foamcraft-render.workspace = true
+foamcraft-api.workspace = true
+foamcraft-geometry.workspace = true
+foamcraft-sim.workspace = true
+tauri-plugin-dialog = "2"

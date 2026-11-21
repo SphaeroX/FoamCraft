@@ -1,0 +1,9 @@
+{
+  "name": "fixture",
+  "lockfileVersion": 3,
+  "packages": {
+    "": { "name": "fixture", "license": "GPL-3.0-or-later" },
+    "node_modules/left-pad": { "version": "1.3.0", "license": "MIT" },
+    "node_modules/evil-db": { "version": "1.0.0", "license": "SSPL-1.0" }
+  }
+}

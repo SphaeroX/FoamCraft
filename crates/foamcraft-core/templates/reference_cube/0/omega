@@ -1,0 +1,22 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft reference case: a 1 m cube in a wind tunnel (pipeline test only).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      omega;
+}
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   uniform 2.24;
+
+boundaryField
+{
+    inlet  { type fixedValue; value uniform 2.24; }
+    outlet { type inletOutlet; inletValue uniform 2.24; value uniform 2.24; }
+    sides  { type slip; }
+    cube   { type omegaWallFunction; value uniform 2.24; }
+}

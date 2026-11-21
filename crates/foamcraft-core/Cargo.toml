@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-core"
+description = "Core library of FoamCraft: project model, commands, case generation."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+schemars = "1.2.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+
+[[test]]
+name = "errors"
+path = "../../tests/core/errors.rs"
+
+[[test]]
+name = "log_parser"
+path = "../../tests/core/log_parser.rs"
+
+[[test]]
+name = "job"
+path = "../../tests/core/job.rs"
+
+[[test]]
+name = "case_template"
+path = "../../tests/core/case_template.rs"
+
+[[test]]
+name = "project"
+path = "../../tests/core/project.rs"
+
+[[test]]
+name = "units"
+path = "../../tests/core/units.rs"
+
+[[test]]
+name = "commands"
+path = "../../tests/core/commands.rs"

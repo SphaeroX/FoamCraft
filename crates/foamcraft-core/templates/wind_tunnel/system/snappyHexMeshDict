@@ -1,0 +1,95 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft wind tunnel case (generated; do not edit).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+castellatedMesh true;
+snap            true;
+addLayers       {{ADD_LAYERS}};
+
+geometry
+{
+    model.stl { type triSurfaceMesh; name model; }
+    near { type searchableBox; min ({{NEAR_MIN}}); max ({{NEAR_MAX}}); }
+    wake { type searchableBox; min ({{WAKE_MIN}}); max ({{WAKE_MAX}}); }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells        {{MAX_LOCAL}};
+    maxGlobalCells       {{MAX_GLOBAL}};
+    minRefinementCells   10;
+    maxLoadUnbalance     0.10;
+    nCellsBetweenLevels  3;
+    features             ();
+    refinementSurfaces
+    {
+        model
+        {
+            level ({{SURFACE_LEVEL}} {{SURFACE_LEVEL}});
+            patchInfo { type wall; inGroups (model); }
+            regions
+            {
+{{REGIONS}}            }
+        }
+    }
+    resolveFeatureAngle  30;
+    refinementRegions
+    {
+        near { mode inside; levels ((1E15 {{NEAR_LEVEL}})); }
+        wake { mode inside; levels ((1E15 {{WAKE_LEVEL}})); }
+    }
+    locationInMesh       ({{LOCATION}});
+    allowFreeStandingZoneFaces true;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       2.0;
+    nSolveIter      50;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+    implicitFeatureSnap true;
+    explicitFeatureSnap false;
+    multiRegionFeatureSnap false;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+    layers
+    {
+        "model.*" { nSurfaceLayers {{LAYERS}}; }
+    }
+    expansionRatio  {{EXPANSION}};
+    firstLayerThickness {{FIRST_LAYER}};
+    minThickness    {{MIN_THICKNESS}};
+    nGrow           0;
+    featureAngle    130;
+    slipFeatureAngle 30;
+    nRelaxIter      5;
+    nSmoothSurfaceNormals 1;
+    nSmoothNormals  3;
+    nSmoothThickness 10;
+    maxFaceThicknessRatio 0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedialAxisAngle 90;
+    nBufferCellsNoExtrude 0;
+    nLayerIter      50;
+}
+
+meshQualityControls
+{
+    #includeEtc "caseDicts/meshQualityDict"
+    nSmoothScale    4;
+    errorReduction  0.75;
+}
+
+mergeTolerance 1e-6;

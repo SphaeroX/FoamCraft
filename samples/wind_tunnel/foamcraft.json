@@ -1,0 +1,48 @@
+{
+  "schema_version": 11,
+  "name": "Rounded body",
+  "created": 1795241543,
+  "display_units": "metric",
+  "runs": [],
+  "geometry": [
+    {
+      "id": "model-1",
+      "name": "body.stl",
+      "file": "geometry/model-1.stl",
+      "source": null,
+      "unit": "mm",
+      "scale": 1.0,
+      "rotation_deg": [0.0, 0.0, 0.0],
+      "translation": [0.0, 0.0, 0.0],
+      "fix_normals": false,
+      "crease_angle_deg": 30.0
+    }
+  ],
+  "surface_names": {},
+  "groups": [],
+  "scenario": {
+    "kind": "wind_tunnel",
+    "speed_m_s": 20.0,
+    "direction_deg": 0.0,
+    "ground": "none",
+    "medium": {
+      "kind": "air",
+      "temperature_c": 20.0
+    },
+    "quality": "draft"
+  },
+  "mesh": null,
+  "caps": [],
+  "boundary_roles": {},
+  "view": {
+    "result_job": null,
+    "surface_field": null,
+    "range": null,
+    "slices": [],
+    "isosurfaces": [],
+    "clip": null,
+    "particles": null,
+    "compare": null
+  },
+  "run_names": {}
+}

@@ -25,9 +25,6 @@ from `runtime/`.
 
 ## Commands
 
-The Rust commands work once the Cargo workspace exists (see `docs/architecture.md`, first
-implementation step).
-
 ```bash
 npm ci                                                   # install the JS tooling
 cargo test --workspace                                   # all fast Rust tests
@@ -38,6 +35,8 @@ cargo fmt --all --check                                  # Rust format check
 cargo clippy --workspace --all-targets -- -D warnings    # Rust lint
 npm run lint                                             # TypeScript lint
 npm run format                                           # TypeScript and Markdown format
+npm run app:dev                                          # start the desktop app (dev mode)
+cargo xtask license-check                                # dependency license check
 ```
 
 ## Documentation (load on demand)
@@ -54,6 +53,8 @@ Read only what your current work needs:
 - [docs/licensing.md](docs/licensing.md): read before adding a dependency, asset or sample file,
   before naming another product, and before touching the runtime image or a release.
 - [docs/project-brief.md](docs/project-brief.md): read when goal, scope or non-goals are unclear.
+- [docs/mcp.md](docs/mcp.md): MCP server setup (`foamcraft mcp`), tools, path sandbox and the
+  bridge to the running app. Read before changing MCP tools or the bridge.
 
 ## Roadmap
 

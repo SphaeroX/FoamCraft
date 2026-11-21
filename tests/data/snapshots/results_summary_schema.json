@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Summary",
+  "type": "object",
+  "properties": {
+    "figures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Figure"
+      }
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "kind": {
+      "description": "`wind_tunnel` or `internal_flow`.",
+      "type": "string"
+    },
+    "reliability": {
+      "$ref": "#/$defs/Reliability"
+    },
+    "schema": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schema",
+    "job_id",
+    "kind",
+    "figures",
+    "reliability"
+  ],
+  "$defs": {
+    "Check": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "Catalog code with the reason, for example `reliability.converged`.",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "code",
+        "level"
+      ]
+    },
+    "Figure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Stable id, for example `drag_n`; its explanation is the catalog entry `figure.<id>`.",
+          "type": "string"
+        },
+        "part": {
+          "description": "Part (face group) or opening key; `None` for the whole model.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "id",
+        "value",
+        "unit"
+      ]
+    },
+    "Level": {
+      "type": "string",
+      "enum": [
+        "green",
+        "yellow",
+        "red"
+      ]
+    },
+    "Reliability": {
+      "type": "object",
+      "properties": {
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Check"
+          }
+        },
+        "level": {
+          "description": "The worst check.",
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "level",
+        "checks"
+      ]
+    }
+  }
+}

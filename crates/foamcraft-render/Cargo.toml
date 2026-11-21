@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-render"
+description = "wgpu renderer of FoamCraft: viewport, offscreen frames."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[test]]
+name = "camera"
+path = "../../tests/render/camera.rs"
+
+[[test]]
+name = "golden"
+path = "../../tests/render/golden.rs"
+
+[dependencies]
+bytemuck = { version = "1.25.2", features = ["derive"] }
+glam = "0.34.3"
+png = "0.18.1"
+serde = { version = "1.0.229", features = ["derive"] }
+schemars = "1"
+pollster = "1.0.3"
+wgpu = "30.0.2"
+
+[dev-dependencies]
+image = { version = "0.25.10", default-features = false, features = ["jpeg"] }
+foamcraft-core = { path = "../foamcraft-core" }
+foamcraft-geometry = { path = "../foamcraft-geometry" }
+foamcraft-sim = { path = "../foamcraft-sim" }
+
+[[test]]
+name = "picking"
+path = "../../tests/render/picking.rs"
+
+[[test]]
+name = "particles"
+path = "../../tests/render/particles.rs"
+
+[[test]]
+name = "split"
+path = "../../tests/render/split.rs"
+
+[[test]]
+name = "camera_path"
+path = "../../tests/render/camera_path.rs"
+
+[[test]]
+name = "video"
+path = "../../tests/render/video.rs"
+
+[[test]]
+name = "jpeg"
+path = "../../tests/render/jpeg.rs"

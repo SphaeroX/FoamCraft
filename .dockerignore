@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Only what the runtime image build needs.
+*
+!Cargo.toml
+!Cargo.lock
+!crates/
+!app/src-tauri/Cargo.toml

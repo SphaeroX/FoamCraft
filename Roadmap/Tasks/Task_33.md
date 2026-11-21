@@ -1,4 +1,4 @@
-# Task_33: Sofort-Vorschau in der App
+# Task_33: Leistungsmessung und CPU-Tuning
 
 > ## ⚠️ PFLICHT – BEVOR DU IRGENDETWAS ANDERES TUST
 >
@@ -7,63 +7,56 @@
 
 ## Ziel
 
-Der Nutzer sieht die Strömung wenige Sekunden nach dem Einrichten live in der 3D-Ansicht und kann Geschwindigkeit und Richtung ändern, während die Vorschau läuft. Ein Knopf übergibt das Szenario an die genaue OpenFOAM-Rechnung.
+Es gibt eine wiederholbare Leistungsmessung, und die Standardwerte für Kerne, Zerlegung und Löser sind so eingestellt, dass FoamCraft auf der vorhandenen CPU messbar schneller rechnet als mit den bisherigen Vorgaben.
 
 ## Kontext & Abhängigkeiten
 
-- **Voraussetzung:** Task_16 (Partikel, Schnitte auf Rastern) und Task_32 (GPU-Löser) sind archiviert.
-- **Relevantes Vorwissen:** Der GPU-Löser und der Renderer nutzen dieselbe GPU; Felder sollen ohne Umweg über Dateien in die Ansicht gelangen. Die Vorschau ist eine Schätzung und muss als solche erkennbar sein.
+- **Voraussetzung:** Task_13 ist archiviert (beide Grundfälle mit Validierungstests); Task_14 bis Task_32 liegen davor.
+- **Relevantes Vorwissen:** Referenzrechner: i9-13900HX mit 8 P-Kernen und 16 E-Kernen, 64 GB. Hybrid-CPUs verhalten sich bei OpenFOAM anders als gleichförmige Kerne. Die Validierungstests aus Task_10 und Task_13 dürfen sich nicht verschlechtern.
 
 ## Umfang
 
 **Gehört dazu:**
 
-- Modus "Vorschau" neben "Genau": startet den GPU-Löser direkt aus dem Szenario, ohne Container
-- Felder des Lösers als gemeinsame GPU-Texturen im Renderer; Partikel und Schnitte live während der Rechnung
-- Live-Kennzahlen (gleitend gemittelt) mit der Kennzeichnung "Schätzung"
-- Änderungen von Geschwindigkeit und Richtung wirken ohne Neustart
-- Regler zwischen Auflösung und Bildrate
-- Genauigkeitshinweis und Knopf "Jetzt genau rechnen"
-- Hinweis, wenn die GPU ungeeignet ist
-- MCP-Werkzeug für die Vorschau
-- Anzeige des Unterschieds zwischen Vorschau und genauer Rechnung, wenn beide vorliegen
+- Befehl `foamcraft bench` mit festen Fällen (Außenströmung klein und mittel, Innenströmung): Zeit je Stufe, Durchsatz, Speicher; Ablage und Vergleich mit einer Basislinie
+- Untersuchung: Kernzahl und Kernauswahl (P- und E-Kerne, Bindung), Zerlegungsverfahren, Umnummerierung des Netzes, Löser- und Vorkonditionierer-Einstellungen, Schreibformat, parallele Vernetzung, Ressourcen des Containers
+- Übernahme nur von Maßnahmen, die messbar gewinnen
+- Hardware-abhängige Standardwerte
+- `docs/performance.md` mit Messwerten und Schlussfolgerungen
 
 **Gehört nicht dazu:**
 
-- Ersatz der OpenFOAM-Rechnung durch die Vorschau
+- GPU-Löser (Task_34), adaptive Verfeinerung (Task_35)
 
 ## Umsetzungsschritte
 
-1. Tests zuerst für die Kopplung (Offscreen-Bild nach einer festen Schrittzahl, wiederholbar) und die Glättung der Kennzahlen.
-2. Gemeinsame Texturen zwischen Löser und Renderer umsetzen.
-3. Modus, Live-Kennzahlen und Regler in der Oberfläche umsetzen (Vitest zuerst).
-4. Änderungen im laufenden Betrieb umsetzen.
-5. Übergabe an die genaue Rechnung und die Vergleichsanzeige umsetzen.
-6. MCP-Werkzeug ergänzen.
-7. Leistung und Abweichung zur OpenFOAM-Rechnung für die Vergleichsfälle messen und dokumentieren.
+1. Tests zuerst für die Messung (Fake-Runner) und die Kernauswahl-Logik.
+2. `foamcraft bench` umsetzen und eine Basislinie aufzeichnen.
+3. Die Maßnahmen einzeln messen und jeweils Gewinn oder Befund festhalten.
+4. Gewinnbringende Maßnahmen als Standardwerte übernehmen.
+5. Validierungstests erneut laufen lassen.
+6. `docs/performance.md` schreiben.
 
 ## Tests
 
 Alle Tests dieses Tasks werden permanent in `tests/` im Hauptverzeichnis des Projekts abgelegt (siehe `AGENTS.md`).
 
-- Kopplung: Das Offscreen-Bild nach N Schritten ist wiederholbar.
-- Eine Parameteränderung wirkt, ohne dass das Feld neu initialisiert wird.
-- Glättung der Kennzahlen an synthetischen Signalen.
-- Vitest: Umschalten des Modus, Genauigkeitshinweis ist sichtbar.
-- Abweichung der Vorschau zur OpenFOAM-Rechnung für die Vergleichsfälle innerhalb von 30 %; die Messwerte stehen in der Doku.
+- Die Messung erfasst Zeiten je Stufe korrekt (Fake-Runner).
+- Kernauswahl für Beispiel-Topologien: 8 P-Kerne plus 16 E-Kerne, 16 gleiche Kerne, 4 Kerne.
+- Die `validation_`-Tests bleiben grün.
+- Ignorierter Regressionstest: Messung gegen die Basislinie mit Toleranz.
 
 ## Akzeptanzkriterien
 
 Der Task gilt erst als fertig, wenn alle Punkte erfüllt und durch Tests oder einen konkreten Befehl belegt sind:
 
-- [ ] In der App läuft die Vorschau für beide Grundfälle live mit Partikeln (Bildrate in den Notizen)
-- [ ] Geschwindigkeit und Richtung lassen sich während der Vorschau ändern
-- [ ] "Jetzt genau rechnen" startet die OpenFOAM-Rechnung mit demselben Szenario
-- [ ] Die Vorschau ist in Ansicht, Kennzahlen und Report als Schätzung gekennzeichnet
+- [ ] `foamcraft bench` liefert einen wiederholbaren Bericht
+- [ ] `docs/performance.md` nennt je Maßnahme den gemessenen Gewinn oder den Befund "kein Gewinn"
+- [ ] Die Validierungstests laufen mit den neuen Standardwerten grün
 
 ## Offene Fragen / Annahmen
 
-- Die Toleranz von 30 % zur OpenFOAM-Rechnung ist eine Annahme und wird hier mit Messwerten bestätigt oder begründet angepasst.
+- Kein Gewinn ist ein zulässiges Ergebnis einer Maßnahme, solange es gemessen und dokumentiert ist.
 
 ## Notizen zu diesem Task
 

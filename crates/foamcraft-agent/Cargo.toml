@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-agent"
+description = "FoamCraft agent that runs inside the OpenFOAM runtime (Linux)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "foamcraft-agent"
+path = "src/main.rs"
+
+[[test]]
+name = "agent_status"
+path = "../../tests/agent/status.rs"
+
+[dependencies]
+foamcraft-core.workspace = true
+serde = "1.0.229"
+serde_json = "1"
+
+[[test]]
+name = "agent_tail"
+path = "../../tests/agent/tail.rs"

@@ -1,0 +1,484 @@
+{
+  "app": {
+    "title": "FoamCraft"
+  },
+  "toolbar": {
+    "about": "Über",
+    "language": "Sprache",
+    "fit": "Ansicht einpassen"
+  },
+  "language": {
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "viewport": {
+    "hint": "Ziehen zum Drehen, Rechtsziehen zum Verschieben, Mausrad zum Zoomen"
+  },
+  "about": {
+    "title": "Über FoamCraft",
+    "version": "Version {version}",
+    "tagline": "Freie, unabhängige Strömungssimulation für alle.",
+    "license": "Lizenziert unter der GNU General Public License, Version 3 oder später.",
+    "uses": "FoamCraft verwendet OpenFOAM als Löser.",
+    "trademark": "This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner of the OPENFOAM® and OpenCFD® trade marks.",
+    "close": "Schließen"
+  },
+  "start": {
+    "title": "Willkommen bei FoamCraft",
+    "subtitle": "Lege ein Projekt an oder öffne eines, um eine Strömungssimulation zu starten.",
+    "name": {
+      "label": "Projektname",
+      "placeholder": "Zum Beispiel: Fahrradhelm"
+    },
+    "create": "Projekt anlegen",
+    "open": "Projekt öffnen",
+    "recent": "Zuletzt geöffnet",
+    "recentEmpty": "Noch keine Projekte geöffnet.",
+    "nameMissing": "Zuerst einen Projektnamen eingeben.",
+    "chooseFolder": "Ordner wählen",
+    "location": "Wird angelegt in {path}",
+    "otherFolder": "Anderer Ordner …"
+  },
+  "project": {
+    "close": "Projekt schließen"
+  },
+  "geometry": {
+    "title": "Geometrie",
+    "import": "Modell importieren",
+    "importTitle": "Modelldatei wählen",
+    "empty": "Noch kein Modell. Eine STL-, OBJ-, 3MF-, STEP- oder IGES-Datei importieren.",
+    "triangles": "Dreiecke",
+    "size": "Größe",
+    "unit": "Einheit",
+    "suggested": "Vorschlag aus der Modellgröße: {unit}",
+    "rotation": "Drehung",
+    "yaw": "Gieren (°)",
+    "pitch": "Nicken (°)",
+    "roll": "Rollen (°)",
+    "position": "Lage",
+    "ground": "Auf den Boden setzen",
+    "fixNormals": "Normalen ausrichten",
+    "remove": "Entfernen",
+    "models": "3D-Modelle"
+  },
+  "units": {
+    "um": "Mikrometer",
+    "mm": "Millimeter",
+    "cm": "Zentimeter",
+    "m": "Meter",
+    "in": "Zoll",
+    "ft": "Fuß"
+  },
+  "surfaces": {
+    "title": "Flächen und Gruppen",
+    "hint": "Eine Fläche in der 3D-Ansicht anklicken. Umschalt fügt hinzu, Strg schaltet um.",
+    "selected": "{n} Flächen ausgewählt",
+    "adjacent": "Nachbarn hinzufügen",
+    "clear": "Auswahl aufheben",
+    "faceName": "Flächenname",
+    "groupName": "Gruppenname",
+    "createGroup": "Gruppe anlegen",
+    "groups": "Gruppen",
+    "noGroups": "Noch keine Gruppen.",
+    "selectGroup": "{name} auswählen",
+    "addToGroup": "Auswahl hinzufügen",
+    "deleteGroup": "Löschen",
+    "parts": "Teile",
+    "part": "Teil {n}",
+    "oneFace": "1 Fläche",
+    "faces": "{n} Flächen",
+    "selectedOne": "1 Fläche ausgewählt"
+  },
+  "scenario": {
+    "title": "Windkanal",
+    "speed": "Geschwindigkeit ({unit})",
+    "direction": "Anströmrichtung (°)",
+    "ground": "Boden",
+    "groundNone": "Kein Boden (frei)",
+    "groundFixed": "Fester Boden",
+    "groundMoving": "Bewegter Boden (in einer späteren Version)",
+    "medium": "Medium",
+    "air": "Luft",
+    "water": "Wasser",
+    "custom": "Eigenes Medium",
+    "temperature": "Temperatur (°C)",
+    "density": "Dichte (kg/m³)",
+    "viscosity": "Kinematische Viskosität (m²/s)",
+    "quality": "Qualität",
+    "draft": "Entwurf",
+    "standard": "Standard",
+    "fine": "Fein",
+    "apply": "Übernehmen",
+    "speedInvalid": "Die Geschwindigkeit muss größer als null sein.",
+    "reynolds": "Reynolds-Zahl",
+    "area": "Stirnfläche",
+    "length": "Bezugslänge",
+    "mach": "Mach-Zahl",
+    "budget": "Zellbudget",
+    "cells": "{n} Zellen",
+    "memoryLimited": "durch den Arbeitsspeicher begrenzt",
+    "time": "Geschätzte Zeit",
+    "minutes": "etwa {n} min"
+  },
+  "steps": {
+    "geometry": "Geometrie",
+    "scenario": "Szenario",
+    "run": "Rechnen",
+    "results": "Ergebnisse"
+  },
+  "mesh": {
+    "title": "Netz",
+    "generate": "Netz erzeugen",
+    "running": "Vernetzung läuft… das kann einige Minuten dauern",
+    "cells": "Zellen",
+    "quality": "Qualität",
+    "layers": "Grenzschichten",
+    "layersOf": "{achieved} von {target}",
+    "noLayers": "keine",
+    "verdict": {
+      "good": "Gut",
+      "acceptable": "Brauchbar",
+      "poor": "Schlecht"
+    }
+  },
+  "run": {
+    "title": "Rechnen",
+    "start": "Rechnung starten",
+    "cancel": "Abbrechen",
+    "meshFirst": "Das Netz wird beim Start erzeugt",
+    "about": "etwa {n} min",
+    "remaining": "noch etwa {n} min",
+    "iteration": "Iteration {n} von höchstens {max}",
+    "stages": "Stufen",
+    "residuals": "Residuen",
+    "coefficients": "Beiwerte",
+    "result": "Ergebnis",
+    "drag": "Widerstand",
+    "lift": "Auftrieb",
+    "iterations": "Iterationen",
+    "duration": "Dauer",
+    "log": "Protokoll",
+    "state": {
+      "running": "Läuft",
+      "finished": "Fertig",
+      "failed": "Fehlgeschlagen",
+      "cancelled": "Abgebrochen"
+    },
+    "stage": {
+      "background": "Grundnetz",
+      "mesh": "Körpernetz",
+      "check": "Netzprüfung",
+      "decompose": "Parallellauf vorbereiten",
+      "solve": "Rechnen",
+      "reconstruct": "Ergebnisse zusammenführen"
+    },
+    "meshing": "Vernetzung",
+    "meshOnly": "Nur vernetzen",
+    "percent": "{n} %",
+    "attempt": "Versuch {n}: einfachere Einstellungen, weil das Netz davor nicht gut genug war.",
+    "meshPhase": {
+      "refine": "Netz um das Modell verfeinern",
+      "snap": "Netz an die Oberfläche anschmiegen",
+      "layers": "Grenzschichten aufbauen"
+    },
+    "preparing": "Lauf wird vorbereitet …"
+  },
+  "openings": {
+    "title": "Öffnungen",
+    "kind": {
+      "open_shell": "Offene Flächen",
+      "thick_walled": "Geschlossener Körper mit Durchgängen",
+      "closed_volume": "Geschlossenes Fluidvolumen"
+    },
+    "count": "{n} Öffnungen, {closed} verschlossen",
+    "opening": "Öffnung {n}",
+    "notFlat": "nicht eben",
+    "close": "Verschließen",
+    "closeN": "Öffnung {n} verschließen",
+    "byClick": "Per Klick in der Ansicht verschließen",
+    "clickNow": "Öffnung in der Ansicht anklicken …",
+    "caps": "Deckflächen",
+    "roleOf": "Rolle von {key}",
+    "roleNone": "Rolle …",
+    "inlet": "Einlass",
+    "outlet": "Auslass",
+    "wall": "Wand",
+    "remove": "Entfernen",
+    "check": "Dichtheit prüfen",
+    "sealed": "Der Strömungsraum ist dicht."
+  },
+  "internal": {
+    "kind": "Art der Strömung",
+    "windTunnel": "Windkanal (um das Modell)",
+    "internalFlow": "Innenströmung (durch das Modell)",
+    "inlets": "Einlässe",
+    "outlets": "Auslässe",
+    "givenAt": "Vorgabe an {key}",
+    "valueAt": "Wert an {key}",
+    "pressureAt": "Druck an {key} (Pa)",
+    "velocity": "Geschwindigkeit (m/s)",
+    "volumeFlow": "Volumenstrom (m³/s)",
+    "massFlow": "Massenstrom (kg/s)",
+    "totalPressure": "Gesamtdruck (Pa)",
+    "dh": "D_h {mm} mm",
+    "markFirst": "Zuerst im Geometrie-Schritt Öffnungen als Einlass und Auslass markieren.",
+    "pressureLoss": "Druckverlust",
+    "flow": "Durchfluss",
+    "share": "Anteil",
+    "massBalance": "Fehler der Massenbilanz"
+  },
+  "results": {
+    "title": "Ergebnisse",
+    "none": "Zuerst die Simulation rechnen; ihre Ergebnisse erscheinen hier.",
+    "surfaceField": "Oberflächenfeld",
+    "scale": "Farbskala",
+    "manual": "Bereich von Hand festlegen",
+    "from": "Von",
+    "to": "Bis",
+    "applyRange": "Bereich übernehmen",
+    "hover": "Auf das Modell zeigen, um den Wert zu sehen.",
+    "gridNote": "Strömungswerte im Raum sind auf drei Rastern abgetastet; sehr feine Details erscheinen weniger scharf.",
+    "field": {
+      "p": "Druck",
+      "Cp": "Druckbeiwert",
+      "wall_shear_stress": "Wandschubspannung",
+      "y_plus": "y+",
+      "p_total": "Gesamtdruck",
+      "Ux": "Geschwindigkeit x",
+      "Uy": "Geschwindigkeit y",
+      "Uz": "Geschwindigkeit z",
+      "k": "Turbulente kinetische Energie",
+      "U_mag": "Geschwindigkeit",
+      "Q": "Q-Kriterium (Wirbel)"
+    }
+  },
+  "flowView": {
+    "slices": "Schnitte",
+    "normal": "Schnittrichtung",
+    "sliceField": "Feld des Schnitts",
+    "addSlice": "Schnitt hinzufügen",
+    "isosurfaces": "Isoflächen",
+    "isoField": "Feld der Isofläche",
+    "isoValue": "Wert der Isofläche",
+    "addIso": "Isofläche hinzufügen",
+    "clip": "Modell am ersten Schnitt aufschneiden",
+    "axis": {
+      "x": "Quer zu x",
+      "y": "Quer zu y",
+      "z": "Quer zu z"
+    },
+    "flip": "Andere Seite"
+  },
+  "particles": {
+    "title": "Partikel",
+    "windSmoke": "Windkanal-Rauch",
+    "internal": "Innenströmung",
+    "off": "Aus",
+    "style": "Darstellung",
+    "comets": "Partikel mit Schweif",
+    "smoke": "Rauch",
+    "streamlines": "Stromlinien",
+    "colorBy": "Färbung nach",
+    "age": "Zeit seit dem Start",
+    "density": "Dichte",
+    "tempo": "Tempo",
+    "pause": "Pause",
+    "play": "Weiter",
+    "seed": "Startwert",
+    "areaPosition": "Lage des Startbereichs"
+  },
+  "figures": {
+    "title": "Kennzahlen",
+    "run": "Lauf",
+    "reliability": "Verlässlichkeit",
+    "level": {
+      "green": "Verlässlich",
+      "yellow": "Mit Vorsicht nutzen",
+      "red": "Nicht verlässlich"
+    },
+    "table": "Kennzahlen",
+    "hint": "Auf einen Namen zeigen, um die Erklärung zu sehen.",
+    "exportCsv": "CSV exportieren",
+    "exportJson": "JSON exportieren",
+    "exported": "Geschrieben nach {path}",
+    "compare": "Läufe vergleichen",
+    "compareWith": "Vergleichen mit",
+    "noCompare": "Kein Vergleich",
+    "comparison": "Vergleich",
+    "mode": {
+      "split": "Nebeneinander",
+      "difference": "Differenz am Modell"
+    },
+    "endCompare": "Vergleich beenden",
+    "manage": "Läufe verwalten",
+    "size": "Speicherplatz dieses Laufs: {size}",
+    "runName": "Name des Laufs",
+    "rename": "Umbenennen",
+    "variantName": "Name der Variante",
+    "duplicate": "Als Variante duplizieren",
+    "duplicated": "Variante angelegt in {path}",
+    "delete": "Lauf löschen",
+    "confirmDelete": "Den Lauf „{name}“ mit allen Dateien löschen?",
+    "deleted": "Lauf gelöscht, {size} frei geworden.",
+    "label": {
+      "cd": "Widerstandsbeiwert Cd",
+      "cl": "Auftriebsbeiwert Cl",
+      "cs": "Seitenkraftbeiwert Cs",
+      "cm_pitch": "Nickmomentbeiwert",
+      "cm_roll": "Rollmomentbeiwert",
+      "cm_yaw": "Giermomentbeiwert",
+      "drag_n": "Widerstandskraft",
+      "lift_n": "Auftriebskraft",
+      "side_n": "Seitenkraft",
+      "drag_pressure_n": "Widerstand aus Druck",
+      "drag_viscous_n": "Widerstand aus Reibung",
+      "drag_area_m2": "Widerstandsfläche Cd·A",
+      "power_w": "Leistungsbedarf",
+      "reference_area_m2": "Stirnfläche",
+      "y_plus_average": "Mittleres y+",
+      "pressure_loss_pa": "Druckverlust",
+      "static_pressure_loss_pa": "Statische Druckdifferenz",
+      "loss_coefficient": "Verlustbeiwert ζ",
+      "flow_m3_s": "Volumenstrom",
+      "mass_flow_kg_s": "Massenstrom",
+      "share": "Anteil am Abfluss",
+      "total_pressure_pa": "Gesamtdruck",
+      "mass_balance_error": "Fehler der Massenbilanz"
+    },
+    "differenceScale": "Farben am Modell: {field} des zweiten Laufs minus des ersten, {range} {unit}; die mittlere Farbe heißt unverändert."
+  },
+  "mcp": {
+    "title": "KI-Agenten (MCP)",
+    "button": "Agenten",
+    "intro": "Ein KI-Agent wie Claude Code kann über den MCP-Server von FoamCraft Simulationen einrichten, rechnen und auswerten. Diese Konfiguration in die MCP-Einstellungen des Agenten einfügen.",
+    "root": "Ordner für den Agenten",
+    "app": "In dieser App ausführen (jeder Schritt ist sichtbar); sonst ohne Fenster",
+    "config": "Konfiguration",
+    "hint": "Der Agent darf nur Dateien in diesem Ordner nutzen. Details: docs/mcp.md.",
+    "copy": "Kopieren",
+    "copied": "Kopiert."
+  },
+  "export": {
+    "button": "Export",
+    "title": "Bild oder Video exportieren",
+    "preview": "Vorschau",
+    "time": "Zeit",
+    "resolution": "Auflösung",
+    "res": {
+      "hd": "HD (1280 × 720)",
+      "full_hd": "Full HD (1920 × 1080)",
+      "qhd": "QHD (2560 × 1440)",
+      "4k": "4K (3840 × 2160)"
+    },
+    "camera": "Kamerafahrt",
+    "cam": {
+      "turntable": "Drehteller",
+      "swing": "Nach links und rechts schwenken",
+      "rise": "Aufsteigen zur Draufsicht",
+      "approach": "Heranfahren",
+      "still": "Stillstand"
+    },
+    "fps": "Bildrate",
+    "duration": "Dauer (s)",
+    "legend": "Farblegende",
+    "transparent": "Transparenter Hintergrund",
+    "cancel": "Export abbrechen",
+    "saved": "Gespeichert: {path}",
+    "cancelled": "Export abgebrochen; die unvollständige Datei wurde entfernt.",
+    "failed": "Der Export ist fehlgeschlagen.",
+    "note": "Videos sind Motion-JPEG in einer AVI-Datei: Jeder Player unter Windows öffnet sie; die Dateien sind groß.",
+    "saveImage": "Bild speichern",
+    "saveVideo": "Video speichern"
+  },
+  "report": {
+    "button": "Bericht",
+    "title": "Bericht zu einem Lauf",
+    "run": "Lauf",
+    "compare": "Vergleichen mit",
+    "noCompare": "Kein Vergleich",
+    "title_field": "Titel",
+    "author": "Autor",
+    "language": "Sprache des Berichts",
+    "formats": "Formate",
+    "sections": "Abschnitte",
+    "section": {
+      "summary": "Zusammenfassung",
+      "setup": "Aufbau",
+      "mesh": "Netz",
+      "convergence": "Konvergenz",
+      "figures": "Kennzahlen",
+      "views": "Ansichten",
+      "reliability": "Verlässlichkeit",
+      "comparison": "Vergleich",
+      "limits": "Grenzen der Aussagekraft",
+      "versions": "Versionen"
+    },
+    "logo": "Logo wählen",
+    "save": "Bericht speichern",
+    "saved": "Geschrieben: {files}"
+  },
+  "setup": {
+    "button": "System",
+    "title": "FoamCraft einrichten",
+    "intro": "FoamCraft rechnet mit OpenFOAM in einem lokalen Container. Diese Prüfung zeigt, was bereit ist und was du noch tun musst; du kannst sie jederzeit unter System erneut öffnen.",
+    "list": "Systemprüfung",
+    "step": {
+      "docker": "Docker",
+      "service": "Docker-Dienst",
+      "backend": "Backend",
+      "memory": "Arbeitsspeicher",
+      "image": "OpenFOAM-Laufzeit",
+      "disk": "Speicherplatz",
+      "gpu": "Grafikkarte"
+    },
+    "action": "Handlung nötig",
+    "provide": "Laufzeit bereitstellen",
+    "providing": "Die Laufzeit wird gebaut, das dauert einige Minuten …",
+    "imageFailed": "Die Laufzeit konnte nicht bereitgestellt werden; der Diagnosebericht enthält die Einzelheiten.",
+    "ready": "Bereit für Simulationen.",
+    "notReady": "Noch nicht bereit: den Schritten mit „Handlung nötig“ folgen, dann erneut prüfen.",
+    "profile": "Hardware-Profil",
+    "profileText": "Läufe nutzen standardmäßig {cores} Kerne; der Arbeitsspeicher reicht für Netze bis etwa {cells} Mio. Zellen, daher ist die Qualität „{quality}“ die höchste passende.",
+    "quality": {
+      "draft": "Entwurf",
+      "standard": "Standard",
+      "fine": "Fein"
+    },
+    "recheck": "Erneut prüfen",
+    "copy": "Diagnosebericht kopieren",
+    "copied": "Kopiert.",
+    "finish": "Fertig",
+    "tour": "Tour"
+  },
+  "tour": {
+    "count": "Schritt {n} von {of}",
+    "geometry": {
+      "title": "1 · Geometrie",
+      "text": "Modell importieren (STL, OBJ, 3MF, STEP, IGES), Einheit und Diagnose prüfen und Flächen auswählen, um sie zu benennen oder Öffnungen zu verschließen."
+    },
+    "scenario": {
+      "title": "2 · Szenario",
+      "text": "Windkanal für die Umströmung wählen oder Innenströmung mit Ein- und Auslässen; Geschwindigkeit, Medium und Qualität festlegen."
+    },
+    "run": {
+      "title": "3 · Rechnen",
+      "text": "Den Lauf starten: FoamCraft vernetzt und rechnet, zeigt den Fortschritt und hört auf, wenn sich die Werte eingependelt haben."
+    },
+    "results": {
+      "title": "4 · Ergebnisse",
+      "text": "Das Modell einfärben, Schnitte und Partikel zeigen, Kennzahlen mit Verlässlichkeits-Ampel lesen, Läufe vergleichen und Bilder, Videos und Berichte exportieren."
+    },
+    "next": "Weiter",
+    "back": "Zurück",
+    "done": "Fertig",
+    "skip": "Überspringen"
+  },
+  "samples": {
+    "title": "Beispielprojekte",
+    "hint": "Ein Klick legt eine Kopie in deinem Projektordner an und öffnet sie."
+  },
+  "console": {
+    "title": "Konsole",
+    "empty": "Noch keine Ausgabe."
+  }
+}

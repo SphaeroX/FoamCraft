@@ -1,0 +1,89 @@
+/*--------------------------------*- C++ -*----------------------------------*\n  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft internal flow case (generated; do not edit).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     simpleFoam;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         1500;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   1500;
+purgeWrite      0;
+writeFormat     binary;
+writePrecision  8;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable false;
+
+functions
+{
+    flow_in_1
+    {
+        type surfaceFieldValue;
+        libs (fieldFunctionObjects);
+        writeControl timeStep;
+        writeInterval 1;
+        log true;
+        writeFields false;
+        regionType patch;
+        name model_in_1;
+        operation sum;
+        fields (phi);
+    }
+    pressure_in_1
+    {
+        type surfaceFieldValue;
+        libs (fieldFunctionObjects);
+        writeControl timeStep;
+        writeInterval 1;
+        log true;
+        writeFields false;
+        regionType patch;
+        name model_in_1;
+        operation areaAverage;
+        fields (p);
+    }
+    flow_out_1
+    {
+        type surfaceFieldValue;
+        libs (fieldFunctionObjects);
+        writeControl timeStep;
+        writeInterval 1;
+        log true;
+        writeFields false;
+        regionType patch;
+        name model_out_1;
+        operation sum;
+        fields (phi);
+    }
+    pressure_out_1
+    {
+        type surfaceFieldValue;
+        libs (fieldFunctionObjects);
+        writeControl timeStep;
+        writeInterval 1;
+        log true;
+        writeFields false;
+        regionType patch;
+        name model_out_1;
+        operation areaAverage;
+        fields (p);
+    }
+    stop
+    {
+        type abort;
+        libs (utilityFunctionObjects);
+        file "<case>/stop";
+        action writeNow;
+    }
+}

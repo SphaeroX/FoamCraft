@@ -1,0 +1,21 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  SPDX-License-Identifier: GPL-3.0-or-later
+  FoamCraft internal flow case (generated; do not edit).
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    ".*" { type zeroGradient; }
+    model_out_1 { type fixedValue; value uniform 1.001769489422284e-1; }
+}

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "foamcraft-runtime"
+description = "Runtime layer of FoamCraft: runs OpenFOAM in a container."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[test]]
+name = "runner"
+path = "../../tests/runtime/runner.rs"
+
+[[test]]
+name = "docker_runtime"
+path = "../../tests/runtime/docker.rs"
+
+[dependencies]
+foamcraft-core.workspace = true
+num_cpus = "1.17.0"
+serde_json = "1"
+
+[[test]]
+name = "report"
+path = "../../tests/runtime/report.rs"
+
+[[test]]
+name = "runtime_job"
+path = "../../tests/runtime/job.rs"
