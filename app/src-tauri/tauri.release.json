@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "FoamCraft contributors",
+    "homepage": "https://github.com/SphaeroX/FoamCraft",
+    "license": "GPL-3.0-or-later",
+    "licenseFile": "../../LICENSE",
+    "category": "Utility",
+    "shortDescription": "Flow simulation with OpenFOAM for everyone",
+    "longDescription": "FoamCraft makes CFD simulation with OpenFOAM approachable. This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via www.openfoam.com, and owner of the OPENFOAM® and OpenCFD® trade marks.",
+    "externalBin": ["binaries/foamcraft"],
+    "resources": { "../../target/notices/": "notices/" },
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.png"]
+  }
+}

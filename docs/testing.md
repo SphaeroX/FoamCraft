@@ -25,8 +25,12 @@ npm test                                          # all frontend tests
 npx vitest run tests/app/<file>.test.ts           # one frontend test file
 npx vitest run -t "<test name>"                   # one frontend test
 cargo xtask license-check                         # dependency license check (Rust + npm)
+cargo test -p foamcraft-xtask --test release      # license bundle complete, versions agree
 npm run typecheck                                 # TypeScript type check
 ```
+
+`.github/workflows/ci.yml` runs format, clippy, the fast Rust and frontend tests, lint, type check
+and the license check on Windows, Linux and macOS for every push to `main` and every pull request.
 
 ## Which tests to run when
 

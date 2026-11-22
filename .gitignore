@@ -46,3 +46,6 @@ CLAUDE.local.md
 
 # /brag launch video work files
 /brag-output*/
+
+# Release build inputs (made by the release workflow)
+app/src-tauri/binaries/

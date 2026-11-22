@@ -1,0 +1,153 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Builds a release: the runtime image (published as ghcr.io/sphaerox/foamcraft-runtime:<version>,
+# the image the installed app pulls) and the installers for Windows, Linux and macOS with the
+# command line program and the license bundle. The installers go into a draft GitHub release,
+# which is published once every part is built. Start it by pushing a tag v<version> (the version
+# in Cargo.toml) or by hand from the Actions tab. Checklist: docs/release.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        name: Version from Cargo.toml (and the tag must match it)
+        run: |
+          version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version *= *"\(.*\)"/\1/p' Cargo.toml)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match version $version in Cargo.toml" >&2
+            exit 1
+          fi
+
+  image:
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the runtime image
+        env:
+          IMAGE: ghcr.io/sphaerox/foamcraft-runtime:${{ needs.version.outputs.version }}
+        run: |
+          docker build -f runtime/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+  installers:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            triple: x86_64-pc-windows-msvc
+            exe: .exe
+          - os: ubuntu-22.04
+            triple: x86_64-unknown-linux-gnu
+            exe: ""
+          - os: macos-latest
+            triple: aarch64-apple-darwin
+            exe: ""
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux libraries for the web view
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libxdo-dev libssl-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: release-${{ matrix.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+
+      - run: npm ci
+
+      - name: License bundle
+        run: cargo xtask notices target/notices
+
+      - name: Command line program next to the app
+        shell: bash
+        run: |
+          cargo build --release --locked -p foamcraft-cli
+          mkdir -p app/src-tauri/binaries
+          cp "target/release/foamcraft${{ matrix.exe }}" \
+            "app/src-tauri/binaries/foamcraft-${{ matrix.triple }}${{ matrix.exe }}"
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: app
+          args: --config src-tauri/tauri.release.json
+          tagName: v${{ needs.version.outputs.version }}
+          releaseName: FoamCraft ${{ needs.version.outputs.version }}
+          releaseDraft: true
+          prerelease: false
+          releaseBody: |
+            FoamCraft ${{ needs.version.outputs.version }}.
+
+            **Requirements:** Docker Desktop (Windows: with the WSL 2 backend) or Docker Engine
+            on Linux. On first start the setup assistant downloads the runtime image
+            `ghcr.io/sphaerox/foamcraft-runtime:${{ needs.version.outputs.version }}`
+            (OpenFOAM v2606, about 1.4 GB on disk).
+
+            The installers are not signed: Windows SmartScreen and macOS Gatekeeper warn
+            before the first start.
+
+            **Source:** this repository at tag `v${{ needs.version.outputs.version }}`. The
+            OpenFOAM source of the runtime image:
+            https://develop.openfoam.com/Development/openfoam/-/tree/OpenFOAM-v2606.
+            Licenses of all components are installed with the app (folder `notices`).
+
+            This offering is not approved or endorsed by OpenCFD Limited, producer and
+            distributor of the OpenFOAM software via www.openfoam.com, and owner of the
+            OPENFOAM® and OpenCFD® trade marks.
+
+  publish:
+    needs: [version, image, installers]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release edit "v${{ needs.version.outputs.version }}"
+          --repo "${{ github.repository }}" --draft=false --latest

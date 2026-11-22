@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 [package]
 name = "foamcraft-xtask"
-description = "Development tasks of FoamCraft (license check)."
+description = "Development tasks of FoamCraft (license check, license bundle, version)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,6 +10,10 @@ publish.workspace = true
 [[test]]
 name = "license_check"
 path = "../../tests/xtask/license_check.rs"
+
+[[test]]
+name = "release"
+path = "../../tests/xtask/release.rs"
 
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }

@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Fast tests, lint and the dependency license check on Windows, Linux and macOS. Tests that need
+# Docker and the runtime image (`runtime_`) or long CFD cases (`validation_`) are ignored by
+# default and do not run here (docs/testing.md).
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/screenshots/**"
+      - "Roadmap/**"
+      - "site/**"
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-22.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux libraries for the web view
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libxdo-dev libssl-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ci-${{ matrix.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+
+      - run: npm ci
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - run: cargo xtask license-check
+      - run: npx eslint app/src tests/app
+      - run: npm run typecheck
+      - run: npm test

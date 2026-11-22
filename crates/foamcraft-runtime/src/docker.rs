@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::engine::{CmdOutput, Engine, LogLine, ProcessEngine};
 use crate::{
-    Backend, Container, EnvironmentReport, IMAGE_TAG, MANAGED_LABEL, Mount,
+    Backend, Container, EnvironmentReport, IMAGE_TAG, MANAGED_LABEL, Mount, PUBLISHED_IMAGE,
     RECOMMENDED_MEMORY_BYTES, Runner, StartOptions, WORK_DIR,
 };
 
@@ -172,6 +172,19 @@ impl<E: Engine> Runner for DockerRunner<E> {
             ],
             on_line,
         )?;
+        if out.status == 0 {
+            Ok(())
+        } else {
+            Err(map_failure(&out))
+        }
+    }
+
+    fn pull_image(&self, on_line: &mut dyn FnMut(LogLine)) -> Result<(), FoamError> {
+        let out = self.call(&["pull", PUBLISHED_IMAGE], on_line)?;
+        if out.status != 0 {
+            return Err(map_failure(&out));
+        }
+        let out = self.call(&["tag", PUBLISHED_IMAGE, IMAGE_TAG], on_line)?;
         if out.status == 0 {
             Ok(())
         } else {

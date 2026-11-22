@@ -105,7 +105,11 @@ an open question that must be answered before such an image is published.
 ## Releases
 
 Each release bundles the license texts and notices of all shipped dependencies, the OpenFOAM
-source reference and the trademark notice.
+source reference and the trademark notice. `cargo xtask notices <dir>` writes them
+(`THIRD-PARTY-NOTICES.txt`, `NOTICE.txt`, `LICENSE.txt`, `OFL.txt`); the installers install them
+in the folder `notices`, and the release page repeats the source reference and the trademark
+notice. The runtime image is published as `ghcr.io/sphaerox/foamcraft-runtime:<version>` with the
+OpenFOAM source labels of `runtime/Dockerfile`. Details: [release.md](release.md).
 
 ---
 

@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use foamcraft_api::system::{Probe, profile, steps};
+use foamcraft_api::system::{Probe, fetch_image, profile, steps};
 use foamcraft_runtime::fake::FakeEngine;
 use foamcraft_runtime::{CmdOutput, DockerRunner};
 use serde_json::Value;
@@ -191,4 +191,30 @@ fn the_wording_of_current_docker_versions_is_recognised_as_a_stopped_service() {
         list.iter().find(|s| s["id"] == "service").unwrap()["code"],
         "runtime.daemon_not_running"
     );
+}
+
+#[test]
+fn a_build_from_the_repository_builds_the_image_an_installed_app_pulls_it() {
+    let root = std::env::temp_dir().join("foamcraft-fetch-image");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    let engine = FakeEngine::new()
+        .on(&["pull"], CmdOutput::ok("pulled\n"))
+        .on(&["tag"], CmdOutput::ok(""))
+        .on(&["build"], CmdOutput::ok("built\n"));
+    // No runtime/Dockerfile next to the program: the published image is pulled.
+    let runner = DockerRunner::with_host(engine, true);
+    fetch_image(&runner, &root, &mut |_| {}).unwrap();
+    let first: Vec<String> = runner
+        .engine()
+        .calls()
+        .iter()
+        .map(|c| c[0].clone())
+        .collect();
+    assert_eq!(first, ["pull", "tag"]);
+    // In the repository the image is built from the Dockerfile.
+    std::fs::create_dir_all(root.join("runtime")).unwrap();
+    std::fs::write(root.join("runtime/Dockerfile"), "FROM scratch\n").unwrap();
+    fetch_image(&runner, &root, &mut |_| {}).unwrap();
+    assert_eq!(runner.engine().calls().last().unwrap()[0], "build");
 }

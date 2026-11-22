@@ -3,7 +3,8 @@
 
 use foamcraft_runtime::fake::FakeEngine;
 use foamcraft_runtime::{
-    Backend, CmdOutput, Container, DockerRunner, IMAGE_TAG, LogLine, Mount, Runner, StartOptions,
+    Backend, CmdOutput, Container, DockerRunner, IMAGE_TAG, LogLine, Mount, PUBLISHED_IMAGE,
+    Runner, StartOptions,
 };
 
 const GIB: u64 = 1024 * 1024 * 1024;
@@ -315,4 +316,43 @@ mod stage_executor {
         exec.cancel().unwrap();
         assert_eq!(r.engine().calls()[0], ["rm", "-f", "abc"]);
     }
+}
+
+#[test]
+fn the_published_image_is_pulled_and_tagged_with_the_local_name() {
+    assert_eq!(
+        PUBLISHED_IMAGE,
+        format!(
+            "ghcr.io/sphaerox/foamcraft-runtime:{}",
+            env!("CARGO_PKG_VERSION")
+        )
+    );
+    let engine = FakeEngine::new()
+        .on(
+            &["pull", PUBLISHED_IMAGE],
+            CmdOutput::ok("Status: Downloaded\n"),
+        )
+        .on(&["tag", PUBLISHED_IMAGE, IMAGE_TAG], CmdOutput::ok(""));
+    let r = runner(engine, true);
+    let mut lines = Vec::new();
+    r.pull_image(&mut |l| lines.push(l)).unwrap();
+    let calls: Vec<String> = r.engine().calls().iter().map(|c| c.join(" ")).collect();
+    assert_eq!(
+        calls,
+        [
+            format!("pull {PUBLISHED_IMAGE}"),
+            format!("tag {PUBLISHED_IMAGE} {IMAGE_TAG}")
+        ]
+    );
+}
+
+#[test]
+fn a_failed_pull_is_an_error_and_tags_nothing() {
+    let engine = FakeEngine::new().on(
+        &["pull", PUBLISHED_IMAGE],
+        CmdOutput::failed(1, "Error response from daemon: manifest unknown"),
+    );
+    let r = runner(engine, true);
+    assert!(r.pull_image(&mut |_| {}).is_err());
+    assert!(r.engine().calls().iter().all(|c| c[0] != "tag"));
 }

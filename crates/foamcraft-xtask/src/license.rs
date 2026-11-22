@@ -2,7 +2,7 @@
 //! Dependency license check against the allowed list in docs/licensing.md.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
@@ -56,6 +56,8 @@ pub struct Package {
     pub name: String,
     pub version: String,
     pub license: Option<String>,
+    /// Folder of the package sources (for its license files), when known.
+    pub dir: Option<PathBuf>,
 }
 
 impl Package {
@@ -65,6 +67,7 @@ impl Package {
             name: name.into(),
             version: version.into(),
             license: license.map(Into::into),
+            dir: None,
         }
     }
 }
@@ -252,6 +255,7 @@ pub fn npm_packages(lock_path: &Path) -> Result<Vec<Package>, String> {
             name,
             version: entry.version.unwrap_or_default(),
             license,
+            dir: lock_path.parent().map(|d| d.join(&path)),
         });
     }
     Ok(out)
@@ -267,6 +271,7 @@ struct CargoPackage {
     name: String,
     version: String,
     license: Option<String>,
+    manifest_path: PathBuf,
 }
 
 /// All packages in the Cargo dependency graph of the workspace in `dir`.
@@ -293,6 +298,7 @@ pub fn cargo_packages(dir: &Path) -> Result<Vec<Package>, String> {
             name: p.name,
             version: p.version,
             license: p.license,
+            dir: p.manifest_path.parent().map(Path::to_path_buf),
         })
         .collect())
 }

@@ -24,6 +24,12 @@ use foamcraft_core::runtime::AgentStatus;
 pub const OPENFOAM_RELEASE: &str = "v2606";
 /// Name and tag of the runtime image built from `runtime/Dockerfile`.
 pub const IMAGE_TAG: &str = concat!("foamcraft-runtime:", env!("CARGO_PKG_VERSION"));
+/// The runtime image published for this version (built by the release workflow from
+/// `runtime/Dockerfile`); installed apps pull it and tag it as [`IMAGE_TAG`].
+pub const PUBLISHED_IMAGE: &str = concat!(
+    "ghcr.io/sphaerox/foamcraft-runtime:",
+    env!("CARGO_PKG_VERSION")
+);
 /// Label on every container FoamCraft starts, so `stop_all` finds them.
 pub const MANAGED_LABEL: &str = "org.foamcraft.managed=true";
 /// Working directory inside the container.
@@ -83,6 +89,8 @@ pub trait Runner {
         context: &std::path::Path,
         on_line: &mut dyn FnMut(LogLine),
     ) -> Result<(), FoamError>;
+    /// Pulls [`PUBLISHED_IMAGE`] and tags it as [`IMAGE_TAG`].
+    fn pull_image(&self, on_line: &mut dyn FnMut(LogLine)) -> Result<(), FoamError>;
     fn start(&self, options: &StartOptions) -> Result<Container, FoamError>;
     /// Runs `command` in the container. A non-zero exit code is returned, not an error.
     fn exec(

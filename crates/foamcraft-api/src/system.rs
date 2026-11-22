@@ -315,24 +315,31 @@ fn load_setup(data_dir: &Path) -> SetupState {
 pub struct NoParams {}
 
 /// Building the runtime image in the background (until releases provide it ready-made).
+/// Provides the runtime image: built from `runtime/Dockerfile` when `context` is the repository
+/// (a development build), otherwise the image published for this version is pulled.
+pub fn fetch_image(
+    runner: &dyn Runner,
+    context: &Path,
+    on_line: &mut dyn FnMut(foamcraft_runtime::LogLine),
+) -> Result<(), FoamError> {
+    if context.join("runtime/Dockerfile").is_file() {
+        runner.build_image(context, on_line)
+    } else {
+        runner.pull_image(on_line)
+    }
+}
+
 fn provide_image(runner: SharedRunner, s: &mut Session) -> Result<Value, FoamError> {
     static BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
     if BUSY.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return Ok(json!({"started": false, "running": true}));
     }
-    // The build context is the repository the program was built from.
+    // A development build finds the repository it was built from; an installed app does not.
     let context = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    if !context.join("runtime/Dockerfile").is_file() {
-        BUSY.store(false, std::sync::atomic::Ordering::SeqCst);
-        return Err(FoamError::new(
-            "system.image_unavailable",
-            context.display().to_string(),
-        ));
-    }
     let events = s.events().clone();
     std::thread::spawn(move || {
         let mut lines = 0u32;
-        let result = runner.build_image(&context, &mut |line| {
+        let result = fetch_image(runner.as_ref(), &context, &mut |line| {
             lines += 1;
             let text = match line {
                 foamcraft_runtime::LogLine::Stdout(t) | foamcraft_runtime::LogLine::Stderr(t) => t,

@@ -52,6 +52,8 @@ Read only what your current work needs:
   committing.
 - [docs/licensing.md](docs/licensing.md): read before adding a dependency, asset or sample file,
   before naming another product, and before touching the runtime image or a release.
+- [docs/release.md](docs/release.md): read before preparing a release or changing the version,
+  the release workflow or the runtime image tag. Versions, workflow, license bundle, checklist.
 - [docs/project-brief.md](docs/project-brief.md): read when goal, scope or non-goals are unclear.
 - [docs/mcp.md](docs/mcp.md): MCP server setup (`foamcraft mcp`), tools, path sandbox and the
   bridge to the running app. Read before changing MCP tools or the bridge.

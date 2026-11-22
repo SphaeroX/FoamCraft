@@ -929,8 +929,10 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   `sysinfo`, GPU name via `nvidia-smi`), so tests run it against the fake engine. Commands:
   `system.check`, `system.diagnostics` (plain text, home folder replaced by `~`),
   `system.setup_state` / `system.finish_setup` (`<data dir>/setup.json`), `system.provide_image`
-  (builds the image from the repository in the background with `system.image_progress` events;
-  from Task_36 on it downloads the release image instead).
+  (in the background with `system.image_progress` events: an installed app pulls
+  `ghcr.io/sphaerox/foamcraft-runtime:<version>` and tags it as `foamcraft-runtime:<version>`; a
+  development build that finds `runtime/Dockerfile` builds it; `system::fetch_image`, see
+  [release.md](release.md)).
 - **Hardware profile:** default cores = min(physical cores, cores of the container runtime); the
   largest mesh = 60 % of the container memory at 1.5 GiB per million cells (the cell budget rule
   of Task_08); recommended quality = the highest level whose cell count fits.

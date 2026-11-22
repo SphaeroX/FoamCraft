@@ -2,3 +2,4 @@
 //! Development tasks of FoamCraft.
 
 pub mod license;
+pub mod release;
