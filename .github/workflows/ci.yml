@@ -60,7 +60,7 @@ jobs:
       - run: npm ci
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - run: cargo test --workspace --no-fail-fast
       - run: cargo xtask license-check
       - run: npx eslint app/src tests/app
       - run: npm run typecheck

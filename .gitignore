@@ -26,6 +26,8 @@ postProcessing/
 
 # Logs and temp files
 *.log
+# Recorded OpenFOAM logs used by the log parser tests (see their README)
+!tests/data/logs/*.log
 *.tmp
 
 # IDE and OS

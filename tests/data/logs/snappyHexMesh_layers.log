@@ -1,0 +1,42 @@
+Extruding 13228 out of 13570 faces (97.479735%). Removed extrusion at 12 faces.
+Added 13240 out of 13570 cells (97.568165%).
+
+Edge intersection testing:
+    Number of edges             : 592463
+    Number of edges to retest   : 0
+    Number of intersected edges : 26810
+Mesh with layers : cells:188962  faces:592463  points:214803
+
+patch            faces        layers        overall thickness
+                          target   mesh     [m]       [%]
+-----            -----    -----    ----     ---       ---
+model_Inlet_face 2594     1        0.981    0.00018   90.2    
+model_body       10976    1        0.974    0.000185  92.9    
+
+Layer mesh : cells:188962  faces:592463  points:214803
+Cells per refinement level:
+    0	5480
+    1	2250
+    2	5128
+    3	37496
+    4	80868
+    5	57740
+Writing mesh to time constant
+Wrote mesh in = 0 s.
+Layers added in = 43.92 s.
+Checking final mesh ...
+Checking faces in error :
+    non-orthogonality > 65  degrees                        : 4
+    faces with face pyramid volume < 1e-13                 : 0
+    faces with face-decomposition tet quality < 1e-15      : 0
+    faces with concavity > 80  degrees                     : 0
+    faces with skewness > 4   (internal) or 20  (boundary) : 0
+    faces with interpolation weights (0..1)  < 0.05        : 8
+    faces with volume ratio of neighbour cells < 0.01      : 0
+    faces with face twist < 0.02                           : 0
+    faces on cells with determinant < 0.001                : 0
+Finished meshing with 12 illegal faces (concave, zero area or negative cell pyramid volume)
+Finished meshing in = 58.08 s.
+Memory per-node = (456200)
+End
+

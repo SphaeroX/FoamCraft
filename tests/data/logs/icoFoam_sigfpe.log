@@ -1,0 +1,72 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : icoFoam
+Date   : Nov 21 2026
+Time   : 00:29:21
+Host   : 9355f0ac3021
+PID    : 1304
+I/O    : uncollated
+Case   : /work/div
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+PISO: Operating solver in PISO mode
+
+Reading transportProperties
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+
+Starting time loop
+
+Time = 0.5
+
+Courant Number mean: 0 max: 0
+smoothSolver:  Solving for Ux, Initial residual = 1, Final residual = 9.97394e-06, No Iterations 614
+smoothSolver:  Solving for Uy, Initial residual = 0, Final residual = 0, No Iterations 0
+DICPCG:  Solving for p, Initial residual = 1, Final residual = 0.0377734, No Iterations 43
+time step continuity errors : sum local = 11.8701, global = 5.0822e-15, cumulative = 5.0822e-15
+DICPCG:  Solving for p, Initial residual = 0.751026, Final residual = 9.62531e-07, No Iterations 67
+time step continuity errors : sum local = 0.000397974, global = 2.29374e-15, cumulative = 7.37594e-15
+ExecutionTime = 0.02 s  ClockTime = 0 s
+
+Time = 1
+
+Courant Number mean: 3713.85 max: 14224.9
+[stack trace]
+=============
+#1  Foam::sigFpe::sigHandler(int) platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so [0x7f114f821955]
+#2  /usr/lib/x86_64-linux-gnu/libc.so.6(+0x45cb0) [0x7f114eb00cb0]
+#3  Foam::symGaussSeidelSmoother::smooth(Foam::word const&, Foam::Field<double>&, Foam::lduMatrix const&, Foam::Field<double> const&, Foam::FieldField<Foam::Field, double> const&, Foam::UPtrList<Foam::lduInterfaceField const> const&, unsigned char, int) platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so [0x7f114f5fdadd]
+#4  Foam::symGaussSeidelSmoother::smooth(Foam::Field<double>&, Foam::Field<double> const&, unsigned char, int) const platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so [0x7f114f5fdcbd]
+#5  Foam::smoothSolver::solve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so [0x7f114f5f51ea]
+#6  platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(+0x5b3e49) [0x7f11505fce49]
+#7  Foam::fvMesh::solve(Foam::fvMatrix<Foam::Vector<double>>&, Foam::dictionary const&) const platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so [0x7f11505fe228]
+#8  icoFoam(+0x1bc09) [0x556e3eb0ec09]
+#9  /usr/lib/x86_64-linux-gnu/libc.so.6(+0x2a601) [0x7f114eae5601]
+#10  __libc_start_main /usr/lib/x86_64-linux-gnu/libc.so.6 [0x7f114eae5718]
+#11  icoFoam(+0x1d445) [0x556e3eb10445]
+=============
