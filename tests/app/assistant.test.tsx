@@ -3,7 +3,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppMenu } from "../../app/src/components/AppMenu";
-import { StepFooter, StepRail } from "../../app/src/components/StepRail";
+import { StepRail } from "../../app/src/components/StepRail";
 import { LanguageProvider, STORAGE_KEY } from "../../app/src/i18n/i18n";
 import { ExpertOnly, MODE_KEY, ModeProvider, ModeSwitch, useMode } from "../../app/src/mode";
 import { canAdvance, stepStates } from "../../app/src/steps";
@@ -63,32 +63,6 @@ describe("step rail and footer", () => {
     fireEvent.click(geometry);
     expect(onStep).toHaveBeenCalledWith("geometry");
   });
-
-  it("blocks Next and names what is missing", () => {
-    const states = stepStates({ ...empty, models: 1, watertight: true });
-    const onStep = vi.fn();
-    render(
-      <LanguageProvider>
-        <StepFooter step="scenario" states={states} onStep={onStep} />
-      </LanguageProvider>,
-    );
-    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-    expect(screen.getByText("Set up the wind first.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onStep).toHaveBeenCalledWith("geometry");
-  });
-
-  it("Next moves on when the step is done", () => {
-    const states = stepStates({ ...empty, models: 1, watertight: true });
-    const onStep = vi.fn();
-    render(
-      <LanguageProvider>
-        <StepFooter step="geometry" states={states} onStep={onStep} />
-      </LanguageProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(onStep).toHaveBeenCalledWith("scenario");
-  });
 });
 
 describe("simple and expert", () => {
@@ -143,11 +117,10 @@ describe("app menu", () => {
   beforeEach(() => localStorage.setItem(STORAGE_KEY, "en"));
   afterEach(cleanup);
 
-  it("holds language, system, agents, tour and about", () => {
+  it("holds language, system, agents and about, but no tour", () => {
     const actions = {
       onSystem: vi.fn(),
       onAgents: vi.fn(),
-      onTour: vi.fn(),
       onAbout: vi.fn(),
     };
     render(
@@ -162,13 +135,13 @@ describe("app menu", () => {
     for (const [name, fn] of [
       ["System", actions.onSystem],
       ["Agents", actions.onAgents],
-      ["Tour", actions.onTour],
       ["About", actions.onAbout],
     ] as const) {
       fireEvent.click(screen.getByRole("menuitem", { name }));
       expect(fn).toHaveBeenCalled();
       fireEvent.click(toggle);
     }
+    expect(screen.queryByRole("menuitem", { name: "Tour" })).toBeNull();
     fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     expect(screen.queryByRole("menu")).toBeNull();
   });

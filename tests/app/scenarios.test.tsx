@@ -92,7 +92,7 @@ describe("queue", () => {
       return () => {};
     };
     ui(<QueueSection api={api} subscribe={subscribe} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Run all scenarios" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Run all 2 scenarios" }));
     await waitFor(() => expect(api.call).toHaveBeenCalledWith("run.start_all", {}));
     act(() =>
       emit({
@@ -105,6 +105,39 @@ describe("queue", () => {
     await waitFor(() => expect(api.call).toHaveBeenCalledWith("run.cancel_queue", {}));
     act(() => emit({ name: "run.queue_finished", payload: { cancelled: true, runs: [] } }));
     expect(screen.getByRole("status")).toHaveTextContent("Queue stopped");
+  });
+
+  it("runs only the scenarios without a result on request", async () => {
+    const api = fakeApi({ "runs.list": [{ job_id: "job-2", name: "30 m/s" }] });
+    ui(<QueueSection api={api} subscribe={() => () => {}} />);
+    expect(await screen.findByRole("button", { name: "Run all 2 scenarios" })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Run only missing (1)" }));
+    await waitFor(() =>
+      expect(api.call).toHaveBeenCalledWith("run.start_all", { scenarios: ["scenario-1"] }),
+    );
+    expect(api.call).toHaveBeenCalledWith("runs.list", { sizes: false });
+  });
+
+  it("offers no 'missing' button when every scenario or none has a result", async () => {
+    const api = fakeApi({ "runs.list": [] });
+    ui(<QueueSection api={api} subscribe={() => () => {}} />);
+    await screen.findByRole("button", { name: "Run all 2 scenarios" });
+    expect(screen.queryByRole("button", { name: /Run only missing/ })).toBeNull();
+  });
+
+  it("reports a finished queue that was not stopped", async () => {
+    let emit: (e: ApiEvent) => void = () => {};
+    const subscribe = (h: (e: ApiEvent) => void) => {
+      emit = h;
+      return () => {};
+    };
+    const onDone = vi.fn();
+    ui(<QueueSection api={fakeApi()} subscribe={subscribe} onDone={onDone} />);
+    await screen.findByRole("button", { name: "Run all 2 scenarios" });
+    act(() => emit({ name: "run.queue_finished", payload: { cancelled: true, runs: [] } }));
+    expect(onDone).not.toHaveBeenCalled();
+    act(() => emit({ name: "run.queue_finished", payload: { cancelled: false, runs: [] } }));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -146,6 +146,8 @@
   "run": {
     "title": "Run",
     "start": "Start run",
+    "startScenario": "Run “{name}”",
+    "busy": "Running …",
     "cancel": "Cancel",
     "meshFirst": "The mesh is built when the run starts",
     "about": "about {n} min",
@@ -183,7 +185,8 @@
       "snap": "Fitting the mesh to the surface",
       "layers": "Adding boundary layers"
     },
-    "preparing": "Preparing the run …"
+    "preparing": "Preparing the run …",
+    "solverStarts": "The mesh is ready; the solver starts by itself …"
   },
   "openings": {
     "title": "Openings",
@@ -448,7 +451,8 @@
     "logo": "Choose logo",
     "save": "Save report",
     "saved": "Written: {files}",
-    "compareRuns": "Compare with several runs"
+    "compareRuns": "Compare with several runs",
+    "loadingRuns": "Loading the runs…"
   },
   "setup": {
     "button": "System",
@@ -480,31 +484,7 @@
     "recheck": "Check again",
     "copy": "Copy diagnostic report",
     "copied": "Copied.",
-    "finish": "Finish",
-    "tour": "Tour"
-  },
-  "tour": {
-    "count": "Step {n} of {of}",
-    "geometry": {
-      "title": "1 · Geometry",
-      "text": "Load a model (STL, OBJ, 3MF, STEP, IGES), check its size and place it with the arrows and rings in the view. Faces and openings are in expert mode (menu)."
-    },
-    "scenario": {
-      "title": "2 · Scenario",
-      "text": "Choose the wind: speed with one click, direction on the wind rose or with the orange arrow in the view. Changes apply on their own."
-    },
-    "run": {
-      "title": "3 · Run",
-      "text": "Start the run: FoamCraft meshes and solves, shows the progress and stops when the values have settled."
-    },
-    "results": {
-      "title": "4 · Results",
-      "text": "Pick a ready-made view such as smoke lines or the wake, or start the demo. Key figures, comparisons and exports are there too."
-    },
-    "next": "Next",
-    "back": "Back",
-    "done": "Done",
-    "skip": "Skip"
+    "finish": "Finish"
   },
   "samples": {
     "title": "Sample projects",
@@ -604,22 +584,12 @@
     "run": "Start the calculation to see results.",
     "running": "The calculation is running."
   },
-  "nav": {
-    "back": "Back",
-    "next": "Next"
-  },
   "menu": {
     "label": "Menu"
   },
   "mode": {
     "expert": "Expert mode",
     "hint": "Shows faces, groups, roles, mesh figures and logs."
-  },
-  "assistant": {
-    "geometry": "Load your model and check its size. Drag the arrows to place it.",
-    "scenario": "Choose how fast and from where the wind blows.",
-    "run": "Start the calculation. FoamCraft builds the mesh and stops when the result is stable.",
-    "results": "Pick a ready-made view or start the demo to see what the flow does."
   },
   "scenarios": {
     "title": "Scenarios",
@@ -629,7 +599,8 @@
     "remove": "Remove {name}"
   },
   "queue": {
-    "start": "Run all scenarios",
+    "start": "Run all {n} scenarios",
+    "missing": "Run only missing ({n})",
     "stop": "Stop queue",
     "progress": "{n} of {of}: {name}",
     "stopped": "Queue stopped.",

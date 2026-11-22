@@ -59,6 +59,14 @@ describe("report dialog", () => {
     expect(await screen.findByText(/C:\/out\/report\.pdf/)).toBeInTheDocument();
   });
 
+  it("lists the runs without measuring their disk space and says it is loading", async () => {
+    const { call } = setup();
+    expect(screen.getByText("Loading the runs…")).toBeInTheDocument();
+    expect(await screen.findByRole("combobox", { name: "Run" })).toHaveValue("job-b");
+    expect(call).toHaveBeenCalledWith("runs.list", { sizes: false });
+    expect(screen.queryByText("Loading the runs…")).not.toBeInTheDocument();
+  });
+
   it("chooses language, formats, sections, a logo and a comparison", async () => {
     const { call, pickLogo } = setup();
     fireEvent.change(await screen.findByRole("combobox", { name: "Language of the report" }), {

@@ -302,7 +302,7 @@ export function RideOverlay({ api, revision, units, control, onClock }: Props) {
           />
           <span>{t("ride.guide")}</span>
         </label>
-        <button type="button" className="quiet" onClick={stop}>
+        <button type="button" className="exit" onClick={stop}>
           {t("ride.stop")}
         </button>
       </div>

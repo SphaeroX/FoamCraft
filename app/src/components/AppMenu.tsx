@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// One menu for everything that is not part of the current task: language, setup check, agents,
-// tour and about.
+// One menu for everything that is not part of the current task: language, setup check, agents
+// and about.
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { ModeSwitch } from "../mode";
@@ -9,11 +9,10 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 interface Props {
   onSystem: () => void;
   onAgents: () => void;
-  onTour: () => void;
   onAbout: () => void;
 }
 
-export function AppMenu({ onSystem, onAgents, onTour, onAbout }: Props) {
+export function AppMenu({ onSystem, onAgents, onAbout }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -67,7 +66,6 @@ export function AppMenu({ onSystem, onAgents, onTour, onAbout }: Props) {
           <ModeSwitch />
           {item(t("setup.button"), onSystem)}
           {item(t("mcp.button"), onAgents)}
-          {item(t("setup.tour"), onTour)}
           {item(t("toolbar.about"), onAbout)}
         </div>
       )}

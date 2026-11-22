@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The four steps as a streamline: numbered stations joined by a line that fills up as steps are
-// done; and the Back/Next footer of a step panel.
+// done.
 import { useTranslation } from "../i18n/i18n";
-import { STEPS, canAdvance, type Step, type StepInfo } from "../steps";
+import { STEPS, type Step, type StepInfo } from "../steps";
 
 interface RailProps {
   step: Step;
@@ -46,28 +46,5 @@ export function StepRail({ step, states, onStep }: RailProps) {
         })}
       </ol>
     </nav>
-  );
-}
-
-export function StepFooter({ step, states, onStep }: RailProps) {
-  const { t } = useTranslation();
-  const index = STEPS.indexOf(step);
-  const next = STEPS[index + 1];
-  const ok = canAdvance(states, step);
-  const missing = states[step].missing;
-  return (
-    <div className="step-footer">
-      {index > 0 && (
-        <button type="button" className="quiet" onClick={() => onStep(STEPS[index - 1])}>
-          {t("nav.back")}
-        </button>
-      )}
-      <span className="step-footer-note muted small">{!ok && missing ? t(missing) : ""}</span>
-      {next && (
-        <button type="button" className="primary" disabled={!ok} onClick={() => onStep(next)}>
-          {t("nav.next")}
-        </button>
-      )}
-    </div>
   );
 }

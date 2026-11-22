@@ -9,6 +9,7 @@ import { ExpertOnly, useMode } from "../mode";
 import { RunMonitor, useRunMonitor } from "../run-monitor";
 import { LineChart, type Series } from "./LineChart";
 import { MeshSection } from "./MeshSection";
+import { scenarioName, type ScenarioList } from "./ScenarioTabs";
 
 type Texts = Record<string, { en: LocalizedMessage; de: LocalizedMessage }>;
 
@@ -49,6 +50,18 @@ export function RunPanel({ api, subscribe, monitor, footer }: Props) {
   const [summary, setSummary] = useState<Summary>({ cells: null, estimate_s: null });
   const [texts, setTexts] = useState<Texts>({});
   const [logOpen, setLogOpen] = useState(false);
+  // With several scenarios the start button names the one it calculates.
+  const [scenarios, setScenarios] = useState<ScenarioList | null>(null);
+  useEffect(() => {
+    api
+      .call<ScenarioList>("scenario.list", {})
+      .then((l) => setScenarios(l && Array.isArray(l.scenarios) ? l : null))
+      .catch(() => setScenarios(null));
+  }, [api]);
+  const active =
+    scenarios && scenarios.scenarios.length > 1
+      ? scenarios.scenarios.find((s) => s.id === scenarios.active)
+      : undefined;
   const [log, setLog] = useState<string[]>([]);
 
   // Summary; the cell count is read again when a mesh was built.
@@ -124,7 +137,11 @@ export function RunPanel({ api, subscribe, monitor, footer }: Props) {
       </dl>
       <div className="run-actions">
         <button type="button" className="primary" disabled={running} onClick={() => m.start()}>
-          {t("run.start")}
+          {running && !state.meshOnly
+            ? t("run.busy")
+            : active
+              ? t("run.startScenario", { name: scenarioName(active, t) })
+              : t("run.start")}
         </button>
         {running && (
           <button type="button" onClick={() => m.cancel()}>
@@ -149,6 +166,9 @@ export function RunPanel({ api, subscribe, monitor, footer }: Props) {
         </ol>
       )}
       {running && stage === null && <p className="small muted">{t("run.preparing")}</p>}
+      {running && state.meshReady && !state.meshOnly && !iteration && (
+        <p className="small">{t("run.solverStarts")}</p>
+      )}
       {running && mesh && (
         <div className="mesh-progress">
           <div

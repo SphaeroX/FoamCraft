@@ -365,8 +365,8 @@ pub struct RunInfo {
     pub key_value: Option<f64>,
     pub key_unit: String,
     pub reliability: Level,
-    /// Disk space of the run (job folder, result, cache).
-    pub bytes: u64,
+    /// Disk space of the run (job folder, result, cache); `null` when sizes were not asked for.
+    pub bytes: Option<u64>,
 }
 
 fn run_bytes(root: &Path, job: &str) -> u64 {
@@ -375,7 +375,7 @@ fn run_bytes(root: &Path, job: &str) -> u64 {
         + size(&cache_dir(root, job))
 }
 
-fn list(project: &Project) -> Vec<RunInfo> {
+fn list(project: &Project, sizes: bool) -> Vec<RunInfo> {
     let dir = project.root.join(RESULTS_DIR);
     let mut out: Vec<RunInfo> = std::fs::read_dir(&dir)
         .ok()
@@ -401,7 +401,7 @@ fn list(project: &Project) -> Vec<RunInfo> {
                 .map_or(0, |d| d.as_secs());
             Some(RunInfo {
                 name: run_name(project, &job),
-                bytes: run_bytes(&project.root, &job),
+                bytes: sizes.then(|| run_bytes(&project.root, &job)),
                 job_id: job,
                 kind: s.kind.clone(),
                 created,
@@ -413,6 +413,19 @@ fn list(project: &Project) -> Vec<RunInfo> {
         .collect();
     out.sort_by(|a, b| (b.created, &b.job_id).cmp(&(a.created, &a.job_id)));
     out
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ListParams {
+    /// Measure the disk space of each run (default true). Walking the job folders of large runs
+    /// takes long; lists that only need names pass false.
+    #[serde(default = "yes")]
+    pub sizes: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -588,7 +601,7 @@ pub fn register(r: &mut Registry, runner: SharedRunner) {
             errors: &["project.none_open"],
             example: json!({}),
         },
-        |s, _: JobParams| Ok(list(s.project()?)),
+        |s, p: ListParams| Ok(list(s.project()?, p.sizes)),
     );
     r.add(
         "runs.rename",

@@ -44,7 +44,7 @@ export function CompareManySection({ api, revision }: Props) {
 
   useEffect(() => {
     api
-      .call<Run[]>("runs.list", {})
+      .call<Run[]>("runs.list", { sizes: false })
       .then((l) => setRuns(Array.isArray(l) ? l : []))
       .catch(() => setRuns([]));
   }, [api, revision]);

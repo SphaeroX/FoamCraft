@@ -20,7 +20,7 @@ interface Run {
   key_value: number | null;
   key_unit: string;
   reliability: Level;
-  bytes: number;
+  bytes: number | null;
 }
 
 interface Figure {
@@ -303,7 +303,9 @@ export function KeyFiguresPanel({ api, revision, pickSavePath, confirm }: Props)
       )}
 
       <h3>{t("figures.manage")}</h3>
-      {run && <p className="small">{t("figures.size", { size: mb(run.bytes) })}</p>}
+      {run && run.bytes !== null && (
+        <p className="small">{t("figures.size", { size: mb(run.bytes) })}</p>
+      )}
       <div className="range-inputs">
         <input
           type="text"

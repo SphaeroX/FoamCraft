@@ -123,9 +123,8 @@ and offscreen frames show identical pixel values.
 (`StepRail`: four numbered stations on a line that fills as steps are done; states from the pure
 function `stepStates` in `app/src/steps.ts` fed by `geometry.list/info`, `scenario.info` and
 `results.list_fields` on every project change), fit, export, report, close and one menu
-(`AppMenu`: language, expert mode, system, agents, tour, about). A guide card under the left panel
-says in one sentence what the step is for and has Back/Next (`StepFooter`; Next is blocked with the
-reason until the step is done). Simple mode hides faces, groups, openings, rotation angles,
+(`AppMenu`: language, expert mode, system, agents, about). The step rail is the only step
+navigation; there is no guide card and no click-through tour. Simple mode hides faces, groups, openings, rotation angles,
 normals, residuals, coefficients, mesh details, logs, particle and slice editors. On start the app
 asks `project.info`, so a reloaded page shows the open project again.
 
@@ -140,6 +139,10 @@ first-layer height in steps of √2 (∝ ν^0.9/U^0.9), so close speeds share a 
 removed only when no scenario uses it. `run.start_all` runs scenarios one after another in a
 background thread, each on a copy of the project with that scenario active, reusing meshes built
 earlier in the queue; events `run.queue` and `run.queue_finished`; `run.cancel_queue` stops it.
+In the "Run" step the start button names the active scenario when there are several (it calculates
+only that one); `QueueSection` offers "Run all N scenarios" and, when some scenarios already have a
+result and others do not, "Run only missing" (`run.start_all {scenarios}` with the scenarios none of
+whose runs has a result in `runs.list`).
 `results.compare_many {jobs, reference}` gives one row per figure with a value and a relative
 change per run; `export.report {compare_runs}` prints that table (one column per run).
 
@@ -521,7 +524,12 @@ time-dependent simulation is needed (planned: Task_41).
   on it stops its meshing jobs, marks the run failed and answers `run.lost`.
 - **Interface:** `app/src/run-monitor.ts` holds the state of the run of the open project
   (`RunMonitor`, one per project, created in `App`); `reduceMonitor` is the pure reducer over the
-  events. `RunPanel` only renders it, so leaving the step loses nothing. The "Scenario" step has no
+  events. `RunPanel` only renders it, so leaving the step loses nothing. `RunMonitor.onResult`
+  tells `App` when a run it started has its result; `App` then switches from the "Run" step to
+  "Results" (also when a queue ends without being stopped). Meshing and solving are one run:
+  while it runs the start button reads "Running …", and between `mesh.ready` and the first
+  iteration (`MonitorState.meshReady`) the panel says the solver starts by itself. The ride's "End ride" button is a
+  filled red button (`button.exit`). The "Scenario" step has no
   mesh section; mesh statistics and "Mesh only" sit in a collapsed section of the "Run" step.
   `ConsoleDock` shows one status line of the run in every step and the log when opened.
 
@@ -834,7 +842,8 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   reached < 2 % yellow, else red), mesh verdict, wind tunnel: average y+ of the model (30–300
   green, 5–1000 yellow, else red), internal flow: mass balance (< 0.5 % green, < 1 % yellow).
 - **Runs:** `runs.list` (name, kind, key value, light, disk space of job folder, result and
-  cache), `runs.rename` (manifest `run_names`, schema 11), `runs.duplicate` (a variant: copy of
+  cache; `{sizes: false}` skips the disk space, which takes long for large runs, and gives
+  `bytes: null`: used by the report dialog, run comparison and queue), `runs.rename` (manifest `run_names`, schema 11), `runs.duplicate` (a variant: copy of
   the project folder with geometry and settings, without runs, mesh and view, next to it),
   `runs.delete` (job folder, result, cache and a job volume; refused for the job that holds the
   current mesh).
@@ -933,8 +942,7 @@ spanBox (...)`; points lie at origin + (i + 1) / (n + 1) · span. Without `rotat
   (copies the embedded project into a new folder, by default in the projects folder, and opens
   it). Both run through in draft quality
   (`runtime_` tests).
-- **Interface:** the assistant opens at the first start and from "System"; afterwards a four-step
-  tour (also from "Tour"); the start page lists the samples. Light appearance follows
+- **Interface:** the assistant opens at the first start and from "System"; the start page lists the samples. Light appearance follows
   `prefers-color-scheme` (colour tokens on `:root`), every control has a visible focus ring, and
   dialogs close with Escape.
 

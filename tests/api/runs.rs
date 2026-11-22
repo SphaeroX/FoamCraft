@@ -180,6 +180,15 @@ fn runs_are_listed_renamed_and_deleted_with_their_files() {
 }
 
 #[test]
+fn runs_are_listed_without_sizes_when_none_are_asked_for() {
+    let (reg, mut s, _root) = setup("nosizes");
+    let list = run(&reg, &mut s, "runs.list", json!({"sizes": false}));
+    assert_eq!(list.as_array().unwrap().len(), 2);
+    assert!(list[0]["bytes"].is_null());
+    assert!(list[0]["name"].is_string());
+}
+
+#[test]
 fn a_variant_is_a_copy_of_the_project_without_runs() {
     let (reg, mut s, root) = setup("variant");
     let out = run(

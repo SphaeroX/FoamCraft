@@ -169,6 +169,8 @@ describe("ride overlay", () => {
     expect(control).toHaveBeenLastCalledWith({ kind: "seek", t: 1.5 });
     fireEvent.keyDown(window, { key: "3" });
     await waitFor(() => expect(api.call).toHaveBeenCalledWith("ride.start", { view: "overview" }));
+    // Leaving the ride stands out: a filled red button.
+    expect(screen.getByRole("button", { name: "End ride" })).toHaveClass("exit");
     fireEvent.keyDown(window, { key: "Escape" });
     await waitFor(() => expect(api.call).toHaveBeenCalledWith("ride.stop", {}));
   });

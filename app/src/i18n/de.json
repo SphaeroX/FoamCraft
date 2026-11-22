@@ -146,6 +146,8 @@
   "run": {
     "title": "Rechnen",
     "start": "Rechnung starten",
+    "startScenario": "„{name}“ rechnen",
+    "busy": "Rechnet …",
     "cancel": "Abbrechen",
     "meshFirst": "Das Netz wird beim Start erzeugt",
     "about": "etwa {n} min",
@@ -183,7 +185,8 @@
       "snap": "Netz an die Oberfläche anschmiegen",
       "layers": "Grenzschichten aufbauen"
     },
-    "preparing": "Lauf wird vorbereitet …"
+    "preparing": "Lauf wird vorbereitet …",
+    "solverStarts": "Das Netz ist fertig; die Rechnung startet von selbst …"
   },
   "openings": {
     "title": "Öffnungen",
@@ -448,7 +451,8 @@
     "logo": "Logo wählen",
     "save": "Bericht speichern",
     "saved": "Geschrieben: {files}",
-    "compareRuns": "Mit mehreren Läufen vergleichen"
+    "compareRuns": "Mit mehreren Läufen vergleichen",
+    "loadingRuns": "Läufe werden geladen…"
   },
   "setup": {
     "button": "System",
@@ -480,31 +484,7 @@
     "recheck": "Erneut prüfen",
     "copy": "Diagnosebericht kopieren",
     "copied": "Kopiert.",
-    "finish": "Fertig",
-    "tour": "Tour"
-  },
-  "tour": {
-    "count": "Schritt {n} von {of}",
-    "geometry": {
-      "title": "1 · Geometrie",
-      "text": "Modell laden (STL, OBJ, 3MF, STEP, IGES), Größe prüfen und mit Pfeilen und Ringen in der Ansicht zurechtlegen. Flächen und Öffnungen gibt es im Expertenmodus (Menü)."
-    },
-    "scenario": {
-      "title": "2 · Szenario",
-      "text": "Wind wählen: Geschwindigkeit mit einem Klick, Richtung an der Windrose oder am orangen Pfeil in der Ansicht. Änderungen wirken sofort."
-    },
-    "run": {
-      "title": "3 · Rechnen",
-      "text": "Den Lauf starten: FoamCraft vernetzt und rechnet, zeigt den Fortschritt und hört auf, wenn sich die Werte eingependelt haben."
-    },
-    "results": {
-      "title": "4 · Ergebnisse",
-      "text": "Eine fertige Ansicht wie Rauchfäden oder Nachlauf wählen oder die Vorführung starten. Kennzahlen, Vergleiche und Export gibt es dort auch."
-    },
-    "next": "Weiter",
-    "back": "Zurück",
-    "done": "Fertig",
-    "skip": "Überspringen"
+    "finish": "Fertig"
   },
   "samples": {
     "title": "Beispielprojekte",
@@ -604,22 +584,12 @@
     "run": "Die Rechnung starten, um Ergebnisse zu sehen.",
     "running": "Die Rechnung läuft."
   },
-  "nav": {
-    "back": "Zurück",
-    "next": "Weiter"
-  },
   "menu": {
     "label": "Menü"
   },
   "mode": {
     "expert": "Expertenmodus",
     "hint": "Zeigt Flächen, Gruppen, Rollen, Netz-Kennwerte und Protokolle."
-  },
-  "assistant": {
-    "geometry": "Lade dein Modell und prüfe die Größe. Mit den Pfeilen legst du es zurecht.",
-    "scenario": "Wähle, wie schnell und aus welcher Richtung der Wind weht.",
-    "run": "Starte die Rechnung. FoamCraft vernetzt selbst und hört auf, wenn das Ergebnis stabil ist.",
-    "results": "Wähle eine fertige Ansicht oder starte die Vorführung, um zu sehen, was die Strömung tut."
   },
   "scenarios": {
     "title": "Szenarien",
@@ -629,7 +599,8 @@
     "remove": "{name} entfernen"
   },
   "queue": {
-    "start": "Alle Szenarien rechnen",
+    "start": "Alle {n} Szenarien rechnen",
+    "missing": "Nur fehlende rechnen ({n})",
     "stop": "Warteschlange anhalten",
     "progress": "{n} von {of}: {name}",
     "stopped": "Warteschlange angehalten.",

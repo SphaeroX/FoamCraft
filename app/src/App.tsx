@@ -5,7 +5,6 @@ import { errorMessage, onApiEvent, subscribeApiEvents, tauriApi, type ProjectInf
 import { AboutDialog } from "./components/AboutDialog";
 import { ConsoleDock } from "./components/ConsoleDock";
 import { ExportDialog } from "./components/ExportDialog";
-import { GuidedTour } from "./components/GuidedTour";
 import { McpDialog } from "./components/McpDialog";
 import { ReportDialog } from "./components/ReportDialog";
 import { SetupAssistant } from "./components/SetupAssistant";
@@ -26,7 +25,7 @@ import { gentleStart } from "./components/RideSection";
 import { ScenarioTabs } from "./components/ScenarioTabs";
 import { QueueSection } from "./components/QueueSection";
 import { AppMenu } from "./components/AppMenu";
-import { StepFooter, StepRail } from "./components/StepRail";
+import { StepRail } from "./components/StepRail";
 import { useMode } from "./mode";
 import { stepStates, type ProjectFacts, type Step } from "./steps";
 import { useTranslation } from "./i18n/i18n";
@@ -63,9 +62,8 @@ export function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
 
-  // First start: the setup assistant, then the tour.
+  // First start: the setup assistant.
   useEffect(() => {
     tauriApi
       .call<{ done: boolean }>("system.setup_state", {})
@@ -122,6 +120,11 @@ export function App() {
     monitor.connect();
     return () => monitor.dispose();
   }, [monitor]);
+  // A finished run (or queue) watched in the Run step opens the results.
+  const showResults = useCallback(() => {
+    if (stepRef.current === "run") setStep("results");
+  }, []);
+  useEffect(() => monitor?.onResult(showResults), [monitor, showResults]);
 
   const onPick = useCallback((x: number, y: number, mode: PickMode) => {
     if (ridePickRef.current) {
@@ -503,7 +506,6 @@ export function App() {
         <AppMenu
           onSystem={() => setSetupOpen(true)}
           onAgents={() => setMcpOpen(true)}
-          onTour={() => setTourOpen(true)}
           onAbout={() => setAboutOpen(true)}
         />
       </header>
@@ -571,17 +573,15 @@ export function App() {
               key={project.path}
               api={tauriApi}
               subscribe={subscribeApiEvents}
-              footer={<QueueSection api={tauriApi} subscribe={subscribeApiEvents} />}
+              footer={
+                <QueueSection api={tauriApi} subscribe={subscribeApiEvents} onDone={showResults} />
+              }
               monitor={monitor ?? undefined}
             />
           )}
           {monitor && (
             <ConsoleDock key={`console-${project.path}`} api={tauriApi} monitor={monitor} />
           )}
-          <section className="step-guide panel" aria-label={t(`steps.${step}`)}>
-            <p>{t(`assistant.${step}`)}</p>
-            <StepFooter step={step} states={states} onStep={goTo} />
-          </section>
           <footer className="hint panel">{t("viewport.hint")}</footer>
         </>
       ) : (
@@ -618,20 +618,9 @@ export function App() {
           api={tauriApi}
           copy={(text) => navigator.clipboard.writeText(text)}
           subscribe={subscribeApiEvents}
-          onClose={() => {
-            setSetupOpen(false);
-            try {
-              if (!localStorage.getItem("foamcraft.tourSeen")) {
-                localStorage.setItem("foamcraft.tourSeen", "1");
-                setTourOpen(true);
-              }
-            } catch {
-              // Without storage the tour is still available from the toolbar.
-            }
-          }}
+          onClose={() => setSetupOpen(false)}
         />
       )}
-      {tourOpen && <GuidedTour onClose={() => setTourOpen(false)} />}
       {mcpOpen && (
         <McpDialog
           cliPath={cliPath}

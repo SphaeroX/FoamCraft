@@ -43,6 +43,8 @@ export interface MonitorState {
   mesh: MeshProgress | null;
   /** Counts finished meshes, so views of the mesh reload. */
   meshRevision: number;
+  /** The mesh of this run is ready and the solver is being started. */
+  meshReady: boolean;
   residuals: Record<string, [number, number][]>;
   coeffs: { cd: [number, number][]; cl: [number, number][] };
   loss: [number, number][];
@@ -63,6 +65,7 @@ export const initialMonitor: MonitorState = {
   seen: [],
   mesh: null,
   meshRevision: 0,
+  meshReady: false,
   residuals: {},
   coeffs: { cd: [], cl: [] },
   loss: [],
@@ -119,6 +122,7 @@ export function reduceMonitor(state: MonitorState, event: ApiEvent): MonitorStat
         ...state,
         mesh: null,
         meshRevision: state.meshRevision + 1,
+        meshReady: state.phase === "running",
         phase: state.meshOnly && state.phase === "running" ? "finished" : state.phase,
       };
     case "run.progress": {
@@ -166,6 +170,7 @@ type Subscribe = (handler: (event: ApiEvent) => void) => () => void;
 export class RunMonitor {
   private state: MonitorState = initialMonitor;
   private listeners = new Set<() => void>();
+  private resultListeners = new Set<(result: RunResult) => void>();
   private stop: (() => void) | null = null;
   /** Language for the message of a start command that fails. */
   language: Language = "en";
@@ -180,6 +185,12 @@ export class RunMonitor {
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  };
+
+  /** Called when a run this monitor started or attached to has its result (not a mesh-only run). */
+  onResult = (listener: (result: RunResult) => void): (() => void) => {
+    this.resultListeners.add(listener);
+    return () => this.resultListeners.delete(listener);
   };
 
   private set(next: MonitorState) {
@@ -231,9 +242,14 @@ export class RunMonitor {
     if (event.name === "run.result") {
       const id = String(asRecord(event.payload).job_id);
       if (this.state.jobId !== null && id !== this.state.jobId) return;
+      // Only a run this monitor follows tells its listeners (not each run of a queue).
+      const followed = this.state.phase === "running" && !this.state.meshOnly;
       this.api
         .call<RunResult>("run.result", { job_id: id })
-        .then((result) => this.set({ ...this.state, result, phase: "finished", mesh: null }))
+        .then((result) => {
+          this.set({ ...this.state, result, phase: "finished", mesh: null });
+          if (followed) this.resultListeners.forEach((l) => l(result));
+        })
         .catch((e: unknown) =>
           this.set({
             ...this.state,

@@ -547,6 +547,21 @@ table.figures th[scope="row"] {
 button.danger {
   border-color: #e05040;
 }
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+/* Leaving a mode (the ride): a filled red button that is found at once. */
+button.exit {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #fff;
+  font-weight: bold;
+}
+button.exit:hover {
+  filter: brightness(1.1);
+}
 /* Comparison: the name above its four values, so the table fits the side panel. */
 table.figures.compare thead tr,
 table.figures.compare tbody tr {
@@ -674,9 +689,6 @@ pre.code {
 .ready {
   color: var(--ok);
   font-weight: bold;
-}
-.tour-dialog {
-  max-width: 460px;
 }
 .samples {
   display: flex;
@@ -1172,31 +1184,6 @@ button:disabled {
 }
 .step-rail button[data-state="open"]:not(.current) {
   opacity: 0.7;
-}
-/* Guide card: one sentence what to do, Back and Next. */
-.step-guide {
-  position: fixed;
-  left: 8px;
-  bottom: 44px;
-  width: 300px;
-  box-sizing: border-box;
-  padding: var(--space-3);
-  z-index: 3;
-}
-.step-guide p {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-m);
-}
-.step-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.step-footer-note {
-  flex: 1;
-}
-.step-footer .primary {
-  margin-left: auto;
 }
 /* With the guide card below it, the left panel ends higher. */
 .side-panel:not(.right) {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// "Run all scenarios": starts the queue, shows which scenario is being calculated and stops it.
+// "Run all scenarios" and "Run only missing": starts the queue, shows which scenario is being
+// calculated and stops it.
 import { useEffect, useState } from "react";
 import type { Api, ApiEvent } from "../api";
 import { useTranslation } from "../i18n/i18n";
@@ -8,6 +9,8 @@ import { scenarioName, type ScenarioList } from "./ScenarioTabs";
 interface Props {
   api: Api;
   subscribe: (handler: (event: ApiEvent) => void) => () => void;
+  /** Called when a queue ran to its end (not stopped). */
+  onDone?: () => void;
 }
 
 type QueueState =
@@ -15,9 +18,11 @@ type QueueState =
   | { kind: "running"; index: number; total: number; scenario: string }
   | { kind: "done"; cancelled: boolean; failed: number };
 
-export function QueueSection({ api, subscribe }: Props) {
+export function QueueSection({ api, subscribe, onDone }: Props) {
   const { t } = useTranslation();
   const [list, setList] = useState<ScenarioList | null>(null);
+  // Job ids of the runs that have a result.
+  const [results, setResults] = useState<Set<string>>(new Set());
   const [state, setState] = useState<QueueState>({ kind: "idle" });
 
   useEffect(() => {
@@ -25,6 +30,10 @@ export function QueueSection({ api, subscribe }: Props) {
       .call<ScenarioList>("scenario.list", {})
       .then((l) => setList(l && Array.isArray(l.scenarios) ? l : null))
       .catch(() => setList(null));
+    api
+      .call<{ job_id: string }[]>("runs.list", { sizes: false })
+      .then((r) => setResults(new Set(Array.isArray(r) ? r.map((x) => x.job_id) : [])))
+      .catch(() => setResults(new Set()));
   }, [api]);
 
   useEffect(
@@ -40,14 +49,12 @@ export function QueueSection({ api, subscribe }: Props) {
           });
         } else if (e.name === "run.queue_finished") {
           const runs = Array.isArray(p.runs) ? (p.runs as { error: unknown }[]) : [];
-          setState({
-            kind: "done",
-            cancelled: p.cancelled === true,
-            failed: runs.filter((r) => r.error).length,
-          });
+          const cancelled = p.cancelled === true;
+          setState({ kind: "done", cancelled, failed: runs.filter((r) => r.error).length });
+          if (!cancelled) onDone?.();
         }
       }),
-    [subscribe],
+    [subscribe, onDone],
   );
 
   const name = (id: string) => {
@@ -57,6 +64,14 @@ export function QueueSection({ api, subscribe }: Props) {
   const running = state.kind === "running";
   // A queue only makes sense with two or more scenarios.
   if (!list || list.scenarios.length < 2) return null;
+  const all = list.scenarios;
+  const missing = all.filter((s) => !s.runs.some((r) => results.has(r)));
+  const start = (ids: string[] | null) => {
+    setState({ kind: "running", index: 0, total: ids?.length ?? all.length, scenario: "" });
+    void api
+      .call("run.start_all", ids ? { scenarios: ids } : {})
+      .catch(() => setState({ kind: "idle" }));
+  };
   return (
     <section className="queue">
       {running ? (
@@ -64,20 +79,16 @@ export function QueueSection({ api, subscribe }: Props) {
           {t("queue.stop")}
         </button>
       ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setState({
-              kind: "running",
-              index: 0,
-              total: list?.scenarios.length ?? 0,
-              scenario: "",
-            });
-            void api.call("run.start_all", {}).catch(() => setState({ kind: "idle" }));
-          }}
-        >
-          {t("queue.start")}
-        </button>
+        <div className="queue-actions">
+          <button type="button" onClick={() => start(null)}>
+            {t("queue.start", { n: String(all.length) })}
+          </button>
+          {missing.length > 0 && missing.length < all.length && (
+            <button type="button" onClick={() => start(missing.map((s) => s.id))}>
+              {t("queue.missing", { n: String(missing.length) })}
+            </button>
+          )}
+        </div>
       )}
       <p role="status" className="small muted">
         {state.kind === "running" && state.scenario

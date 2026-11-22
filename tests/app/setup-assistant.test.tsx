@@ -4,7 +4,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Api } from "../../app/src/api";
 import { SetupAssistant } from "../../app/src/components/SetupAssistant";
-import { GuidedTour } from "../../app/src/components/GuidedTour";
 import { SamplesSection } from "../../app/src/components/SamplesSection";
 import { LanguageProvider, STORAGE_KEY } from "../../app/src/i18n/i18n";
 
@@ -161,41 +160,6 @@ describe("setup assistant", () => {
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(call).toHaveBeenCalledWith("system.finish_setup", {}));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-  });
-});
-
-describe("guided tour", () => {
-  beforeEach(() => localStorage.setItem(STORAGE_KEY, "en"));
-  afterEach(cleanup);
-
-  it("walks through the four steps and can be closed with Escape", () => {
-    const onClose = vi.fn();
-    render(
-      <LanguageProvider>
-        <GuidedTour onClose={onClose} />
-      </LanguageProvider>,
-    );
-    const dialog = screen.getByRole("dialog", { name: /Geometry/ });
-    expect(dialog).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("dialog", { name: /Scenario/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByRole("dialog", { name: /Geometry/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("dialog", { name: /Results/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-    cleanup();
-    const onClose2 = vi.fn();
-    render(
-      <LanguageProvider>
-        <GuidedTour onClose={onClose2} />
-      </LanguageProvider>,
-    );
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-    expect(onClose2).toHaveBeenCalled();
   });
 });
 

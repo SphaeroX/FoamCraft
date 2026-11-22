@@ -34,7 +34,8 @@ interface Props {
 
 export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose }: Props) {
   const { t, language } = useTranslation();
-  const [runs, setRuns] = useState<Run[]>([]);
+  const [loaded, setLoaded] = useState<Run[] | null>(null);
+  const runs = loaded ?? [];
   const [job, setJob] = useState("");
   const [other, setOther] = useState("");
   // Several runs to compare with; when some are ticked they replace the single comparison.
@@ -52,12 +53,16 @@ export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose
 
   useEffect(() => {
     api
-      .call<Run[]>("runs.list")
+      // Only the names are needed: measuring the disk space of large runs takes long.
+      .call<Run[]>("runs.list", { sizes: false })
       .then((list) => {
-        setRuns(list);
+        setLoaded(list);
         setJob((j) => j || list[0]?.job_id || "");
       })
-      .catch((e: unknown) => setError(errorMessage(e, language)));
+      .catch((e: unknown) => {
+        setLoaded([]);
+        setError(errorMessage(e, language));
+      });
   }, [api, language]);
 
   const save = async () => {
@@ -99,6 +104,11 @@ export function ReportDialog({ api, projectName, pickSavePath, pickLogo, onClose
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="report-title">{t("report.title")}</h2>
+        {loaded === null && (
+          <p role="status" className="small muted">
+            {t("report.loadingRuns")}
+          </p>
+        )}
         <div className="export-grid">
           <label className="unit-field">
             <span>{t("report.run")}</span>

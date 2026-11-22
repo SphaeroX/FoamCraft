@@ -154,6 +154,29 @@ describe("run monitor", () => {
     expect(screen.getByText("Finished")).toBeInTheDocument();
   });
 
+  it("shows that the run goes on by itself after the mesh is ready", async () => {
+    const { api, monitor, emit } = setup();
+    render(panel(api, monitor));
+    fireEvent.click(await screen.findByRole("button", { name: "Start run" }));
+    // While it runs, the start button says so instead of inviting a click.
+    expect(await screen.findByRole("button", { name: "Running …" })).toBeDisabled();
+    emit("mesh.stage", { job_id: "mesh-1", run_id: "run-1", stage: "mesh", attempt: 1 });
+    emit("mesh.ready", { run_id: "run-1", job_id: "mesh-1", cells: 487123, verdict: "good" });
+    expect(
+      screen.getByText("The mesh is ready; the solver starts by itself …"),
+    ).toBeInTheDocument();
+    emit("run.stage", { job_id: "run-1", stage: "solve" });
+    emit("run.coefficients", {
+      job_id: "run-1",
+      iteration: 1,
+      cd: 0.5,
+      cl: 0,
+      remaining_s: 100,
+      max_iterations: 900,
+    });
+    expect(screen.queryByText(/the solver starts by itself/)).toBeNull();
+  });
+
   it("builds only the mesh on request", async () => {
     const { api, call, monitor, emit } = setup();
     render(panel(api, monitor));
@@ -165,6 +188,35 @@ describe("run monitor", () => {
     expect(await screen.findByText("Finished")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start run" })).toBeEnabled();
     expect(await screen.findByText(/Good/)).toBeInTheDocument();
+  });
+
+  it("tells when a started run has its result, but not for a mesh-only run", async () => {
+    const { monitor, emit } = setup();
+    const done = vi.fn();
+    monitor.onResult(done);
+    monitor.start(true);
+    await waitFor(() => expect(monitor.getState().jobId).toBe("run-1"));
+    emit("mesh.ready", { run_id: "run-1", job_id: "mesh-1", cells: 1, verdict: "good" });
+    expect(done).not.toHaveBeenCalled();
+    monitor.start();
+    await waitFor(() => expect(monitor.getState().jobId).toBe("run-1"));
+    emit("run.result", { job_id: "run-1" });
+    await waitFor(() => expect(done).toHaveBeenCalledTimes(1));
+    expect(done.mock.calls[0][0]).toMatchObject({ job_id: "run-1" });
+  });
+
+  it("names the active scenario on the start button when there are several", async () => {
+    const { api, monitor } = setup({
+      "scenario.list": {
+        active: "scenario-2",
+        scenarios: [
+          { id: "scenario-1", name: "", runs: [] },
+          { id: "scenario-2", name: "Fast", runs: [] },
+        ],
+      },
+    });
+    render(panel(api, monitor));
+    expect(await screen.findByRole("button", { name: "Run “Fast”" })).toBeInTheDocument();
   });
 
   it("ignores events of other runs and starts the stages again for a further attempt", () => {
